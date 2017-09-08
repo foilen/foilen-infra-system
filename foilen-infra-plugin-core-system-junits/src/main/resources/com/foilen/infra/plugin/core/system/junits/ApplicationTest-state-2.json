@@ -1,0 +1,208 @@
+{
+  "resources" : [ {
+    "resource" : "Application | a1 | null",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "DnsPointer | a1.example.com | a1.example.com"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | user1 | /home/user1"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Application | a2 | null",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m2.example.com | m2.example.com (199.141.1.201)"
+    }, {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m3.example.com | m3.example.com (199.141.1.301)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "DnsPointer | d1.example.com | d1.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "DnsPointer | d2.example.com | d2.example.com"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | user2 | /home/user2"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | a1.example.com / A | 199.141.1.101",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | a1.example.com | Domain for a1.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | d1.example.com / A | 199.141.1.201",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | d1.example.com | Domain for d1.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | d1.example.com / A | 199.141.1.301",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | d1.example.com | Domain for d1.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | d2.example.com / A | 199.141.1.201",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | d2.example.com | Domain for d2.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | d2.example.com / A | 199.141.1.301",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | d2.example.com | Domain for d2.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | m1.example.com | Domain for m1.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | m2.example.com / A | 199.141.1.201",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | m2.example.com | Domain for m2.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | m3.example.com / A | 199.141.1.301",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | m3.example.com | Domain for m3.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsPointer | a1.example.com | a1.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | a1.example.com / A | 199.141.1.101"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsPointer | d1.example.com | d1.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | d1.example.com / A | 199.141.1.201"
+    }, {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | d1.example.com / A | 199.141.1.301"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Machine | m2.example.com | m2.example.com (199.141.1.201)"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Machine | m3.example.com | m3.example.com (199.141.1.301)"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsPointer | d2.example.com | d2.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | d2.example.com / A | 199.141.1.201"
+    }, {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | d2.example.com / A | 199.141.1.301"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Machine | m2.example.com | m2.example.com (199.141.1.201)"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Machine | m3.example.com | m3.example.com (199.141.1.301)"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | a1.example.com | Domain for a1.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | d1.example.com | Domain for d1.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | d2.example.com | Domain for d2.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | example.com | Domain for example.com",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | m2.example.com | Domain for m2.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | m3.example.com | Domain for m3.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Machine | m1.example.com | m1.example.com (199.141.1.101)",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | m1.example.com / A | 199.141.1.101"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Machine | m2.example.com | m2.example.com (199.141.1.201)",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | m2.example.com / A | 199.141.1.201"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Machine | m3.example.com | m3.example.com (199.141.1.301)",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | m3.example.com / A | 199.141.1.301"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "UnixUser | user1 | /home/user1",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "UnixUser | user2 | /home/user2",
+    "links" : [ ],
+    "tags" : [ ]
+  } ]
+}

@@ -1,0 +1,35 @@
+dependencies {
+
+  compile project(":foilen-infra-plugin-core")
+  compile "junit:junit"
+
+}
+
+bintray {
+  user = System.getenv('BINTRAY_USER')
+  key = System.getenv('BINTRAY_KEY')
+
+  publish = true
+
+  pkg {
+    repo = 'maven'
+    userOrg = 'foilen'
+    name = 'com.foilen:foilen-infra-plugin-core-system-junits'
+    licenses = ['MIT']
+    vcsUrl = 'https://github.com/foilen/foilen-infra-plugin.git'
+  }
+
+  publications = ['MyPublication']
+}
+
+publishing {
+  publications {
+    MyPublication(MavenPublication) {
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+      groupId 'com.foilen'
+      artifactId 'foilen-infra-plugin-core-system-junits'
+    }
+  }
+}

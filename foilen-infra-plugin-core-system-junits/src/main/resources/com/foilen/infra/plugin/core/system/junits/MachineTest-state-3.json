@@ -1,0 +1,28 @@
+{
+  "resources" : [ {
+    "resource" : "Domain | example.com | Domain for example.com",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | m1.node.example.com | Domain for m1.node.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | node.example.com | Domain for node.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | node.example.com | Domain for node.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Machine | m1.node.example.com | m1.node.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | m1.node.example.com | Domain for m1.node.example.com"
+    } ],
+    "tags" : [ ]
+  } ]
+}

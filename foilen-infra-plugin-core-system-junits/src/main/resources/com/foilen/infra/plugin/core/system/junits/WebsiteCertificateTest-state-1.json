@@ -1,0 +1,31 @@
+{
+  "resources" : [ {
+    "resource" : "Domain | example.com | Domain for example.com",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | m2.example.com | Domain for m2.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "WebsiteCertificate | m1.example.com, m2.example.com | my_thumb, 2001-01-01, 2002-01-01",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | m1.example.com | Domain for m1.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "Domain | m2.example.com | Domain for m2.example.com"
+    } ],
+    "tags" : [ ]
+  } ]
+}
