@@ -19,7 +19,7 @@ License: The MIT License (MIT)
 
 You can see the latest version and the Maven and Gradle settings here:
 
-https://bintray.com/foilen/maven/com.foilen:foilen-infra-plugin
+https://bintray.com/foilen/maven/com.foilen:foilen-infra-plugin-core
 
 ## Plugin
 
