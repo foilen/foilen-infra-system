@@ -10,8 +10,8 @@
 package com.foilen.infra.plugin.v1.core.common;
 
 import com.foilen.infra.plugin.v1.core.base.resources.WebsiteCertificate;
-import com.foilen.smalltools.crypt.asymmetric.RSACrypt;
-import com.foilen.smalltools.crypt.cert.RSACertificate;
+import com.foilen.smalltools.crypt.spongycastle.asymmetric.RSACrypt;
+import com.foilen.smalltools.crypt.spongycastle.cert.RSACertificate;
 
 public class CertificateHelper {
 

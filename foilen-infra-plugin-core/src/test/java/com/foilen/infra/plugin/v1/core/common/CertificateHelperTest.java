@@ -13,10 +13,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.foilen.infra.plugin.v1.core.base.resources.WebsiteCertificate;
-import com.foilen.smalltools.crypt.asymmetric.AsymmetricKeys;
-import com.foilen.smalltools.crypt.asymmetric.RSACrypt;
-import com.foilen.smalltools.crypt.cert.CertificateDetails;
-import com.foilen.smalltools.crypt.cert.RSACertificate;
+import com.foilen.smalltools.crypt.spongycastle.asymmetric.AsymmetricKeys;
+import com.foilen.smalltools.crypt.spongycastle.asymmetric.RSACrypt;
+import com.foilen.smalltools.crypt.spongycastle.cert.CertificateDetails;
+import com.foilen.smalltools.crypt.spongycastle.cert.RSACertificate;
 import com.foilen.smalltools.tools.DateTools;
 
 public class CertificateHelperTest {

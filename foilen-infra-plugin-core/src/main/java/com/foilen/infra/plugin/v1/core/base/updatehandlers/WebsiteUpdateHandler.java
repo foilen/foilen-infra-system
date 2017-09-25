@@ -30,10 +30,10 @@ import com.foilen.infra.plugin.v1.core.eventhandler.AbstractUpdateEventHandler;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
-import com.foilen.smalltools.crypt.asymmetric.AsymmetricKeys;
-import com.foilen.smalltools.crypt.asymmetric.RSACrypt;
-import com.foilen.smalltools.crypt.cert.CertificateDetails;
-import com.foilen.smalltools.crypt.cert.RSACertificate;
+import com.foilen.smalltools.crypt.spongycastle.asymmetric.AsymmetricKeys;
+import com.foilen.smalltools.crypt.spongycastle.asymmetric.RSACrypt;
+import com.foilen.smalltools.crypt.spongycastle.cert.CertificateDetails;
+import com.foilen.smalltools.crypt.spongycastle.cert.RSACertificate;
 import com.foilen.smalltools.tools.DateTools;
 import com.foilen.smalltools.tuple.Tuple3;
 
