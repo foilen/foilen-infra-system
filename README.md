@@ -29,12 +29,12 @@ https://bintray.com/foilen/maven/com.foilen:foilen-infra-plugin-core
 
 - Use foilen-infra-plugin-core-system-common
 - Implement all the services:
- - com.foilen.infra.plugin.v1.core.service.IPResourceService
- - com.foilen.infra.plugin.v1.core.service.MessagingService
- - com.foilen.infra.plugin.v1.core.service.RealmPluginService
- - com.foilen.infra.plugin.v1.core.service.TimerService
- - com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService
- - com.foilen.infra.plugin.v1.core.service.internal.InternalIPResourceService
+    - com.foilen.infra.plugin.v1.core.service.IPResourceService
+    - com.foilen.infra.plugin.v1.core.service.MessagingService
+    - com.foilen.infra.plugin.v1.core.service.RealmPluginService
+    - com.foilen.infra.plugin.v1.core.service.TimerService
+    - com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService
+    - com.foilen.infra.plugin.v1.core.service.internal.InternalIPResourceService
 - Init the system with InfraPluginCommonInit.init(commonServicesContext, internalServicesContext);
 
 ## System test
