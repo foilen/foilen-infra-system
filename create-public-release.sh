@@ -21,7 +21,7 @@ echo ----==[ Update copyrights ]==----
 ./scripts/javaheaderchanger.sh > /dev/null
 
 echo ----==[ Compile and deploy to jcenter ]==----
-./gradlew clean bintrayUpload
+./gradlew clean build bintrayUpload
 
 echo ----==[ Git Tag ]==----
 git tag -a -m $VERSION $VERSION

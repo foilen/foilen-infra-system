@@ -66,6 +66,7 @@ import com.foilen.smalltools.tools.ThreadTools;
 import com.foilen.smalltools.tuple.Tuple2;
 import com.foilen.smalltools.tuple.Tuple3;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 
 /**
  * This is to test that the implementation of the real system is working as expected.
@@ -1548,7 +1549,457 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_equal_yes() {
+    public void testQuerySetDates_many_equal_0() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_0.0
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DATES, Sets.newHashSet()) //
+        );
+        List<String> actualTexts = items.stream().map(it -> it.getText()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("example.com", "sets_0.0", "t1_aaa", "t2_aaa", "www.example.com", "www.example.com", "zz"), actualTexts);
+
+    }
+
+    @Test
+    public void testQuerySetDates_many_equal_1() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_1.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DATES, Sets.newHashSet(DateTools.parseDateOnly("2000-01-01"))) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.1", items.get(0).getText());
+
+        // sets_1.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DATES, Sets.newHashSet(DateTools.parseDateOnly("2000-01-02"))) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetDates_many_equal_2() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_2.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DATES, Sets.newHashSet(DateTools.parseDateOnly("2000-01-01"), DateTools.parseDateOnly("2000-02-01"))) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.1", items.get(0).getText());
+
+        // sets_2.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DATES, Sets.newHashSet(DateTools.parseDateOnly("2000-01-02"), DateTools.parseDateOnly("2000-02-02"))) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetDoubles_many_equal_0() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_0.0
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DOUBLES, Sets.newHashSet()) //
+        );
+        List<String> actualTexts = items.stream().map(it -> it.getText()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("example.com", "sets_0.0", "t1_aaa", "t2_aaa", "www.example.com", "www.example.com", "zz"), actualTexts);
+
+    }
+
+    @Test
+    public void testQuerySetDoubles_many_equal_1() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_1.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DOUBLES, Sets.newHashSet(1.0d)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.1", items.get(0).getText());
+
+        // sets_1.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DOUBLES, Sets.newHashSet(2.0d)) //
+        );
+        Assert.assertEquals(1, items.size());
+    }
+
+    @Test
+    public void testQuerySetDoubles_many_equal_2() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_2.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DOUBLES, Sets.newHashSet(1.0d, 2.0d)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.1", items.get(0).getText());
+
+        // sets_2.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_DOUBLES, Sets.newHashSet(3.0d, 4.0d)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetEnumerations_many_equal_0() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_0.0
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_ENUMERATIONS, Sets.newHashSet()) //
+        );
+        List<String> actualTexts = items.stream().map(it -> it.getText()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("example.com", "sets_0.0", "t1_aaa", "t2_aaa", "www.example.com", "www.example.com", "zz"), actualTexts);
+
+    }
+
+    @Test
+    public void testQuerySetEnumerations_many_equal_1() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_1.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_ENUMERATIONS, Sets.newHashSet(JunitResourceEnum.A)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.1", items.get(0).getText());
+
+        // sets_1.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_ENUMERATIONS, Sets.newHashSet(JunitResourceEnum.B)) //
+        );
+        Assert.assertEquals(1, items.size());
+    }
+
+    @Test
+    public void testQuerySetEnumerations_many_equal_2() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_2.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_ENUMERATIONS, Sets.newHashSet(JunitResourceEnum.A, JunitResourceEnum.B)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.1", items.get(0).getText());
+
+        // sets_2.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_ENUMERATIONS, Sets.newHashSet(JunitResourceEnum.C, JunitResourceEnum.B)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetFloats_many_equal_0() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_0.0
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_FLOATS, Sets.newHashSet()) //
+        );
+        List<String> actualTexts = items.stream().map(it -> it.getText()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("example.com", "sets_0.0", "t1_aaa", "t2_aaa", "www.example.com", "www.example.com", "zz"), actualTexts);
+
+    }
+
+    @Test
+    public void testQuerySetFloats_many_equal_1() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_1.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_FLOATS, Sets.newHashSet(1.0f)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.1", items.get(0).getText());
+
+        // sets_1.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_FLOATS, Sets.newHashSet(2.0f)) //
+        );
+        Assert.assertEquals(1, items.size());
+    }
+
+    @Test
+    public void testQuerySetFloats_many_equal_2() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_2.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_FLOATS, Sets.newHashSet(1.0f, 2.0f)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.1", items.get(0).getText());
+
+        // sets_2.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_FLOATS, Sets.newHashSet(3.0f, 4.0f)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetIntegers_many_equal_0() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_0.0
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_INTEGERS, Sets.newHashSet()) //
+        );
+        List<String> actualTexts = items.stream().map(it -> it.getText()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("example.com", "sets_0.0", "t1_aaa", "t2_aaa", "www.example.com", "www.example.com", "zz"), actualTexts);
+
+    }
+
+    @Test
+    public void testQuerySetIntegers_many_equal_1() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_1.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_INTEGERS, Sets.newHashSet(1)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.1", items.get(0).getText());
+
+        // sets_1.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_INTEGERS, Sets.newHashSet(2)) //
+        );
+        Assert.assertEquals(1, items.size());
+    }
+
+    @Test
+    public void testQuerySetIntegers_many_equal_2() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_2.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_INTEGERS, Sets.newHashSet(1, 2)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.1", items.get(0).getText());
+
+        // sets_2.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_INTEGERS, Sets.newHashSet(3, 4)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetLongs_many_equal_0() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_0.0
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_LONGS, Sets.newHashSet()) //
+        );
+        List<String> actualTexts = items.stream().map(it -> it.getText()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("example.com", "sets_0.0", "t1_aaa", "t2_aaa", "www.example.com", "www.example.com", "zz"), actualTexts);
+
+    }
+
+    @Test
+    public void testQuerySetLongs_many_equal_1() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_1.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_LONGS, Sets.newHashSet(1l)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.1", items.get(0).getText());
+
+        // sets_1.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_LONGS, Sets.newHashSet(2l)) //
+        );
+        Assert.assertEquals(1, items.size());
+    }
+
+    @Test
+    public void testQuerySetLongs_many_equal_2() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_2.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_LONGS, Sets.newHashSet(1l, 2l)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.1", items.get(0).getText());
+
+        // sets_2.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_LONGS, Sets.newHashSet(3l, 4l)) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetTexts_many_equal_0() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_0.0
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Sets.newHashSet()) //
+        );
+        List<String> actualTexts = items.stream().map(it -> it.getText()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("example.com", "sets_0.0", "www.example.com", "www.example.com", "zz"), actualTexts);
+
+    }
+
+    @Test
+    public void testQuerySetTexts_many_equal_1() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_1.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Sets.newHashSet("1")) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.1", items.get(0).getText());
+
+        // sets_1.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Sets.newHashSet("2")) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_1.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetTexts_many_equal_2() {
+
+        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // sets_2.1
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Sets.newHashSet("1", "2")) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.1", items.get(0).getText());
+
+        // sets_2.2
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Sets.newHashSet("3", "4")) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("sets_2.2", items.get(0).getText());
+    }
+
+    @Test
+    public void testQuerySetTexts_single_equal_yes() {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1572,7 +2023,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_greater_equal_no() {
+    public void testQuerySetTexts_single_greater_equal_no() {
 
         thrown.expectMessage("Property [setTexts] does not support querying greater or equal");
 
@@ -1584,7 +2035,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_greater_no() {
+    public void testQuerySetTexts_single_greater_no() {
 
         thrown.expectMessage("Property [setTexts] does not support querying greater");
 
@@ -1596,7 +2047,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_less_equal_no() {
+    public void testQuerySetTexts_single_less_equal_no() {
 
         thrown.expectMessage("Property [setTexts] does not support querying lesser or equal");
 
@@ -1608,7 +2059,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_less_no() {
+    public void testQuerySetTexts_single_less_no() {
 
         thrown.expectMessage("Property [setTexts] does not support querying lesser");
 
@@ -1620,7 +2071,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_like_yes() {
+    public void testQuerySetTexts_single_like_yes() {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 

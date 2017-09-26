@@ -10,14 +10,18 @@
 package com.foilen.infra.plugin.core.system.junits;
 
 import java.util.Arrays;
+import java.util.Date;
+import java.util.Set;
 
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.model.junit.JunitResource;
 import com.foilen.infra.plugin.v1.model.junit.JunitResourceEnum;
+import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.tools.DateTools;
 import com.foilen.smalltools.tuple.Tuple2;
+import com.google.common.collect.Sets;
 
 public class JunitsHelper {
 
@@ -33,7 +37,13 @@ public class JunitsHelper {
                         JunitResource.PROPERTY_INTEGER_NUMBER, //
                         JunitResource.PROPERTY_LONG_NUMBER, //
                         JunitResource.PROPERTY_TEXT, //
-                        JunitResource.PROPERTY_SET_TEXTS //
+                        JunitResource.PROPERTY_SET_TEXTS, //
+                        JunitResource.PROPERTY_SET_DATES, //
+                        JunitResource.PROPERTY_SET_DOUBLES, //
+                        JunitResource.PROPERTY_SET_ENUMERATIONS, //
+                        JunitResource.PROPERTY_SET_LONGS, //
+                        JunitResource.PROPERTY_SET_INTEGERS, //
+                        JunitResource.PROPERTY_SET_FLOATS //
                 ));
         ctx.getInternalIPResourceService().resourceAdd(resourceDefinition);
     }
@@ -59,6 +69,79 @@ public class JunitsHelper {
 
         ctx.getInternalChangeService().changesExecute(changes);
 
+    }
+
+    public static void createFakeDataWithSets(InternalServicesContext ctx) {
+
+        // JunitResource
+        ChangesContext changes = new ChangesContext();
+
+        changes.getResourcesToAdd().add(createWithSets( //
+                "sets_0.0", //
+                Sets.newHashSet(), //
+                Sets.newHashSet(), //
+                Sets.newHashSet(), //
+                Sets.newHashSet(), //
+                Sets.newHashSet(), //
+                Sets.newHashSet(), //
+                Sets.newHashSet() //
+        ));
+        changes.getResourcesToAdd().add(createWithSets( //
+                "sets_1.1", //
+                Sets.newHashSet(DateTools.parseDateOnly("2000-01-01")), //
+                Sets.newHashSet(1.0d), //
+                Sets.newHashSet(JunitResourceEnum.A), //
+                Sets.newHashSet(1.0f), //
+                Sets.newHashSet(1l), //
+                Sets.newHashSet(1), //
+                Sets.newHashSet("1") //
+        ));
+        changes.getResourcesToAdd().add(createWithSets( //
+                "sets_1.2", //
+                Sets.newHashSet(DateTools.parseDateOnly("2000-01-02")), //
+                Sets.newHashSet(2.0d), //
+                Sets.newHashSet(JunitResourceEnum.B), //
+                Sets.newHashSet(2.0f), //
+                Sets.newHashSet(2l), //
+                Sets.newHashSet(2), //
+                Sets.newHashSet("2") //
+        ));
+        changes.getResourcesToAdd().add(createWithSets( //
+                "sets_2.1", //
+                Sets.newHashSet(DateTools.parseDateOnly("2000-01-01"), DateTools.parseDateOnly("2000-02-01")), //
+                Sets.newHashSet(1.0d, 2.0d), //
+                Sets.newHashSet(JunitResourceEnum.A, JunitResourceEnum.B), //
+                Sets.newHashSet(1.0f, 2.0f), //
+                Sets.newHashSet(1l, 2l), //
+                Sets.newHashSet(1, 2), //
+                Sets.newHashSet("1", "2") //
+        ));
+        changes.getResourcesToAdd().add(createWithSets( //
+                "sets_2.2", //
+                Sets.newHashSet(DateTools.parseDateOnly("2000-01-02"), DateTools.parseDateOnly("2000-02-02")), //
+                Sets.newHashSet(3.0d, 4.0d), //
+                Sets.newHashSet(JunitResourceEnum.B, JunitResourceEnum.C), //
+                Sets.newHashSet(3.0f, 4.0f), //
+                Sets.newHashSet(3l, 4l), //
+                Sets.newHashSet(3, 4), //
+                Sets.newHashSet("3", "4") //
+        ));
+
+        ctx.getInternalChangeService().changesExecute(changes);
+
+    }
+
+    private static IPResource createWithSets(String text, Set<Date> setDates, Set<Double> setDoubles, Set<JunitResourceEnum> setEnumerations, Set<Float> setFloats, Set<Long> setLongs,
+            Set<Integer> setIntegers, Set<String> setTexts) {
+        JunitResource junitResource = new JunitResource(text);
+        junitResource.setSetDates(setDates);
+        junitResource.setSetDoubles(setDoubles);
+        junitResource.setSetEnumerations(setEnumerations);
+        junitResource.setSetFloats(setFloats);
+        junitResource.setSetLongs(setLongs);
+        junitResource.setSetIntegers(setIntegers);
+        junitResource.setSetTexts(setTexts);
+        return junitResource;
     }
 
 }

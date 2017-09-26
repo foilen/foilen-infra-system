@@ -30,6 +30,12 @@ public class JunitResource extends AbstractIPResource implements IPResource {
     public static final String PROPERTY_INTEGER_NUMBER = "integerNumber";
     public static final String PROPERTY_LONG_NUMBER = "longNumber";
     public static final String PROPERTY_TEXT = "text";
+    public static final String PROPERTY_SET_DATES = "setDates";
+    public static final String PROPERTY_SET_DOUBLES = "setDoubles";
+    public static final String PROPERTY_SET_ENUMERATIONS = "setEnumerations";
+    public static final String PROPERTY_SET_FLOATS = "setFloats";
+    public static final String PROPERTY_SET_LONGS = "setLongs";
+    public static final String PROPERTY_SET_INTEGERS = "setIntegers";
     public static final String PROPERTY_SET_TEXTS = "setTexts";
 
     private String text;
@@ -40,6 +46,13 @@ public class JunitResource extends AbstractIPResource implements IPResource {
     private Double doubleNumber;
     private Float floatNumber;
     private boolean bool;
+
+    private Set<Date> setDates = new HashSet<>();
+    private Set<Double> setDoubles = new HashSet<>();
+    private Set<JunitResourceEnum> setEnumerations = new HashSet<>();
+    private Set<Float> setFloats = new HashSet<>();
+    private Set<Long> setLongs = new HashSet<>();
+    private Set<Integer> setIntegers = new HashSet<>();
     private Set<String> setTexts = new HashSet<>();
 
     public JunitResource() {
@@ -131,6 +144,30 @@ public class JunitResource extends AbstractIPResource implements IPResource {
         return text;
     }
 
+    public Set<Date> getSetDates() {
+        return setDates;
+    }
+
+    public Set<Double> getSetDoubles() {
+        return setDoubles;
+    }
+
+    public Set<JunitResourceEnum> getSetEnumerations() {
+        return setEnumerations;
+    }
+
+    public Set<Float> getSetFloats() {
+        return setFloats;
+    }
+
+    public Set<Integer> getSetIntegers() {
+        return setIntegers;
+    }
+
+    public Set<Long> getSetLongs() {
+        return setLongs;
+    }
+
     public Set<String> getSetTexts() {
         return setTexts;
     }
@@ -176,6 +213,30 @@ public class JunitResource extends AbstractIPResource implements IPResource {
         this.longNumber = longNumber;
     }
 
+    public void setSetDates(Set<Date> setDates) {
+        this.setDates = setDates;
+    }
+
+    public void setSetDoubles(Set<Double> setDoubles) {
+        this.setDoubles = setDoubles;
+    }
+
+    public void setSetEnumerations(Set<JunitResourceEnum> setEnumerations) {
+        this.setEnumerations = setEnumerations;
+    }
+
+    public void setSetFloats(Set<Float> setFloats) {
+        this.setFloats = setFloats;
+    }
+
+    public void setSetIntegers(Set<Integer> setIntegers) {
+        this.setIntegers = setIntegers;
+    }
+
+    public void setSetLongs(Set<Long> setLongs) {
+        this.setLongs = setLongs;
+    }
+
     public void setSetTexts(Set<String> setTexts) {
         this.setTexts = setTexts;
     }
@@ -203,6 +264,18 @@ public class JunitResource extends AbstractIPResource implements IPResource {
         builder.append(floatNumber);
         builder.append(", bool=");
         builder.append(bool);
+        builder.append(", setDates=");
+        builder.append(setDates);
+        builder.append(", setDoubles=");
+        builder.append(setDoubles);
+        builder.append(", setEnumerations=");
+        builder.append(setEnumerations);
+        builder.append(", setFloats=");
+        builder.append(setFloats);
+        builder.append(", setLongs=");
+        builder.append(setLongs);
+        builder.append(", setIntegers=");
+        builder.append(setIntegers);
         builder.append(", setTexts=");
         builder.append(setTexts);
         builder.append("]");

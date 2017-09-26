@@ -731,8 +731,12 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                                     return false;
                                 }
                             }
-                            if (currentValue instanceof Collection) {
-                                return ((Collection) currentValue).contains(propertyValue);
+                            if (currentValue instanceof Set) {
+                                if (propertyValue instanceof Set) {
+                                    return currentValue.equals(propertyValue);
+                                } else {
+                                    return ((Set) currentValue).contains(propertyValue);
+                                }
                             } else {
                                 if (!propertyValue.equals(currentValue)) {
                                     // Wrong value

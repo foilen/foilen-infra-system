@@ -13,4 +13,4 @@ echo ----==[ Update copyrights ]==----
 ./scripts/javaheaderchanger.sh > /dev/null
 
 echo ----==[ Compile and deploy locally ]==----
-./gradlew clean install
+./gradlew clean build install
