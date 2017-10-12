@@ -11,7 +11,7 @@ package com.foilen.infra.plugin.core.system.fake.junits;
 
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.foilen.infra.plugin.core.system.common.service.RealmPluginServiceImpl;
+import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
 import com.foilen.infra.plugin.core.system.fake.ConfigWebUiConfig;
 import com.foilen.infra.plugin.core.system.fake.service.FakeSystemServicesImpl;
 import com.foilen.infra.plugin.core.system.fake.service.TimerServiceImpl;
@@ -30,7 +30,7 @@ public class FakeSystemServicesTests {
         TranslationService translationService = new TranslationServiceImpl();
         ReflectionTestUtils.setField(translationService, "messageSource", new ConfigWebUiConfig().messageSource());
 
-        CommonServicesContext commonServicesContext = new CommonServicesContext(fakeSystemServicesImpl, new RealmPluginServiceImpl(), fakeSystemServicesImpl, timerService, translationService);
+        CommonServicesContext commonServicesContext = new CommonServicesContext(fakeSystemServicesImpl, new IPPluginServiceImpl(), fakeSystemServicesImpl, timerService, translationService);
         InternalServicesContext internalServicesContext = new InternalServicesContext(fakeSystemServicesImpl, fakeSystemServicesImpl);
 
         ReflectionTestUtils.setField(fakeSystemServicesImpl, "commonServicesContext", commonServicesContext);

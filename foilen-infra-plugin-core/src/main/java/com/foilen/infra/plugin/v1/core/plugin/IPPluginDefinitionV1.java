@@ -23,7 +23,7 @@ import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 
-public class RealmPluginDefinitionV1 {
+public class IPPluginDefinitionV1 {
 
     // Information
     private String pluginVendor;
@@ -38,7 +38,7 @@ public class RealmPluginDefinitionV1 {
     private List<ResourceEditorContext> resourceEditors = new ArrayList<>();
     private List<String> translations = new ArrayList<>();
 
-    public RealmPluginDefinitionV1(String pluginVendor, String pluginName, String pluginDescription, String pluginVersion) {
+    public IPPluginDefinitionV1(String pluginVendor, String pluginName, String pluginDescription, String pluginVersion) {
         this.pluginVendor = pluginVendor;
         this.pluginName = pluginName;
         this.pluginDescription = pluginDescription;
@@ -178,22 +178,22 @@ public class RealmPluginDefinitionV1 {
         return updateHandlers;
     }
 
-    public RealmPluginDefinitionV1 setPluginDescription(String pluginDescription) {
+    public IPPluginDefinitionV1 setPluginDescription(String pluginDescription) {
         this.pluginDescription = pluginDescription;
         return this;
     }
 
-    public RealmPluginDefinitionV1 setPluginName(String pluginName) {
+    public IPPluginDefinitionV1 setPluginName(String pluginName) {
         this.pluginName = pluginName;
         return this;
     }
 
-    public RealmPluginDefinitionV1 setPluginVendor(String pluginVendor) {
+    public IPPluginDefinitionV1 setPluginVendor(String pluginVendor) {
         this.pluginVendor = pluginVendor;
         return this;
     }
 
-    public RealmPluginDefinitionV1 setPluginVersion(String pluginVersion) {
+    public IPPluginDefinitionV1 setPluginVersion(String pluginVersion) {
         this.pluginVersion = pluginVersion;
         return this;
     }
@@ -201,7 +201,7 @@ public class RealmPluginDefinitionV1 {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("RealmPluginDefinitionV1 [pluginVendor=");
+        builder.append("IPPluginDefinitionV1 [pluginVendor=");
         builder.append(pluginVendor);
         builder.append(", pluginName=");
         builder.append(pluginName);

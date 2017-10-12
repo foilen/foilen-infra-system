@@ -40,13 +40,13 @@ import com.foilen.infra.plugin.v1.core.base.updatehandlers.WebsiteCertificateUpd
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.WebsiteUpdateHandler;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
-import com.foilen.infra.plugin.v1.core.plugin.RealmPluginDefinitionV1;
+import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
 
 public class IPCorePluginDefinitionProvider implements IPPluginDefinitionProvider {
 
     @Override
-    public RealmPluginDefinitionV1 getRealmPluginDefinition() {
-        RealmPluginDefinitionV1 pluginDefinitionV1 = new RealmPluginDefinitionV1("Main", "Core", "Main components that are always available", "1.0.0");
+    public IPPluginDefinitionV1 getIPPluginDefinition() {
+        IPPluginDefinitionV1 pluginDefinitionV1 = new IPPluginDefinitionV1("Main", "Core", "Main components that are always available", "1.0.0");
 
         // Resources
         pluginDefinitionV1.addCustomResource(Application.class, "Application", //

@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.MessagingService;
-import com.foilen.infra.plugin.v1.core.service.RealmPluginService;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.TimerService;
 import com.foilen.infra.plugin.v1.core.service.TranslationService;
 
@@ -25,7 +25,7 @@ public class CommonServicesContextBean extends CommonServicesContext {
     @Autowired
     private MessagingService messagingService;
     @Autowired
-    private RealmPluginService realmPluginService;
+    private IPPluginService ipPluginService;
     @Autowired
     private IPResourceService resourceService;
     @Autowired
@@ -43,8 +43,8 @@ public class CommonServicesContextBean extends CommonServicesContext {
     }
 
     @Override
-    public RealmPluginService getRealmPluginService() {
-        return realmPluginService;
+    public IPPluginService getPluginService() {
+        return ipPluginService;
     }
 
     @Override

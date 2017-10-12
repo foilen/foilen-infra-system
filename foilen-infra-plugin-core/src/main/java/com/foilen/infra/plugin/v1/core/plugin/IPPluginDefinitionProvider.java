@@ -16,7 +16,7 @@ import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
  */
 public interface IPPluginDefinitionProvider {
 
-    RealmPluginDefinitionV1 getRealmPluginDefinition();
+    IPPluginDefinitionV1 getIPPluginDefinition();
 
     /**
      * Once the system is ready, it will call this method to let the plugin initialize any helper.

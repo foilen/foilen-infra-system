@@ -26,9 +26,9 @@ import com.foilen.infra.plugin.v1.core.context.TimerEventContext;
 import com.foilen.infra.plugin.v1.core.context.UpdateEventContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
-import com.foilen.infra.plugin.v1.core.plugin.RealmPluginDefinitionV1;
+import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
-import com.foilen.infra.plugin.v1.core.service.RealmPluginService;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.comparator.ClassNameComparator;
@@ -36,7 +36,7 @@ import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.AssertTools;
 import com.foilen.smalltools.tuple.Tuple3;
 
-public class RealmPluginServiceImpl extends AbstractBasics implements RealmPluginService {
+public class IPPluginServiceImpl extends AbstractBasics implements IPPluginService {
 
     private static final Reflections reflections;
 
@@ -47,17 +47,17 @@ public class RealmPluginServiceImpl extends AbstractBasics implements RealmPlugi
         reflections = new Reflections(configurationBuilder);
     }
 
-    private List<Tuple3<Class<? extends IPPluginDefinitionProvider>, RealmPluginDefinitionV1, String>> brokenPlugins;
-    private List<RealmPluginDefinitionV1> availablePlugins;
+    private List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> brokenPlugins;
+    private List<IPPluginDefinitionV1> availablePlugins;
     private List<UpdateEventContext> updateEvents;
 
     @Override
-    public List<RealmPluginDefinitionV1> getAvailablePlugins() {
+    public List<IPPluginDefinitionV1> getAvailablePlugins() {
         return availablePlugins;
     }
 
     @Override
-    public List<Tuple3<Class<? extends IPPluginDefinitionProvider>, RealmPluginDefinitionV1, String>> getBrokenPlugins() {
+    public List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> getBrokenPlugins() {
         return brokenPlugins;
     }
 
@@ -80,7 +80,7 @@ public class RealmPluginServiceImpl extends AbstractBasics implements RealmPlugi
     @Override
     public Optional<ResourceEditor<?>> getResourceEditorByName(String editorName) {
         Optional<ResourceEditorContext> resourceCommonServicesContextOptional = availablePlugins.stream() //
-                .map(RealmPluginDefinitionV1::getResourceEditors) //
+                .map(IPPluginDefinitionV1::getResourceEditors) //
                 .reduce(new ArrayList<>(), (a, b) -> {
                     a.addAll(b);
                     return a;
@@ -99,7 +99,7 @@ public class RealmPluginServiceImpl extends AbstractBasics implements RealmPlugi
     @Override
     public List<String> getResourceEditorNamesByResourceType(Class<? extends IPResource> resourceType) {
         return availablePlugins.stream() //
-                .map(RealmPluginDefinitionV1::getResourceEditors) //
+                .map(IPPluginDefinitionV1::getResourceEditors) //
                 .reduce(new ArrayList<>(), (a, b) -> {
                     a.addAll(b);
                     return a;
@@ -122,8 +122,8 @@ public class RealmPluginServiceImpl extends AbstractBasics implements RealmPlugi
         AssertTools.assertNull(availablePlugins, "Plugin service already loaded");
 
         // Prepare the list of plugins
-        List<Tuple3<Class<? extends IPPluginDefinitionProvider>, RealmPluginDefinitionV1, String>> brokenPlugins = new ArrayList<>();
-        List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, RealmPluginDefinitionV1>> availablePlugins = new ArrayList<>();
+        List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> brokenPlugins = new ArrayList<>();
+        List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1>> availablePlugins = new ArrayList<>();
 
         logger.info("Seaching for plugins");
 
@@ -135,11 +135,11 @@ public class RealmPluginServiceImpl extends AbstractBasics implements RealmPlugi
         logger.info("Found {} plugins", providers.size());
         for (Class<? extends IPPluginDefinitionProvider> provider : providers) {
             logger.debug("Found plugin [{}] . Loading it", provider.getName());
-            RealmPluginDefinitionV1 pluginDefinition = null;
+            IPPluginDefinitionV1 pluginDefinition = null;
             try {
                 // Load the definition
                 IPPluginDefinitionProvider pluginDefinitionProvider = provider.newInstance();
-                pluginDefinition = pluginDefinitionProvider.getRealmPluginDefinition();
+                pluginDefinition = pluginDefinitionProvider.getIPPluginDefinition();
 
                 logger.info("[{}] {}", provider.getName(), pluginDefinition);
 
@@ -159,9 +159,9 @@ public class RealmPluginServiceImpl extends AbstractBasics implements RealmPlugi
         }
 
         // Init
-        Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, RealmPluginDefinitionV1>> availablePluginsIt = availablePlugins.iterator();
+        Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1>> availablePluginsIt = availablePlugins.iterator();
         while (availablePluginsIt.hasNext()) {
-            Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, RealmPluginDefinitionV1> next = availablePluginsIt.next();
+            Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1> next = availablePluginsIt.next();
             IPPluginDefinitionProvider provider = next.getB();
             try {
                 provider.initialize(commonServicesContext);
@@ -176,11 +176,11 @@ public class RealmPluginServiceImpl extends AbstractBasics implements RealmPlugi
 
         // Enable the events
         List<UpdateEventContext> updateEvents = new ArrayList<>();
-        Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, RealmPluginDefinitionV1>> it = availablePlugins.iterator();
+        Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1>> it = availablePlugins.iterator();
         while (it.hasNext()) {
-            Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, RealmPluginDefinitionV1> entry = it.next();
+            Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1> entry = it.next();
             Class<? extends IPPluginDefinitionProvider> provider = entry.getA();
-            RealmPluginDefinitionV1 pluginDefinition = entry.getC();
+            IPPluginDefinitionV1 pluginDefinition = entry.getC();
             try {
 
                 // Set timers

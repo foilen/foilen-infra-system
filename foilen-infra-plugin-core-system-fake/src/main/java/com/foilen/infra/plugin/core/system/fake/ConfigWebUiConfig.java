@@ -25,8 +25,8 @@ import org.springframework.web.servlet.resource.GzipResourceResolver;
 import org.springframework.web.servlet.resource.ResourceUrlEncodingFilter;
 import org.springframework.web.servlet.resource.VersionResourceResolver;
 
-import com.foilen.infra.plugin.core.system.common.service.RealmPluginServiceImpl;
-import com.foilen.infra.plugin.v1.core.service.RealmPluginService;
+import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.smalltools.spring.resourceresolver.BundleResourceResolver;
 import com.foilen.smalltools.tools.CharsetTools;
 
@@ -106,8 +106,8 @@ public class ConfigWebUiConfig extends WebMvcConfigurerAdapter {
     }
 
     @Bean
-    public RealmPluginService realmPluginService() {
-        return new RealmPluginServiceImpl();
+    public IPPluginService ipPluginService() {
+        return new IPPluginServiceImpl();
     }
 
     @Bean

@@ -288,7 +288,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
             Set<Long> removedResourcesInThisTransaction = new HashSet<>();
 
             long globalLoopCount = 0;
-            Map<Class<?>, List<UpdateEventContext>> updateEventContextsByResourceType = commonServicesContext.getRealmPluginService().getUpdateEvents().stream() //
+            Map<Class<?>, List<UpdateEventContext>> updateEventContextsByResourceType = commonServicesContext.getPluginService().getUpdateEvents().stream() //
                     .collect(Collectors.groupingBy(it -> it.getUpdateEventHandler().supportedClass()));
 
             // Apply the changes

@@ -11,7 +11,7 @@ package com.foilen.infra.plugin.v1.core.context;
 
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.MessagingService;
-import com.foilen.infra.plugin.v1.core.service.RealmPluginService;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.TimerService;
 import com.foilen.infra.plugin.v1.core.service.TranslationService;
 
@@ -21,20 +21,20 @@ import com.foilen.infra.plugin.v1.core.service.TranslationService;
 public class CommonServicesContext {
 
     private MessagingService messagingService;
-    private RealmPluginService realmPluginService;
+    private IPPluginService pluginService;
     private IPResourceService resourceService;
     private TimerService timerService;
     private TranslationService translationService;
 
     public CommonServicesContext( //
             MessagingService messagingService, //
-            RealmPluginService realmPluginService, //
+            IPPluginService pluginService, //
             IPResourceService resourceService, //
             TimerService timerService, //
             TranslationService translationService //
     ) {
         this.messagingService = messagingService;
-        this.realmPluginService = realmPluginService;
+        this.pluginService = pluginService;
         this.resourceService = resourceService;
         this.timerService = timerService;
         this.translationService = translationService;
@@ -44,8 +44,8 @@ public class CommonServicesContext {
         return messagingService;
     }
 
-    public RealmPluginService getRealmPluginService() {
-        return realmPluginService;
+    public IPPluginService getPluginService() {
+        return pluginService;
     }
 
     public IPResourceService getResourceService() {

@@ -14,7 +14,7 @@ import java.util.Calendar;
 
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
-import com.foilen.infra.plugin.v1.core.plugin.RealmPluginDefinitionV1;
+import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
 import com.foilen.infra.plugin.v1.example.form.EmployeeResourceRawForm;
 import com.foilen.infra.plugin.v1.example.form.EmployeeResourceSimpleForm;
 import com.foilen.infra.plugin.v1.example.resource.EmployeeResource;
@@ -26,10 +26,10 @@ import com.foilen.infra.plugin.v1.example.resource.Ex1Resource;
 public class ExamplePluginDefinitionProvider implements IPPluginDefinitionProvider {
 
     @Override
-    public RealmPluginDefinitionV1 getRealmPluginDefinition() {
+    public IPPluginDefinitionV1 getIPPluginDefinition() {
 
         // Description
-        RealmPluginDefinitionV1 pluginDefinitionV1 = new RealmPluginDefinitionV1("Infra", "Example", "An example of a plugin", "1.0.0");
+        IPPluginDefinitionV1 pluginDefinitionV1 = new IPPluginDefinitionV1("Infra", "Example", "An example of a plugin", "1.0.0");
 
         // Timers
         LoggingTimerEventHandler loggingTimerEventHandler = new LoggingTimerEventHandler();

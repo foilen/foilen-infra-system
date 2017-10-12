@@ -19,7 +19,7 @@ public class InfraPluginCommonInit {
 
     public static void init(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext) {
         // Load all the plugins
-        commonServicesContext.getRealmPluginService().loadPlugins(commonServicesContext, internalServicesContext);
+        commonServicesContext.getPluginService().loadPlugins(commonServicesContext, internalServicesContext);
     }
 
 }

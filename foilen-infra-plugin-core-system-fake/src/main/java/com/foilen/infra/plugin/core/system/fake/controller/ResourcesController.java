@@ -36,7 +36,7 @@ import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
-import com.foilen.infra.plugin.v1.core.service.RealmPluginService;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.SecurityService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
@@ -65,7 +65,7 @@ public class ResourcesController extends AbstractBasics {
     @Autowired
     private MessageSource messageSource;
     @Autowired
-    private RealmPluginService realmPluginService;
+    private IPPluginService ipPluginService;
     @Autowired
     private SecurityService securityService;
 
@@ -80,7 +80,7 @@ public class ResourcesController extends AbstractBasics {
     public ModelAndView createPageDefinition(@PathVariable("editorName") String editorName, HttpServletRequest httpServletRequest) {
         ModelAndView modelAndView = new ModelAndView("resource/resource");
 
-        Optional<ResourceEditor<?>> editor = realmPluginService.getResourceEditorByName(editorName);
+        Optional<ResourceEditor<?>> editor = ipPluginService.getResourceEditorByName(editorName);
 
         if (editor.isPresent()) {
             PageDefinition pageDefinition = editor.get().providePageDefinition(commonServicesContext, null);
@@ -117,7 +117,7 @@ public class ResourcesController extends AbstractBasics {
             IPResource resource = resourceOptional.get();
 
             String editorName = resource.getResourceEditorName();
-            List<String> editorNames = realmPluginService.getResourceEditorNamesByResourceType(resource.getClass());
+            List<String> editorNames = ipPluginService.getResourceEditorNamesByResourceType(resource.getClass());
             if (editorName == null) {
                 if (!editorNames.isEmpty()) {
                     editorName = editorNames.get(0);
@@ -138,7 +138,7 @@ public class ResourcesController extends AbstractBasics {
     public ModelAndView editPageDefinition(@PathVariable("editorName") String editorName, @PathVariable("resourceId") long resourceId) {
         ModelAndView modelAndView = new ModelAndView("resource/resource");
 
-        Optional editorOptional = realmPluginService.getResourceEditorByName(editorName);
+        Optional editorOptional = ipPluginService.getResourceEditorByName(editorName);
 
         if (editorOptional.isPresent()) {
 
@@ -217,7 +217,7 @@ public class ResourcesController extends AbstractBasics {
             resourceUpdateResponse.setTopError(messageSource.getMessage("error.editorNotSpecified", null, locale));
             return resourceUpdateResponse;
         }
-        Optional<ResourceEditor<?>> resourceEditorOptional = realmPluginService.getResourceEditorByName(editorName);
+        Optional<ResourceEditor<?>> resourceEditorOptional = ipPluginService.getResourceEditorByName(editorName);
         if (resourceEditorOptional.isPresent()) {
             ResourceEditor resourceEditor = resourceEditorOptional.get();
 

@@ -45,9 +45,9 @@ import com.foilen.infra.plugin.v1.core.eventhandler.TimerEventHandler;
 import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
-import com.foilen.infra.plugin.v1.core.plugin.RealmPluginDefinitionV1;
+import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
-import com.foilen.infra.plugin.v1.core.service.RealmPluginService;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.failingexample.CrashingTimerEventHandler;
 import com.foilen.infra.plugin.v1.model.junit.JunitResource;
@@ -191,9 +191,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
     @Test
     public void testBrokenPlugin() {
-        RealmPluginService realmPluginService = getCommonServicesContext().getRealmPluginService();
+        IPPluginService ipPluginService = getCommonServicesContext().getPluginService();
 
-        List<Tuple3<Class<? extends IPPluginDefinitionProvider>, RealmPluginDefinitionV1, String>> broken = realmPluginService.getBrokenPlugins();
+        List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> broken = ipPluginService.getBrokenPlugins();
         Assert.assertEquals(1, broken.size());
         Assert.assertEquals("com.foilen.infra.plugin.v1.failingexample.ExampleFailingPluginDefinitionProvider", broken.get(0).getA().getName());
     }

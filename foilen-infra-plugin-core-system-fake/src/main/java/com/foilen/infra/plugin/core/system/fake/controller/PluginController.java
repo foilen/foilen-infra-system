@@ -14,20 +14,20 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.foilen.infra.plugin.v1.core.service.RealmPluginService;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 
 @Controller
 @RequestMapping("plugin")
 public class PluginController {
 
     @Autowired
-    private RealmPluginService realmPluginService;
+    private IPPluginService ipPluginService;
 
     @RequestMapping("list")
     public ModelAndView list() {
         ModelAndView modelAndView = new ModelAndView("plugin/list");
-        modelAndView.addObject("availables", realmPluginService.getAvailablePlugins());
-        modelAndView.addObject("brokens", realmPluginService.getBrokenPlugins());
+        modelAndView.addObject("availables", ipPluginService.getAvailablePlugins());
+        modelAndView.addObject("brokens", ipPluginService.getBrokenPlugins());
         return modelAndView;
     }
 

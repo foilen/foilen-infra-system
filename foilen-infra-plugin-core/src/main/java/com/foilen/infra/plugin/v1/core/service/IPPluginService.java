@@ -16,7 +16,7 @@ import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.UpdateEventContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
-import com.foilen.infra.plugin.v1.core.plugin.RealmPluginDefinitionV1;
+import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.tuple.Tuple3;
@@ -24,21 +24,21 @@ import com.foilen.smalltools.tuple.Tuple3;
 /**
  * The plugin loader.
  */
-public interface RealmPluginService {
+public interface IPPluginService {
 
     /**
      * Get the list of working plugins.
      *
      * @return the immutable list of working plugins
      */
-    List<RealmPluginDefinitionV1> getAvailablePlugins();
+    List<IPPluginDefinitionV1> getAvailablePlugins();
 
     /**
      * Get the list of broken plugins (those that couldn't be loaded).
      *
      * @return the immutable list of broken plugins with their error message
      */
-    List<Tuple3<Class<? extends IPPluginDefinitionProvider>, RealmPluginDefinitionV1, String>> getBrokenPlugins();
+    List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> getBrokenPlugins();
 
     /**
      * Get the resource editor.
