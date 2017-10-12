@@ -64,7 +64,7 @@ public class IPApplicationDefinitionPortRedirect {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("FCApplicationDefinitionPortRedirect [localPort=");
+        builder.append("IPApplicationDefinitionPortRedirect [localPort=");
         builder.append(localPort);
         builder.append(", toMachine=");
         builder.append(toMachine);

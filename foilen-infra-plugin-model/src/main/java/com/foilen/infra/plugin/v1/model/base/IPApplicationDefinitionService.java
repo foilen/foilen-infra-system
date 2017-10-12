@@ -59,7 +59,7 @@ public class IPApplicationDefinitionService {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("FCApplicationDefinitionService [name=");
+        builder.append("IPApplicationDefinitionService [name=");
         builder.append(name);
         builder.append(", command=");
         builder.append(command);

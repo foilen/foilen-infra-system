@@ -126,7 +126,7 @@ public class IPResourceDefinition {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("FCResourceDefinition [resourceType=");
+        builder.append("IPResourceDefinition [resourceType=");
         builder.append(resourceType);
         builder.append(", resourceClass=");
         builder.append(resourceClass);

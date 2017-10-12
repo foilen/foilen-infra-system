@@ -44,7 +44,7 @@ public class IPApplicationDefinitionBuildStep {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("FCApplicationDefinitionBuildStep [type=");
+        builder.append("IPApplicationDefinitionBuildStep [type=");
         builder.append(type);
         builder.append(", step=");
         builder.append(step);

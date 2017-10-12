@@ -17,11 +17,11 @@ import com.foilen.infra.plugin.v1.core.service.internal.InternalIPResourceServic
  */
 public class InternalServicesContext {
 
-    private InternalIPResourceService internalFCResourceService;
+    private InternalIPResourceService internalIPResourceService;
     private InternalChangeService internalChangeService;
 
-    public InternalServicesContext(InternalIPResourceService internalFCResourceService, InternalChangeService internalChangeService) {
-        this.internalFCResourceService = internalFCResourceService;
+    public InternalServicesContext(InternalIPResourceService internalIPResourceService, InternalChangeService internalChangeService) {
+        this.internalIPResourceService = internalIPResourceService;
         this.internalChangeService = internalChangeService;
     }
 
@@ -30,7 +30,7 @@ public class InternalServicesContext {
     }
 
     public InternalIPResourceService getInternalIPResourceService() {
-        return internalFCResourceService;
+        return internalIPResourceService;
     }
 
 }
