@@ -13,9 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
+import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.MessagingService;
-import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.TimerService;
 import com.foilen.infra.plugin.v1.core.service.TranslationService;
 

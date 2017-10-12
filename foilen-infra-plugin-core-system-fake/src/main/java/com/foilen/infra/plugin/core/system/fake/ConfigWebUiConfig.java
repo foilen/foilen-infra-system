@@ -79,6 +79,11 @@ public class ConfigWebUiConfig extends WebMvcConfigurerAdapter {
     }
 
     @Bean
+    public IPPluginService ipPluginService() {
+        return new IPPluginServiceImpl();
+    }
+
+    @Bean
     public LocaleChangeInterceptor localeChangeInterceptor() {
         LocaleChangeInterceptor localeChangeInterceptor = new LocaleChangeInterceptor();
         localeChangeInterceptor.setParamName("lang");
@@ -103,11 +108,6 @@ public class ConfigWebUiConfig extends WebMvcConfigurerAdapter {
         messageSource.setUseCodeAsDefaultMessage(true);
 
         return messageSource;
-    }
-
-    @Bean
-    public IPPluginService ipPluginService() {
-        return new IPPluginServiceImpl();
     }
 
     @Bean
