@@ -9,25 +9,20 @@
  */
 package com.foilen.infra.plugin.v1.model.base;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.foilen.infra.plugin.v1.model.ModelsException;
+import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.foilen.smalltools.tuple.Tuple2;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IPApplicationDefinitionAssetsBundle {
+public class IPApplicationDefinitionAssetsBundle extends AbstractBasics {
 
     private String assetsFolderPath;
 
     private List<Tuple2<String, String>> assetsRelativePathAndContent = new ArrayList<>();
-    private List<Tuple2<String, ByteArrayOutputStream>> futureAssetsRelativePathAndContent = new ArrayList<>();
 
     public IPApplicationDefinitionAssetsBundle() {
     }
@@ -36,20 +31,14 @@ public class IPApplicationDefinitionAssetsBundle {
         this.assetsFolderPath = assetsFolderPath;
     }
 
-    public IPApplicationDefinitionAssetsBundle addAssetContent(String content, String assetRelativePath) {
+    public IPApplicationDefinitionAssetsBundle addAssetContent(String assetRelativePath, String content) {
         assetsRelativePathAndContent.add(new Tuple2<>(assetRelativePath, content));
         return this;
     }
 
-    public IPApplicationDefinitionAssetsBundle addAssetResource(String sourceResource, String assetRelativePath) {
+    public IPApplicationDefinitionAssetsBundle addAssetResource(String assetRelativePath, String sourceResource) {
         String content = ResourceTools.getResourceAsString(sourceResource);
-        return addAssetContent(content, assetRelativePath);
-    }
-
-    public OutputStream addAssetStream(String assetRelativePath) {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        futureAssetsRelativePathAndContent.add(new Tuple2<>(assetRelativePath, byteArrayOutputStream));
-        return byteArrayOutputStream;
+        return addAssetContent(assetRelativePath, content);
     }
 
     public String getAssetsFolderPath() {
@@ -57,17 +46,6 @@ public class IPApplicationDefinitionAssetsBundle {
     }
 
     public List<Tuple2<String, String>> getAssetsRelativePathAndContent() {
-        // Compute the future ones
-        Iterator<Tuple2<String, ByteArrayOutputStream>> it = futureAssetsRelativePathAndContent.iterator();
-        while (it.hasNext()) {
-            Tuple2<String, ByteArrayOutputStream> futureAssetRelativePathAndContent = it.next();
-            try {
-                assetsRelativePathAndContent.add(new Tuple2<>(futureAssetRelativePathAndContent.getA(), futureAssetRelativePathAndContent.getB().toString("UTF-8")));
-            } catch (UnsupportedEncodingException e) {
-                throw new ModelsException(e);
-            }
-            it.remove();
-        }
         return assetsRelativePathAndContent;
     }
 
@@ -76,7 +54,6 @@ public class IPApplicationDefinitionAssetsBundle {
     }
 
     public void setAssetsRelativePathAndContent(List<Tuple2<String, String>> assetsRelativePathAndContent) {
-        futureAssetsRelativePathAndContent.clear();
         this.assetsRelativePathAndContent = assetsRelativePathAndContent;
     }
 

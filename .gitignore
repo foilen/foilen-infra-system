@@ -5,10 +5,10 @@ bin/
 
 # Eclipse
 .classpath
+.pydevproject
 .project
 .settings/
 .springBeans
 
 # Project specific
-_messages_usage.txt
-
+_*

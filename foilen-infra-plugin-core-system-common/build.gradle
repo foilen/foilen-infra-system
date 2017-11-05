@@ -6,7 +6,7 @@ buildscript {
 
 dependencies {
 
-  compile project(":foilen-infra-plugin-core")
+  compile project(":foilen-infra-plugin-core-system")
   compile "org.slf4j:slf4j-api"
   compile "org.reflections:reflections:$reflectionsVersion"
 

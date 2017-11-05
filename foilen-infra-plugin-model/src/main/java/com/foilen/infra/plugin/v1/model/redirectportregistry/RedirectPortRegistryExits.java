@@ -13,9 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.foilen.smalltools.tools.AbstractBasics;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class RedirectPortRegistryExits {
+public class RedirectPortRegistryExits extends AbstractBasics {
 
     private List<RedirectPortRegistryExit> exits = new ArrayList<>();
 

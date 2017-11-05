@@ -10,22 +10,26 @@
 package com.foilen.infra.plugin.v1.model.base;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.foilen.smalltools.JavaEnvironmentValues;
+import com.foilen.smalltools.tools.AbstractBasics;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IPApplicationDefinitionPortRedirect {
+public class IPApplicationDefinitionPortRedirect extends AbstractBasics {
+
+    public static final String LOCAL_MACHINE = "localhost";
 
     private Integer localPort;
     private String toMachine;
-    private String toInstanceName;
+    private String toContainerName;
     private String toEndpoint;
 
     public IPApplicationDefinitionPortRedirect() {
     }
 
-    public IPApplicationDefinitionPortRedirect(Integer localPort, String toMachine, String toInstanceName, String toEndpoint) {
+    public IPApplicationDefinitionPortRedirect(Integer localPort, String toMachine, String toContainerName, String toEndpoint) {
         this.localPort = localPort;
         this.toMachine = toMachine;
-        this.toInstanceName = toInstanceName;
+        this.toContainerName = toContainerName;
         this.toEndpoint = toEndpoint;
     }
 
@@ -33,47 +37,40 @@ public class IPApplicationDefinitionPortRedirect {
         return localPort;
     }
 
-    public String getToEndpoint() {
-        return toEndpoint;
+    public String getMachineContainerEndpoint() {
+        return toMachine + "/" + toContainerName + "/" + toEndpoint;
     }
 
-    public String getToInstanceName() {
-        return toInstanceName;
+    public String getToContainerName() {
+        return toContainerName;
+    }
+
+    public String getToEndpoint() {
+        return toEndpoint;
     }
 
     public String getToMachine() {
         return toMachine;
     }
 
+    public boolean isToLocalMachine() {
+        return IPApplicationDefinitionPortRedirect.LOCAL_MACHINE.equals(toMachine) || JavaEnvironmentValues.getHostName().equals(toMachine);
+    }
+
     public void setLocalPort(Integer localPort) {
         this.localPort = localPort;
+    }
+
+    public void setToContainerName(String toInstanceName) {
+        this.toContainerName = toInstanceName;
     }
 
     public void setToEndpoint(String toEndpoint) {
         this.toEndpoint = toEndpoint;
     }
 
-    public void setToInstanceName(String toInstanceName) {
-        this.toInstanceName = toInstanceName;
-    }
-
     public void setToMachine(String toMachine) {
         this.toMachine = toMachine;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("IPApplicationDefinitionPortRedirect [localPort=");
-        builder.append(localPort);
-        builder.append(", toMachine=");
-        builder.append(toMachine);
-        builder.append(", toInstanceName=");
-        builder.append(toInstanceName);
-        builder.append(", toEndpoint=");
-        builder.append(toEndpoint);
-        builder.append("]");
-        return builder.toString();
     }
 
 }

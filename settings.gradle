@@ -1,4 +1,6 @@
-include 'foilen-infra-plugin-core'
+include 'foilen-infra-plugin-app-test-docker'
+include 'foilen-infra-plugin-core-execute'
+include 'foilen-infra-plugin-core-system'
 include 'foilen-infra-plugin-core-system-common'
 include 'foilen-infra-plugin-core-system-fake'
 include 'foilen-infra-plugin-core-system-junits'

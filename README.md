@@ -9,9 +9,11 @@ License: The MIT License (MIT)
 
 - foilen-infra-plugin-model: The common objects models.
 - foilen-infra-plugin-model-outputter: Some helper to output configuration from the models.
-- foilen-infra-plugin-core: All the services definitions for plugins.
+- foilen-infra-plugin-core-execute: Some Linux and Docker services for the executor.
+- foilen-infra-plugin-core-system: All the services definitions for plugins.
 - foilen-infra-plugin-core-system-junits: The junits for testing any system implementation.
 - foilen-infra-plugin-core-system-fake: An implementation of the services for pluging used in unit tests and standalone tests.
+- foilen-infra-plugin-app-test-docker: An application to generate sample resource files and run applications from files.
 
 # Usage
 
@@ -51,3 +53,46 @@ Versioning:
 For changes/removals in the stable API:
 - When something is in the stable API, it will be there for all the releases in the same MAJOR version.
 - Everything that will be removed in the next MAJOR version is marked as @deprecated and the Javadoc will explain what to use instead if there is a workaround.
+
+# App Test Docker
+
+## Launch the application for testing in Docker (locally)
+
+
+```bash
+# Compile and create image
+./create-local-release.sh
+
+USER_ID=$(id -u)
+
+FOLDER_SAMPLE=$(pwd)/sample-templates
+FOLDER_IMPORT=$(pwd)/import-resources
+mkdir -p $FOLDER_SAMPLE $FOLDER_IMPORT
+
+# Create sample data
+docker run -ti \
+  --rm \
+  --user $USER_ID \
+  --volume $FOLDER_SAMPLE:/data \
+  foilen-infra-plugin-app-test-docker:master-SNAPSHOT \
+  create-sample \
+  /data
+  
+# Create files in "import-resources"
+
+# Import files and execute applications in Docker
+docker run -ti \
+  --rm \
+  --env HOSTFS=/hostfs/ \
+  --volume $FOLDER_IMPORT:/data \
+  --volume /etc:/hostfs/etc \
+  --volume /home:/hostfs/home \
+  --volume /usr/bin/docker:/usr/bin/docker \
+  --volume /usr/lib/x86_64-linux-gnu/libltdl.so.7.3.1:/usr/lib/x86_64-linux-gnu/libltdl.so.7 \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  --workdir /data \
+  foilen-infra-plugin-app-test-docker:master-SNAPSHOT \
+  start-resources \
+  /data
+
+```

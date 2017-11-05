@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -43,8 +44,11 @@ public class TimerServiceImpl extends AbstractBasics implements TimerService {
 
     @PostConstruct
     public void init() {
-        waitingExecutorService = Executors.newCachedThreadPool();
-        executingExecutorService = Executors.newSingleThreadExecutor();
+        BasicThreadFactory demonThreadFactory = new BasicThreadFactory.Builder() //
+                .daemon(true) //
+                .build();
+        waitingExecutorService = Executors.newCachedThreadPool(demonThreadFactory);
+        executingExecutorService = Executors.newSingleThreadExecutor(demonThreadFactory);
     }
 
     @Override

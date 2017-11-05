@@ -16,38 +16,43 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.foilen.smalltools.hash.HashSha256;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.foilen.smalltools.tuple.Tuple2;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IPApplicationDefinition {
 
-    // Basic DockerFile
+    // Image - Basic
     private String from = "ubuntu:16.04";
     private List<IPApplicationDefinitionBuildStep> buildSteps = new ArrayList<>();
     private Map<Integer, Integer> portsExposed = new LinkedHashMap<>();
     private Map<Integer, Integer> udpPortsExposed = new LinkedHashMap<>();
-    private Map<String, String> volumes = new LinkedHashMap<>();
+    private Map<Integer, String> portsEndpoint = new LinkedHashMap<>();
+    private List<IPApplicationDefinitionVolume> volumes = new ArrayList<>();
     private Integer runAs = null;
-    private String ip;
     private String workingDirectory;
     private String command = "/bin/bash";
 
-    // Extra features
+    // Image - Extra features
     private List<IPApplicationDefinitionService> services = new ArrayList<>();
     private List<Tuple2<String, Integer>> containerUsersToChangeId = new ArrayList<>();
     private List<Tuple2<String, String>> assetsPathAndContent = new ArrayList<>();
     private List<IPApplicationDefinitionAssetsBundle> assetsBundles = new ArrayList<>();
+    private List<IPApplicationDefinitionPortRedirect> portsRedirect = new ArrayList<>();
+
+    // Container - Run command
     private List<Tuple2<String, String>> hostToIpMapping = new ArrayList<>();
 
-    private List<IPApplicationDefinitionPortRedirect> portsRedirect = new ArrayList<>();
-    private Map<Integer, String> portsEndpoint = new LinkedHashMap<>();
+    // Container - Started
+    private List<Tuple2<String, String>> copyWhenStartedPathAndContentFiles = new ArrayList<>();
+    private List<String> executeWhenStartedCommands = new ArrayList<>();
 
     // Internal
     @JsonProperty("_nextAssetId")
     private long nextAssetId = 1L;
 
-    public void addAssetContent(String content, String destination) {
+    public void addAssetContent(String destination, String content) {
         long id = nextAssetId++;
         String assetPath = "_assets/" + id;
         assetsPathAndContent.add(new Tuple2<>(assetPath, content));
@@ -55,9 +60,9 @@ public class IPApplicationDefinition {
         addBuildStepCopy(assetPath, destination);
     }
 
-    public void addAssetResource(String sourceResource, String destination) {
+    public void addAssetResource(String destination, String sourceResource) {
         String content = ResourceTools.getResourceAsString(sourceResource);
-        addAssetContent(content, destination);
+        addAssetContent(destination, content);
     }
 
     public IPApplicationDefinitionAssetsBundle addAssetsBundle() {
@@ -80,6 +85,14 @@ public class IPApplicationDefinition {
 
     public void addContainerUserToChangeId(String containerUser, int userId) {
         containerUsersToChangeId.add(new Tuple2<>(containerUser, userId));
+    }
+
+    public void addCopyWhenStartedContent(String destination, String content) {
+        copyWhenStartedPathAndContentFiles.add(new Tuple2<>(destination, content));
+    }
+
+    public void addExecuteWhenStartedCommand(String command) {
+        executeWhenStartedCommands.add(command);
     }
 
     public void addHostToIpMapping(String host, String ip) {
@@ -106,8 +119,8 @@ public class IPApplicationDefinition {
         udpPortsExposed.put(hostPort, containerPort);
     }
 
-    public void addVolume(String hostFolder, String containerFsFolder) {
-        volumes.put(hostFolder, containerFsFolder);
+    public void addVolume(IPApplicationDefinitionVolume volume) {
+        volumes.add(volume);
     }
 
     public List<IPApplicationDefinitionAssetsBundle> getAssetsBundles() {
@@ -130,16 +143,20 @@ public class IPApplicationDefinition {
         return containerUsersToChangeId;
     }
 
+    public List<Tuple2<String, String>> getCopyWhenStartedPathAndContentFiles() {
+        return copyWhenStartedPathAndContentFiles;
+    }
+
+    public List<String> getExecuteWhenStartedCommands() {
+        return executeWhenStartedCommands;
+    }
+
     public String getFrom() {
         return from;
     }
 
     public List<Tuple2<String, String>> getHostToIpMapping() {
         return hostToIpMapping;
-    }
-
-    public String getIp() {
-        return ip;
     }
 
     public long getNextAssetId() {
@@ -170,7 +187,7 @@ public class IPApplicationDefinition {
         return udpPortsExposed;
     }
 
-    public Map<String, String> getVolumes() {
+    public List<IPApplicationDefinitionVolume> getVolumes() {
         return volumes;
     }
 
@@ -198,16 +215,20 @@ public class IPApplicationDefinition {
         this.containerUsersToChangeId = containerUsersToChangeId;
     }
 
+    public void setCopyWhenStartedPathAndContentFiles(List<Tuple2<String, String>> copyWhenStartedPathAndContentFiles) {
+        this.copyWhenStartedPathAndContentFiles = copyWhenStartedPathAndContentFiles;
+    }
+
+    public void setExecuteWhenStartedCommands(List<String> executeWhenStartedCommands) {
+        this.executeWhenStartedCommands = executeWhenStartedCommands;
+    }
+
     public void setFrom(String from) {
         this.from = from;
     }
 
     public void setHostToIpMapping(List<Tuple2<String, String>> hostToIpMapping) {
         this.hostToIpMapping = hostToIpMapping;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
     }
 
     public void setNextAssetId(long nextAssetId) {
@@ -238,12 +259,59 @@ public class IPApplicationDefinition {
         this.udpPortsExposed = udpPortsExposed;
     }
 
-    public void setVolumes(Map<String, String> volumes) {
+    public void setVolumes(List<IPApplicationDefinitionVolume> volumes) {
         this.volumes = volumes;
     }
 
     public void setWorkingDirectory(String workingDirectory) {
         this.workingDirectory = workingDirectory;
+    }
+
+    /**
+     * Gives a unique ID depending on the run command fields.
+     *
+     * @return the unique id
+     */
+    public String toContainerRunUniqueId() {
+        StringBuilder concat = new StringBuilder();
+        concat.append(hostToIpMapping);
+        return HashSha256.hashString(concat.toString());
+    }
+
+    /**
+     * Gives a unique ID depending on the commands to execute once started fields.
+     *
+     * @return the unique id
+     */
+    public String toContainerStartUniqueId() {
+        StringBuilder concat = new StringBuilder();
+        concat.append(copyWhenStartedPathAndContentFiles);
+        concat.append(executeWhenStartedCommands);
+        return HashSha256.hashString(concat.toString());
+    }
+
+    /**
+     * Gives a unique ID depending on the image fields.
+     *
+     * @return the unique id
+     */
+    public String toImageUniqueId() {
+        StringBuilder concat = new StringBuilder();
+        concat.append(from);
+        concat.append(buildSteps);
+        concat.append(portsExposed);
+        concat.append(udpPortsExposed);
+        concat.append(portsEndpoint);
+        concat.append(volumes);
+        concat.append(runAs);
+        concat.append(workingDirectory);
+        concat.append(command);
+        concat.append(services);
+        concat.append(containerUsersToChangeId);
+        concat.append(assetsPathAndContent);
+        concat.append(assetsBundles);
+        concat.append(portsRedirect);
+        return HashSha256.hashString(concat.toString());
     }
 
 }

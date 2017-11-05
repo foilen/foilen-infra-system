@@ -10,9 +10,10 @@
 package com.foilen.infra.plugin.v1.model.base;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.foilen.smalltools.tools.AbstractBasics;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IPApplicationDefinitionBuildStep {
+public class IPApplicationDefinitionBuildStep extends AbstractBasics {
 
     private IPApplicationDefinitionBuildStepType type;
     private String step;
@@ -39,17 +40,6 @@ public class IPApplicationDefinitionBuildStep {
 
     public void setType(IPApplicationDefinitionBuildStepType type) {
         this.type = type;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("IPApplicationDefinitionBuildStep [type=");
-        builder.append(type);
-        builder.append(", step=");
-        builder.append(step);
-        builder.append("]");
-        return builder.toString();
     }
 
 }

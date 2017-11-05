@@ -1,6 +1,6 @@
 dependencies {
 
-  compile project(":foilen-infra-plugin-core")
+  compile project(":foilen-infra-plugin-core-system")
   compile "junit:junit"
 
 }

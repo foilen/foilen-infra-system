@@ -61,6 +61,9 @@ public class EmployeeResource extends AbstractIPResource {
 
     @Override
     public String getResourceDescription() {
+        if (birthday == null) {
+            return null;
+        }
         return DateTools.formatDateOnly(birthday);
     }
 

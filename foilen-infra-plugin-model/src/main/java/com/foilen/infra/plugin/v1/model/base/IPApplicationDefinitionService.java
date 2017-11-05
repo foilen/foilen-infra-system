@@ -10,9 +10,10 @@
 package com.foilen.infra.plugin.v1.model.base;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.foilen.smalltools.tools.AbstractBasics;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IPApplicationDefinitionService {
+public class IPApplicationDefinitionService extends AbstractBasics {
 
     private String name;
     private String command;
@@ -54,19 +55,6 @@ public class IPApplicationDefinitionService {
 
     public void setRunAs(Integer runAs) {
         this.runAs = runAs;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("IPApplicationDefinitionService [name=");
-        builder.append(name);
-        builder.append(", command=");
-        builder.append(command);
-        builder.append(", runAs=");
-        builder.append(runAs);
-        builder.append("]");
-        return builder.toString();
     }
 
 }

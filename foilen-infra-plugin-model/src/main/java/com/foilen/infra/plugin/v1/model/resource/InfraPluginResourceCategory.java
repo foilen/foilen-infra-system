@@ -14,5 +14,6 @@ public enum InfraPluginResourceCategory {
     INFRASTRUCTURE, //
     NET, //
     EMAIL, //
+    DATABASE, //
 
 }

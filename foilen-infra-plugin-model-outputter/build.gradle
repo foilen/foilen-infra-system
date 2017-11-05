@@ -2,6 +2,8 @@ dependencies {
 
   compile project(":foilen-infra-plugin-model")
 
+  compile "org.slf4j:slf4j-api"
+  
   testCompile "org.slf4j:slf4j-api"
   testCompile "junit:junit"
 
