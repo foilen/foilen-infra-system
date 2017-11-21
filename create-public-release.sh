@@ -29,5 +29,7 @@ git tag -a -m $VERSION $VERSION
 echo ----[ Operation completed successfully ]----
 
 echo
-echo You can see published items on https://bintray.com/foilen/maven
+echo You can see published items on 
+echo https://bintray.com/foilen/maven
+echo https://hub.docker.com/r/foilen/foilen-infra-plugin-app-test-docker/
 echo You can send the tag: git push --tags
