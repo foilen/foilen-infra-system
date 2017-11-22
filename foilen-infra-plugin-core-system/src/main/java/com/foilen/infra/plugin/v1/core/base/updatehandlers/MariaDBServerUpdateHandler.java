@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.foilen.infra.plugin.v1.core.base.resources.Application;
 import com.foilen.infra.plugin.v1.core.base.resources.Machine;
@@ -87,44 +88,26 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
             // ADMIN
             services.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(MariaDBUser.class, MariaDBUser.LINK_TYPE_ADMIN, mariaDBDatabase).forEach(mariaDBUser -> {
                 logger.debug("[{}] Database {} has user {} as ADMIN", serverName, databaseName, mariaDBUser.getName());
-                MysqlManagerConfigPermission userConfig = userConfigByName.get(mariaDBUser.getName());
-                if (userConfig == null) {
-                    userConfig = new MysqlManagerConfigPermission(mariaDBUser.getName(), "%", mariaDBUser.getPassword());
-                    userConfigByName.put(mariaDBUser.getName(), userConfig);
-                }
-                userConfig.getDatabaseGrants().add(new MysqlManagerConfigDatabaseGrants(databaseName, //
-                        MysqlManagerConfigGrant.CREATE, //
-                        MysqlManagerConfigGrant.ALTER, //
-                        MysqlManagerConfigGrant.DROP //
-                ));
+                List<MysqlManagerConfigGrant> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
+                grants.add(MysqlManagerConfigGrant.CREATE);
+                grants.add(MysqlManagerConfigGrant.ALTER);
+                grants.add(MysqlManagerConfigGrant.DROP);
             });
 
             // READ
             services.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(MariaDBUser.class, MariaDBUser.LINK_TYPE_READ, mariaDBDatabase).forEach(mariaDBUser -> {
                 logger.debug("[{}] Database {} has user {} as READ", serverName, databaseName, mariaDBUser.getName());
-                MysqlManagerConfigPermission userConfig = userConfigByName.get(mariaDBUser.getName());
-                if (userConfig == null) {
-                    userConfig = new MysqlManagerConfigPermission(mariaDBUser.getName(), "%", mariaDBUser.getPassword());
-                    userConfigByName.put(mariaDBUser.getName(), userConfig);
-                }
-                userConfig.getDatabaseGrants().add(new MysqlManagerConfigDatabaseGrants(databaseName, //
-                        MysqlManagerConfigGrant.SELECT //
-                ));
+                List<MysqlManagerConfigGrant> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
+                grants.add(MysqlManagerConfigGrant.SELECT);
             });
 
             // WRITE
             services.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(MariaDBUser.class, MariaDBUser.LINK_TYPE_WRITE, mariaDBDatabase).forEach(mariaDBUser -> {
                 logger.debug("[{}] Database {} has user {} as WRITE", serverName, databaseName, mariaDBUser.getName());
-                MysqlManagerConfigPermission userConfig = userConfigByName.get(mariaDBUser.getName());
-                if (userConfig == null) {
-                    userConfig = new MysqlManagerConfigPermission(mariaDBUser.getName(), "%", mariaDBUser.getPassword());
-                    userConfigByName.put(mariaDBUser.getName(), userConfig);
-                }
-                userConfig.getDatabaseGrants().add(new MysqlManagerConfigDatabaseGrants(databaseName, //
-                        MysqlManagerConfigGrant.INSERT, //
-                        MysqlManagerConfigGrant.UPDATE, //
-                        MysqlManagerConfigGrant.DELETE //
-                ));
+                List<MysqlManagerConfigGrant> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
+                grants.add(MysqlManagerConfigGrant.INSERT);
+                grants.add(MysqlManagerConfigGrant.UPDATE);
+                grants.add(MysqlManagerConfigGrant.DELETE);
             });
 
         });
@@ -204,6 +187,26 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
         } else {
             manageNeededResources(services, changes, mariaDBServer, neededManagedResources, Arrays.asList(Application.class));
         }
+    }
+
+    private List<MysqlManagerConfigGrant> getGrantsByUserAndDatabase(Map<String, MysqlManagerConfigPermission> userConfigByName, MariaDBUser mariaDBUser, String databaseName) {
+        MysqlManagerConfigPermission userConfig = userConfigByName.get(mariaDBUser.getName());
+        if (userConfig == null) {
+            userConfig = new MysqlManagerConfigPermission(mariaDBUser.getName(), "%", mariaDBUser.getPassword());
+            userConfigByName.put(mariaDBUser.getName(), userConfig);
+        }
+
+        Optional<MysqlManagerConfigDatabaseGrants> grantsOptional = userConfig.getDatabaseGrants().stream().filter(it -> databaseName.equals(it.getDatabaseName())).findAny();
+        List<MysqlManagerConfigGrant> grants;
+        if (grantsOptional.isPresent()) {
+            grants = grantsOptional.get().getGrants();
+        } else {
+            MysqlManagerConfigDatabaseGrants databaseGrants = new MysqlManagerConfigDatabaseGrants(databaseName);
+            grants = databaseGrants.getGrants();
+            userConfig.getDatabaseGrants().add(databaseGrants);
+        }
+        return grants;
+
     }
 
     @Override
