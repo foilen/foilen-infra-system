@@ -26,7 +26,6 @@ import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
-import com.foilen.smalltools.tuple.Tuple2;
 import com.foilen.smalltools.tuple.Tuple3;
 
 public class ApplicationUpdateHandler extends AbstractUpdateEventHandler<Application> {
@@ -59,7 +58,7 @@ public class ApplicationUpdateHandler extends AbstractUpdateEventHandler<Applica
         Integer currentRunAs = resource.getApplicationDefinition().getRunAs();
         if ((neededRunAs == null && currentRunAs != null) || (neededRunAs != null && !neededRunAs.equals(currentRunAs))) {
             resource.getApplicationDefinition().setRunAs(neededRunAs);
-            changes.getResourcesToUpdate().add(new Tuple2<>(resource.getInternalId(), resource));
+            changes.resourceUpdate(resource.getInternalId(), resource);
         }
 
         // Create and manage one DnsPointer per "domainNames" ; POINTS_TO Machines that this application is installed on
@@ -85,7 +84,7 @@ public class ApplicationUpdateHandler extends AbstractUpdateEventHandler<Applica
             }
         }
 
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class));
     }
 
     @Override

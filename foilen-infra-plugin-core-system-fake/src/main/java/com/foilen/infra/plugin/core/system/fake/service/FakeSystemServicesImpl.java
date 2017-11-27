@@ -447,6 +447,23 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     }
 
     @Override
+    public boolean linkExistsByFromResourceAndLinkTypeAndToResource(IPResource fromResource, String linkType, IPResource toResource) {
+        if (fromResource.getInternalId() == null) {
+            throw new ResourceNotFromRepositoryException(fromResource);
+        }
+        if (toResource.getInternalId() == null) {
+            throw new ResourceNotFromRepositoryException(toResource);
+        }
+        return links.stream().filter( //
+                it -> {
+                    return fromResource.getInternalId().equals(it.getA()) && //
+                    linkType.equals(it.getB()) && //
+                    toResource.getInternalId().equals(it.getC());
+                }) //
+                .findAny().isPresent();
+    }
+
+    @Override
     public List<Tuple2<String, ? extends IPResource>> linkFindAllByFromResource(IPResource fromResource) {
         if (fromResource.getInternalId() == null) {
             throw new ResourceNotFromRepositoryException(fromResource);

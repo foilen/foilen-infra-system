@@ -348,32 +348,33 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             }
 
             // Execute the steps
+            IPApplicationDefinition transformedApplicationDefinition = DockerContainerOutput.addInfrastructure(applicationDefinition, ctx);
             switch (startStep) {
             case BUILD_IMAGE:
                 logger.info("[MANAGER] [{}] Building image", applicationNameToStart);
-                if (!imageBuild(applicationDefinition, ctx)) {
+                if (!imageBuild(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not build the image", applicationNameToStart);
                     dockerState.getFailedContainerNames().add(applicationNameToStart);
                     continue;
                 }
-                volumeHostCreate(applicationDefinition);
+                volumeHostCreate(transformedApplicationDefinition);
             case RESTART_CONTAINER:
                 logger.info("[MANAGER] [{}] Starting/Restarting container", applicationNameToStart);
                 containerStopAndRemove(ctx);
-                if (!containerStartWithRestart(applicationDefinition, ctx)) {
+                if (!containerStartWithRestart(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not start the container", applicationNameToStart);
                     dockerState.getFailedContainerNames().add(applicationNameToStart);
                     continue;
                 }
             case COPY_AND_EXECUTE_IN_RUNNING_CONTAINER:
                 logger.info("[MANAGER] [{}] Copying files in the running container", applicationNameToStart);
-                containerCopyFiles(applicationNameToStart, applicationDefinition.getCopyWhenStartedPathAndContentFiles());
+                containerCopyFiles(applicationNameToStart, transformedApplicationDefinition.getCopyWhenStartedPathAndContentFiles());
                 logger.info("[MANAGER] [{}] Executing commands in the running container", applicationNameToStart);
-                if (!applicationDefinition.getExecuteWhenStartedCommands().isEmpty()) {
+                if (!transformedApplicationDefinition.getExecuteWhenStartedCommands().isEmpty()) {
                     Future<Boolean> executionFuture = ExecutorsTools.getCachedThreadPool().submit(new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
-                            return containerExecCommands(applicationNameToStart, applicationDefinition.getExecuteWhenStartedCommands());
+                            return containerExecCommands(applicationNameToStart, transformedApplicationDefinition.getExecuteWhenStartedCommands());
                         }
                     });
                     dockerState.getExecutionsFutures().put(applicationNameToStart, executionFuture);
@@ -395,17 +396,17 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     ip = container.getIp();
                     dockerState.getIpByName().put(applicationNameToStart, ip);
                     dockerState.getRunningContainersByName().put(applicationNameToStart, new DockerStateIds( //
-                            applicationDefinition.toImageUniqueId(), //
-                            applicationDefinition.toContainerRunUniqueId(), //
-                            applicationDefinition.toContainerStartUniqueId()));
+                            transformedApplicationDefinition.toImageUniqueId(), //
+                            transformedApplicationDefinition.toContainerRunUniqueId(), //
+                            transformedApplicationDefinition.toContainerStartUniqueId()));
                 } else {
                     logger.error("[MANAGER] [{}] Could not find it running", applicationNameToStart);
                 }
             }
 
             // Exposing endpoints
-            if (!applicationDefinition.getPortsEndpoint().isEmpty() && ip != null) {
-                for (Entry<Integer, String> portEndpoint : applicationDefinition.getPortsEndpoint().entrySet()) {
+            if (!transformedApplicationDefinition.getPortsEndpoint().isEmpty() && ip != null) {
+                for (Entry<Integer, String> portEndpoint : transformedApplicationDefinition.getPortsEndpoint().entrySet()) {
                     // Fill redirectPortRegistryExits
                     String endpoint = portEndpoint.getValue();
                     Integer port = portEndpoint.getKey();

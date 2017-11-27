@@ -25,7 +25,6 @@ import com.foilen.smalltools.crypt.spongycastle.cert.CertificateDetails;
 import com.foilen.smalltools.crypt.spongycastle.cert.RSACertificate;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.DateTools;
-import com.foilen.smalltools.tuple.Tuple2;
 
 /**
  * Checks the certificates that will expire in 1 week and refresh them.
@@ -62,7 +61,7 @@ public class SelfSignedWebsiteCertificateRefreshTimer extends AbstractBasics imp
                                 .setEndDate(DateTools.addDate(Calendar.MONTH, 1)));
                 CertificateHelper.toWebsiteCertificate(null, rsaCertificate, certificate);
 
-                changes.getResourcesToUpdate().add(new Tuple2<>(certificate.getInternalId(), certificate));
+                changes.resourceUpdate(certificate.getInternalId(), certificate);
             } catch (Exception e) {
                 logger.error("Problem updating self-signed certificate {}", certificate.getDomainNames(), e);
                 services.getMessagingService().alertingError("Problem updating self-signed certificate " + certificate.getDomainNames(), e.getMessage());

@@ -29,7 +29,7 @@ public class TimerExecutionRunnable implements Runnable {
 
     @Override
     public void run() {
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(commonServicesContext.getResourceService());
         timer.getTimerEventHandler().timerHandler(commonServicesContext, changes, timer);
         internalServicesContext.getInternalChangeService().changesExecute(changes);
     }

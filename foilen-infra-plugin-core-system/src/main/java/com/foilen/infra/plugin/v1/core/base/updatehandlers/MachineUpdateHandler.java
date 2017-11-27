@@ -48,7 +48,7 @@ public class MachineUpdateHandler extends AbstractUpdateEventHandler<Machine> {
             neededManagedResources.add(new DnsEntry(resource.getName(), DnsEntryType.A, resource.getPublicIp()));
         }
 
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(DnsEntry.class, Domain.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(DnsEntry.class, Domain.class));
     }
 
     @Override

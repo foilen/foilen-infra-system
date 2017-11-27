@@ -92,7 +92,7 @@ public class WebsiteUpdateHandler extends AbstractUpdateEventHandler<Website> {
                                         .setEndDate(DateTools.addDate(Calendar.MONTH, 1)));
                         CertificateHelper.toWebsiteCertificate(null, rsaCertificate, websiteCertificate);
 
-                        changes.getResourcesToAdd().add(websiteCertificate);
+                        changes.resourceAdd(websiteCertificate);
                     } else {
                         websiteCertificate = websiteCertificates.get(0);
                     }
@@ -102,7 +102,7 @@ public class WebsiteUpdateHandler extends AbstractUpdateEventHandler<Website> {
             }
         }
 
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class, WebsiteCertificate.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class, WebsiteCertificate.class));
     }
 
     @Override

@@ -1,0 +1,122 @@
+{
+  "resources" : [ {
+    "resource" : "Application | infra_login_db_server | The database for the Login service",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | infra_login | /home/infra_login"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Application | infra_ui_db_server | The database for the UI service",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | infra_ui | /home/infra_ui"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | m1.example.com | Domain for m1.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | example.com | Domain for example.com",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Domain | example.com | Domain for example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Machine | m1.example.com | m1.example.com (199.141.1.101)",
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | m1.example.com / A | 199.141.1.101"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "MariaDBDatabase | infra_login_db | The database for the Login service",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "MariaDBServer | infra_login_db_server | The database for the Login service"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "MariaDBDatabase | infra_ui_db | The database for the UI service",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "MariaDBServer | infra_ui_db_server | The database for the UI service"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "MariaDBServer | infra_login_db_server | The database for the Login service",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "Application | infra_login_db_server | The database for the Login service"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | infra_login | /home/infra_login"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "MariaDBServer | infra_ui_db_server | The database for the UI service",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "Application | infra_ui_db_server | The database for the UI service"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | infra_ui | /home/infra_ui"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "MariaDBUser | infra_login_user | The database user for the Login service",
+    "links" : [ {
+      "type" : "CAN_ADMIN",
+      "to" : "MariaDBDatabase | infra_login_db | The database for the Login service"
+    }, {
+      "type" : "CAN_READ",
+      "to" : "MariaDBDatabase | infra_login_db | The database for the Login service"
+    }, {
+      "type" : "CAN_WRITE",
+      "to" : "MariaDBDatabase | infra_login_db | The database for the Login service"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "MariaDBUser | infra_ui_user | The database user for the UI service",
+    "links" : [ {
+      "type" : "CAN_ADMIN",
+      "to" : "MariaDBDatabase | infra_ui_db | The database for the UI service"
+    }, {
+      "type" : "CAN_READ",
+      "to" : "MariaDBDatabase | infra_ui_db | The database for the UI service"
+    }, {
+      "type" : "CAN_WRITE",
+      "to" : "MariaDBDatabase | infra_ui_db | The database for the UI service"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "UnixUser | infra_login | /home/infra_login",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "UnixUser | infra_ui | /home/infra_ui",
+    "links" : [ ],
+    "tags" : [ ]
+  } ]
+}

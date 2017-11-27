@@ -31,7 +31,6 @@ import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourceFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourcesFieldPageItem;
 import com.foilen.infra.plugin.v1.example.resource.EmployeeResource;
-import com.foilen.smalltools.tuple.Tuple3;
 
 public class CommonResourceLinkTest {
 
@@ -80,18 +79,18 @@ public class CommonResourceLinkTest {
         // Bernard
         // -> Donald
 
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(fakeSystemServicesImpl);
         EmployeeResource alain = new EmployeeResource("Alain", "Smith", new Date());
         EmployeeResource bernard = new EmployeeResource("Bernard", "Smith", new Date());
         EmployeeResource cecille = new EmployeeResource("Cecille", "Smith", new Date());
         EmployeeResource donald = new EmployeeResource("Donald", "Smith", new Date());
-        changes.getResourcesToAdd().add(alain);
-        changes.getResourcesToAdd().add(bernard);
-        changes.getResourcesToAdd().add(cecille);
-        changes.getResourcesToAdd().add(donald);
-        changes.getLinksToAdd().add(new Tuple3<>(bernard, EmployeeResource.LINK_TYPE_MANAGER, alain));
-        changes.getLinksToAdd().add(new Tuple3<>(cecille, EmployeeResource.LINK_TYPE_MANAGER, alain));
-        changes.getLinksToAdd().add(new Tuple3<>(donald, EmployeeResource.LINK_TYPE_MANAGER, bernard));
+        changes.resourceAdd(alain);
+        changes.resourceAdd(bernard);
+        changes.resourceAdd(cecille);
+        changes.resourceAdd(donald);
+        changes.linkAdd(bernard, EmployeeResource.LINK_TYPE_MANAGER, alain);
+        changes.linkAdd(cecille, EmployeeResource.LINK_TYPE_MANAGER, alain);
+        changes.linkAdd(donald, EmployeeResource.LINK_TYPE_MANAGER, bernard);
         internalServicesContext.getInternalChangeService().changesExecute(changes);
     }
 
@@ -101,9 +100,9 @@ public class CommonResourceLinkTest {
         thrown.expectMessage("Too many links of type [MANAGER]");
 
         // Add more to one
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(fakeSystemServicesImpl);
         EmployeeResource bernardResource = new EmployeeResource("Bernard", "Smith", new Date());
-        changes.getLinksToAdd().add(new Tuple3<>(bernardResource, EmployeeResource.LINK_TYPE_MANAGER, new EmployeeResource("Cecille", "Smith", new Date())));
+        changes.linkAdd(bernardResource, EmployeeResource.LINK_TYPE_MANAGER, new EmployeeResource("Cecille", "Smith", new Date()));
         internalServicesContext.getInternalChangeService().changesExecute(changes);
 
         // Execute
@@ -166,7 +165,7 @@ public class CommonResourceLinkTest {
         // Change
         Map<String, String> formValues = new HashMap<>();
         formValues.put(FIELD_NAME_MANAGER, String.valueOf(getEmployee("Cecille").getInternalId()));
-        ChangesContext changesContext = new ChangesContext();
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
         CommonResourceLink.fillResourceLink(commonServicesContext, bernard, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER, formValues, changesContext);
         fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
 
@@ -188,7 +187,7 @@ public class CommonResourceLinkTest {
         // Change
         Map<String, String> formValues = new HashMap<>();
         formValues.put(FIELD_NAME_MANAGER, null);
-        ChangesContext changesContext = new ChangesContext();
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
         CommonResourceLink.fillResourceLink(commonServicesContext, bernard, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER, formValues, changesContext);
         fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
 
@@ -209,7 +208,7 @@ public class CommonResourceLinkTest {
         // Change
         Map<String, String> formValues = new HashMap<>();
         formValues.put(FIELD_NAME_MANAGER, null);
-        ChangesContext changesContext = new ChangesContext();
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
         CommonResourceLink.fillResourceLink(commonServicesContext, bernard, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER, formValues, changesContext);
         fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
 
@@ -230,7 +229,7 @@ public class CommonResourceLinkTest {
         // Change
         Map<String, String> formValues = new HashMap<>();
         formValues.put(FIELD_NAME_MANAGER, String.valueOf(getEmployee("Cecille").getInternalId()));
-        ChangesContext changesContext = new ChangesContext();
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
         CommonResourceLink.fillResourceLink(commonServicesContext, bernard, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER, formValues, changesContext);
         fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
 
@@ -252,7 +251,7 @@ public class CommonResourceLinkTest {
         // Add
         Map<String, String> formValues = new HashMap<>();
         formValues.put(FIELD_NAME_MANAGER, String.valueOf(getEmployee("Alain").getInternalId()) + "," + String.valueOf(getEmployee("Cecille").getInternalId()));
-        ChangesContext changesContext = new ChangesContext();
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
         CommonResourceLink.fillResourcesLink(commonServicesContext, bernard, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER, formValues, changesContext);
         fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
 

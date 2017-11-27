@@ -80,14 +80,14 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
             }
 
             // Fill
-            ChangesContext changesContext = new ChangesContext();
+            ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
             resourceEditor.fillResource(getCommonServicesContext(), changesContext, formValues, resource);
 
             // Add or update
             if (internalId == null) {
-                changesContext.getResourcesToAdd().add(resource);
+                changesContext.resourceAdd(resource);
             } else {
-                changesContext.getResourcesToUpdate().add(new Tuple2<>(internalId, resource));
+                changesContext.resourceUpdate(internalId, resource);
             }
 
             // Execute the change

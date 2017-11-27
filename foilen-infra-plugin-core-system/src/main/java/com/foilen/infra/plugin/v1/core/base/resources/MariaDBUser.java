@@ -42,6 +42,12 @@ public class MariaDBUser extends AbstractIPResource implements Comparable<MariaD
     public MariaDBUser() {
     }
 
+    public MariaDBUser(String name, String description, String password) {
+        this.name = name;
+        this.description = description;
+        this.password = password;
+    }
+
     @Override
     public int compareTo(MariaDBUser o) {
         return ComparisonChain.start() //

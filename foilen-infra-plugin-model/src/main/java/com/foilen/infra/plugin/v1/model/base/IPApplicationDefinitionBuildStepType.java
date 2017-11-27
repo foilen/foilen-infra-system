@@ -9,9 +9,6 @@
  */
 package com.foilen.infra.plugin.v1.model.base;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 public enum IPApplicationDefinitionBuildStepType {
 
     COMMAND, //

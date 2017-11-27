@@ -16,10 +16,12 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.foilen.smalltools.hash.HashSha256;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.foilen.smalltools.tuple.Tuple2;
 
+@JsonPropertyOrder(alphabetic = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IPApplicationDefinition {
 
@@ -30,9 +32,19 @@ public class IPApplicationDefinition {
     private Map<Integer, Integer> udpPortsExposed = new LinkedHashMap<>();
     private Map<Integer, String> portsEndpoint = new LinkedHashMap<>();
     private List<IPApplicationDefinitionVolume> volumes = new ArrayList<>();
+    private Map<String, String> environments = new LinkedHashMap<>();
     private Integer runAs = null;
     private String workingDirectory;
-    private String command = "/bin/bash";
+    private List<String> entrypoint = null;
+    private String command = null;
+
+    public List<String> getEntrypoint() {
+        return entrypoint;
+    }
+
+    public void setEntrypoint(List<String> entrypoint) {
+        this.entrypoint = entrypoint;
+    }
 
     // Image - Extra features
     private List<IPApplicationDefinitionService> services = new ArrayList<>();
@@ -147,6 +159,10 @@ public class IPApplicationDefinition {
         return copyWhenStartedPathAndContentFiles;
     }
 
+    public Map<String, String> getEnvironments() {
+        return environments;
+    }
+
     public List<String> getExecuteWhenStartedCommands() {
         return executeWhenStartedCommands;
     }
@@ -217,6 +233,10 @@ public class IPApplicationDefinition {
 
     public void setCopyWhenStartedPathAndContentFiles(List<Tuple2<String, String>> copyWhenStartedPathAndContentFiles) {
         this.copyWhenStartedPathAndContentFiles = copyWhenStartedPathAndContentFiles;
+    }
+
+    public void setEnvironments(Map<String, String> environments) {
+        this.environments = environments;
     }
 
     public void setExecuteWhenStartedCommands(List<String> executeWhenStartedCommands) {
@@ -303,8 +323,10 @@ public class IPApplicationDefinition {
         concat.append(udpPortsExposed);
         concat.append(portsEndpoint);
         concat.append(volumes);
+        concat.append(environments);
         concat.append(runAs);
         concat.append(workingDirectory);
+        concat.append(entrypoint);
         concat.append(command);
         concat.append(services);
         concat.append(containerUsersToChangeId);

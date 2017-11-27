@@ -278,10 +278,10 @@ public class ResourcesController extends AbstractBasics {
                 newResource.setInternalId(resource.getInternalId());
 
                 try {
-                    ChangesContext changesContext = new ChangesContext();
+                    ChangesContext changesContext = new ChangesContext(resourceService);
                     resourceEditor.fillResource(commonServicesContext, changesContext, formValues, newResource);
                     newResource.setResourceEditorName(editorName);
-                    changesContext.getResourcesToUpdate().add(new Tuple2<>(resourceId, newResource));
+                    changesContext.resourceUpdate(resourceId, newResource);
                     internalChangeService.changesExecute(changesContext);
                 } catch (ResourcePrimaryKeyCollisionException e) {
                     logger.error("Problem saving the resource", e);
@@ -300,9 +300,9 @@ public class ResourcesController extends AbstractBasics {
                 // Create a new resource
 
                 try {
-                    ChangesContext changesContext = new ChangesContext();
+                    ChangesContext changesContext = new ChangesContext(resourceService);
                     resourceEditor.fillResource(commonServicesContext, changesContext, formValues, resource);
-                    changesContext.getResourcesToAdd().add(resource);
+                    changesContext.resourceAdd(resource);
                     resource.setResourceEditorName(editorName);
                     internalChangeService.changesExecute(changesContext);
                     resource = resourceService.resourceFindByPk(resource).get();

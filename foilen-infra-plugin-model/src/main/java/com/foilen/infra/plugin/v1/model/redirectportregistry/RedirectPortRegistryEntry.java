@@ -10,8 +10,10 @@
 package com.foilen.infra.plugin.v1.model.redirectportregistry;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.collect.ComparisonChain;
 
+@JsonPropertyOrder(alphabetic = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RedirectPortRegistryEntry implements Comparable<RedirectPortRegistryEntry> {
 

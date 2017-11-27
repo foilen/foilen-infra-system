@@ -10,11 +10,13 @@
 package com.foilen.infra.plugin.v1.model.base;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.foilen.smalltools.tools.AbstractBasics;
 
+@JsonPropertyOrder(alphabetic = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class IPApplicationDefinitionVolume extends AbstractBasics {
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     private String hostFolder;
     private String containerFsFolder;
 

@@ -1,0 +1,117 @@
+[ {
+  "applicationDefinition" : {
+    "_nextAssetId" : 2,
+    "assetsBundles" : [ {
+      "assetsFolderPath" : "_assets_1/",
+      "assetsRelativePathAndContent" : [ {
+        "a" : "/login_config.json",
+        "b" : "{\n  \"administratorEmail\" : \"login-admin@example.com\",\n  \"applicationId\" : \"__the_app_id__\",\n  \"cookieDateName\" : \"login_date\",\n  \"cookieSignatureName\" : \"login_signature\",\n  \"cookieSignatureSalt\" : \"__login_cookie_signature_salt__\",\n  \"cookieUserName\" : \"login_username\",\n  \"csrfSalt\" : \"__login_crsf_salt__\",\n  \"fromEmail\" : \"login-from@example.com\",\n  \"loginBaseUrl\" : \"https://login.example.com\",\n  \"mysqlDatabaseName\" : \"infra_login_db\",\n  \"mysqlDatabasePassword\" : \"llll\",\n  \"mysqlDatabaseUserName\" : \"infra_login_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
+      } ]
+    } ],
+    "assetsPathAndContent" : [ ],
+    "buildSteps" : [ {
+      "step" : "_assets_1/ /",
+      "type" : "COPY"
+    } ],
+    "command" : "java -jar foilen-login.jar",
+    "containerUsersToChangeId" : [ ],
+    "copyWhenStartedPathAndContentFiles" : [ ],
+    "entrypoint" : null,
+    "environments" : {
+      "CONFIG_FILE" : "/login_config.json"
+    },
+    "executeWhenStartedCommands" : [ ],
+    "from" : "foilen-login:0.2.0",
+    "hostToIpMapping" : [ ],
+    "portsEndpoint" : {
+      "14010" : "HTTP_TCP"
+    },
+    "portsExposed" : { },
+    "portsRedirect" : [ {
+      "localPort" : 3306,
+      "machineContainerEndpoint" : "m1.example.com/infra_login_db_server/MYSQL_TCP",
+      "toContainerName" : "infra_login_db_server",
+      "toEndpoint" : "MYSQL_TCP",
+      "toLocalMachine" : false,
+      "toMachine" : "m1.example.com"
+    } ],
+    "runAs" : 2000,
+    "services" : [ ],
+    "udpPortsExposed" : { },
+    "volumes" : [ ],
+    "workingDirectory" : "/app"
+  },
+  "description" : "Login service",
+  "domainNames" : [ ],
+  "name" : "infra_login",
+  "resourceCategory" : "INFRASTRUCTURE",
+  "resourceDescription" : "Login service",
+  "resourceEditorName" : null,
+  "resourceName" : "infra_login"
+}, {
+  "applicationDefinition" : {
+    "_nextAssetId" : 2,
+    "assetsBundles" : [ {
+      "assetsFolderPath" : "_assets_1/",
+      "assetsRelativePathAndContent" : [ {
+        "a" : "/ui_config.json",
+        "b" : "{\n  \"baseUrl\" : \"https://ui.example.com\",\n  \"csrfSalt\" : \"__ui_crsf_salt__\",\n  \"loginConfigDetails\" : {\n    \"appId\" : \"__the_app_id__\",\n    \"baseUrl\" : \"https://login.example.com\",\n    \"certFile\" : null,\n    \"certText\" : \"__login_cert__\"\n  },\n  \"mailAlertsTo\" : \"ui-alerts@example.com\",\n  \"mailFrom\" : \"ui-from@example.com\",\n  \"mailHost\" : \"127.0.0.1\",\n  \"mailPassword\" : null,\n  \"mailPort\" : 25,\n  \"mailUsername\" : null,\n  \"mysqlDatabaseName\" : \"infra_ui_db\",\n  \"mysqlDatabasePassword\" : \"uuuu\",\n  \"mysqlDatabaseUserName\" : \"infra_ui_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
+      } ]
+    } ],
+    "assetsPathAndContent" : [ ],
+    "buildSteps" : [ {
+      "step" : "_assets_1/ /",
+      "type" : "COPY"
+    } ],
+    "command" : "java -jar /app/foilen-infra-ui.jar",
+    "containerUsersToChangeId" : [ ],
+    "copyWhenStartedPathAndContentFiles" : [ ],
+    "entrypoint" : [ ],
+    "environments" : {
+      "CONFIG_FILE" : "/ui_config.json"
+    },
+    "executeWhenStartedCommands" : [ ],
+    "from" : "foilen-infra-ui:master-SNAPSHOT",
+    "hostToIpMapping" : [ ],
+    "portsEndpoint" : {
+      "8080" : "HTTP_TCP"
+    },
+    "portsExposed" : { },
+    "portsRedirect" : [ {
+      "localPort" : 3306,
+      "machineContainerEndpoint" : "m1.example.com/infra_ui_db_server/MYSQL_TCP",
+      "toContainerName" : "infra_ui_db_server",
+      "toEndpoint" : "MYSQL_TCP",
+      "toLocalMachine" : false,
+      "toMachine" : "m1.example.com"
+    } ],
+    "runAs" : 2001,
+    "services" : [ ],
+    "udpPortsExposed" : { },
+    "volumes" : [ ],
+    "workingDirectory" : null
+  },
+  "description" : "UI service",
+  "domainNames" : [ ],
+  "name" : "infra_ui",
+  "resourceCategory" : "INFRASTRUCTURE",
+  "resourceDescription" : "UI service",
+  "resourceEditorName" : null,
+  "resourceName" : "infra_ui"
+}, {
+  "applicationEndpoint" : "HTTP_TCP",
+  "domainNames" : [ "login.example.com" ],
+  "https" : true,
+  "resourceCategory" : "NET",
+  "resourceDescription" : "login.example.com",
+  "resourceEditorName" : null,
+  "resourceName" : "login.example.com"
+}, {
+  "applicationEndpoint" : "HTTP_TCP",
+  "domainNames" : [ "ui.example.com" ],
+  "https" : true,
+  "resourceCategory" : "NET",
+  "resourceDescription" : "ui.example.com",
+  "resourceEditorName" : null,
+  "resourceName" : "ui.example.com"
+} ]

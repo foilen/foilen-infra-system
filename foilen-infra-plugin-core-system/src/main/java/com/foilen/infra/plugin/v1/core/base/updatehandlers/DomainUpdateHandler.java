@@ -46,7 +46,7 @@ public class DomainUpdateHandler extends AbstractUpdateEventHandler<Domain> {
         }
         neededManagedResources.add(new Domain(parentDomainName, DomainHelper.reverseDomainName(parentDomainName)));
 
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(Domain.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(Domain.class));
     }
 
     @Override

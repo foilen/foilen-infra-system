@@ -32,6 +32,11 @@ public class MariaDBDatabase extends AbstractIPResource implements Comparable<Ma
     public MariaDBDatabase() {
     }
 
+    public MariaDBDatabase(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+
     @Override
     public int compareTo(MariaDBDatabase o) {
         return ComparisonChain.start() //

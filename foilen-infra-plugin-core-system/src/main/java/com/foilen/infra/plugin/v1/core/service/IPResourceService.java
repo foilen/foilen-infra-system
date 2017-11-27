@@ -77,6 +77,19 @@ public interface IPResourceService {
     List<IPResourceDefinition> getResourceDefinitions();
 
     /**
+     * Tells if the link exists.
+     *
+     * @param fromResource
+     *            the "from" resource
+     * @param linkType
+     *            the link type
+     * @param toResource
+     *            the "to" resource
+     * @return true if the link exists
+     */
+    boolean linkExistsByFromResourceAndLinkTypeAndToResource(IPResource fromResource, String linkType, IPResource toResource);
+
+    /**
      * Find all the "to" resources.
      *
      * @param fromResource

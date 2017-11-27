@@ -35,6 +35,7 @@ import com.foilen.smalltools.tools.FreemarkerTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.foilen.smalltools.tuple.Tuple2;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
@@ -49,35 +50,10 @@ public class DockerContainerOutput {
     public static final String REDIRECTOR_ENTRY_CONTAINER_NAME = "infra_redirector_entry";
     public static final String REDIRECTOR_EXIT_CONTAINER_NAME = "infra_redirector_exit";
 
-    static protected String generateWaitInfraScript(List<IPApplicationDefinitionPortRedirect> portsRedirect, String command) {
-        Map<String, Object> model = new HashMap<>();
-        model.put("portsRedirect", portsRedirect.stream().map(it -> {
-            return new IPApplicationDefinitionPortRedirectVisualWrapper(it);
-        }).collect(Collectors.toList()));
-        model.put("command", command);
-        return FreemarkerTools.processTemplate("/com/foilen/infra/plugin/v1/model/outputter/docker/waitInfra.sh.ftl", model);
-    }
+    public static IPApplicationDefinition addInfrastructure(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx) {
+        String imageName = ctx.getImageName();
+        logger.info("[{}] Transform the application", imageName);
 
-    protected static String sanitize(String text) {
-        text = text.replaceAll("'", "\\\\'");
-        text = text.replaceAll("\\\"", "\\\\\"");
-        return text;
-    }
-
-    static public void toDockerBuildDirectory(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx) {
-        String instanceName = ctx.getContainerName();
-        String buildDirectory = ctx.getBuildDirectory();
-        if (Strings.isNullOrEmpty(instanceName)) {
-            throw new ModelException("The instance name is not specified");
-        }
-        if (Strings.isNullOrEmpty(buildDirectory)) {
-            buildDirectory = Files.createTempDir().getAbsolutePath();
-            logger.info("[{}] The build directory is not specified. Will use a temporary one {}", instanceName, buildDirectory);
-        }
-        buildDirectory = DirectoryTools.pathTrailingSlash(buildDirectory);
-        ctx.setBuildDirectory(buildDirectory);
-
-        logger.info("[{}] Transform the application", instanceName);
         // Clone
         IPApplicationDefinition transformedApplicationDefinition = JsonTools.clone(applicationDefinition);
 
@@ -89,9 +65,27 @@ public class DockerContainerOutput {
         // Use a single assetsBundle for (supervisor if more than 1 service ; if infra)
         List<IPApplicationDefinitionPortRedirect> portsRedirect = transformedApplicationDefinition.getPortsRedirect();
         if (!portsRedirect.isEmpty() || services.size() > 1) {
-            logger.info("[{}] Has multiple services to run or some port redirects", instanceName);
+            logger.info("[{}] Has multiple services to run or some port redirects", imageName);
 
             IPApplicationDefinitionAssetsBundle assetsBundle = transformedApplicationDefinition.addAssetsBundle();
+            List<String> additionnalAppsToInstall = new ArrayList<>();
+
+            // Make sure there is at least one known service/command to run
+            if (transformedApplicationDefinition.getCommand() == null && services.isEmpty()) {
+                throw new ModelException("We need to move the current command in a service, but you are using the default image's command which we do not know. Please specify the command name");
+            }
+
+            // Move the current command to a service
+            if (transformedApplicationDefinition.getCommand() != null) {
+                IPApplicationDefinitionService commandToService = new IPApplicationDefinitionService("_main", transformedApplicationDefinition.getCommand(),
+                        transformedApplicationDefinition.getRunAs());
+                commandToService.setWorkingDirectory(transformedApplicationDefinition.getWorkingDirectory());
+                transformedApplicationDefinition.getServices().add(commandToService);
+                serviceAndIsInfras.add(new Tuple2<>(commandToService, false));
+                transformedApplicationDefinition.setCommand(null);
+                transformedApplicationDefinition.setWorkingDirectory(null);
+            }
+            transformedApplicationDefinition.setEntrypoint(new ArrayList<>());
 
             // Add infra if needed
             if (!portsRedirect.isEmpty()) {
@@ -99,7 +93,7 @@ public class DockerContainerOutput {
                 // Change the container to run as root, the haproxy as root and all the other services as the container user
                 Integer runAs = transformedApplicationDefinition.getRunAs();
                 if (runAs != null && runAs != 0) {
-                    logger.info("[{}] Changing the instance user to root and all the services to {}", instanceName, runAs);
+                    logger.info("[{}] Changing the instance user to root and all the services to {}", imageName, runAs);
                     transformedApplicationDefinition.setRunAs(0);
                     for (IPApplicationDefinitionService service : transformedApplicationDefinition.getServices()) {
                         if (service.getRunAs() == null) {
@@ -108,6 +102,7 @@ public class DockerContainerOutput {
                     }
                 }
 
+                additionnalAppsToInstall.add("haproxy");
                 HaProxyConfig haProxyConfig = new HaProxyConfig();
                 haProxyConfig.setUser(null);
                 haProxyConfig.setGroup(null);
@@ -115,16 +110,16 @@ public class DockerContainerOutput {
                 for (IPApplicationDefinitionPortRedirect portRedirect : portsRedirect) {
                     String machineContainerEndpoint = portRedirect.getMachineContainerEndpoint();
 
-                    logger.info("[{}] Adding infra {} ; Key {}", instanceName, portRedirect, machineContainerEndpoint);
+                    logger.info("[{}] Adding infra {} ; Key {}", imageName, portRedirect, machineContainerEndpoint);
 
                     String host = ctx.getRedirectIpByMachineContainerEndpoint().get(machineContainerEndpoint);
                     Integer port = ctx.getRedirectPortByMachineContainerEndpoint().get(machineContainerEndpoint);
 
                     if (host == null || port == null) {
-                        logger.error("[{}] Infra {} -> Missing dependency to {}", machineContainerEndpoint);
+                        logger.error("[{}] Infra {} -> Missing dependency to {}", imageName, portRedirect.getLocalPort(), machineContainerEndpoint);
                         missingDependency = true;
                     } else {
-                        logger.info("[{}] Infra {} -> {}:{}", instanceName, portRedirect.getLocalPort(), host, port);
+                        logger.info("[{}] Infra {} -> {}:{}", imageName, portRedirect.getLocalPort(), host, port);
                         haProxyConfig.addPortTcp(portRedirect.getLocalPort(), new Tuple2<>(host, port));
                     }
 
@@ -132,7 +127,7 @@ public class DockerContainerOutput {
                 assetsBundle.addAssetContent("_infra/_infra_ha_proxy.cfg", HaProxyConfigOutput.toConfigFile(haProxyConfig));
 
                 if (missingDependency) {
-                    throw new DockerMissingDependencyException(instanceName + " missing dependency");
+                    throw new DockerMissingDependencyException(imageName + " missing dependency");
                 }
 
                 IPApplicationDefinitionService service = new IPApplicationDefinitionService("_infra_ha_proxy", HaProxyConfigOutput.toRun(haProxyConfig, "/_infra/_infra_ha_proxy.cfg"));
@@ -140,7 +135,9 @@ public class DockerContainerOutput {
                 serviceAndIsInfras.add(serviceAndIsInfra);
             }
 
-            // Supervisor command
+            // Supervisor command & user list
+            StringBuilder supervisorUsersToInstall = new StringBuilder();
+            additionnalAppsToInstall.add("supervisor");
             StringBuilder supervisorConfigContent = new StringBuilder();
             supervisorConfigContent.append("[supervisord]\n");
             supervisorConfigContent.append("nodaemon=true\n\n");
@@ -150,6 +147,10 @@ public class DockerContainerOutput {
                 supervisorConfigContent.append("[program:").append(service.getName()).append("]\n");
                 if (service.getRunAs() != null) {
                     supervisorConfigContent.append("user=").append(service.getRunAs()).append("\n");
+                    supervisorUsersToInstall.append("s_").append(service.getName()).append(":").append(service.getRunAs()).append("\n");
+                }
+                if (service.getWorkingDirectory() != null) {
+                    supervisorConfigContent.append("directory=").append(service.getWorkingDirectory()).append("\n");
                 }
                 supervisorConfigContent.append("startretries=0\n");
                 supervisorConfigContent.append("autorestart=false\n");
@@ -171,6 +172,13 @@ public class DockerContainerOutput {
                 assetsBundle.addAssetContent("_infra/program_" + service.getName() + ".sh", serviceScriptContent);
             }
 
+            transformedApplicationDefinition.addBuildStepCommand("export TERM=dumb ; " + //
+                    "apt-get update && " + //
+                    "apt-get install -y " + Joiner.on(' ').join(additionnalAppsToInstall) + " && " + //
+                    "apt-get clean && rm -rf /var/lib/apt/lists/*");
+
+            assetsBundle.addAssetContent("_infra/supervisord_users.txt", supervisorUsersToInstall.toString());
+
             // Main script
             String mainScriptContent = ResourceTools.getResourceAsString("startSupervisord.sh", DockerContainerOutput.class);
             assetsBundle.addAssetContent("_infra/startSupervisord.sh", mainScriptContent);
@@ -182,7 +190,7 @@ public class DockerContainerOutput {
             assetsBundle.addAssetContent("_infra/supervisord.conf", supervisorConfigContent.toString());
 
         } else {
-            logger.info("[{}] Single command and no infra", instanceName);
+            logger.info("[{}] Single command and no infra", imageName);
 
             if (!services.isEmpty()) {
                 transformedApplicationDefinition.setCommand(services.get(0).getCommand());
@@ -190,13 +198,51 @@ public class DockerContainerOutput {
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug("[{}] Final application definition\n{}", instanceName, JsonTools.prettyPrint(transformedApplicationDefinition));
+            logger.debug("[{}] Final application definition\n{}", imageName, JsonTools.prettyPrint(transformedApplicationDefinition));
         }
+        return transformedApplicationDefinition;
+    }
 
-        logger.info("[{}] Preparing build folder {}", instanceName, buildDirectory);
+    static protected String generateWaitInfraScript(List<IPApplicationDefinitionPortRedirect> portsRedirect, String command) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("portsRedirect", portsRedirect.stream().map(it -> {
+            return new IPApplicationDefinitionPortRedirectVisualWrapper(it);
+        }).collect(Collectors.toList()));
+        model.put("command", command);
+        return FreemarkerTools.processTemplate("/com/foilen/infra/plugin/v1/model/outputter/docker/waitInfra.sh.ftl", model);
+    }
 
-        List<Tuple2<String, String>> assetsPathAndContent = transformedApplicationDefinition.getAssetsPathAndContent();
-        logger.info("[{}] Copying {} asset files", instanceName, assetsPathAndContent.size());
+    protected static String sanitize(String text) {
+        text = text.replaceAll("'", "\\\\'");
+        text = text.replaceAll("\\\"", "\\\\\"");
+        return text;
+    }
+
+    /**
+     * Takes an application definition and creates the build directory.
+     *
+     * @param applicationDefinition
+     *            the application to build
+     * @param ctx
+     *            the context where to build that application
+     */
+    static public void toDockerBuildDirectory(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx) {
+        String imageName = ctx.getImageName();
+        String buildDirectory = ctx.getBuildDirectory();
+        if (Strings.isNullOrEmpty(imageName)) {
+            throw new ModelException("The instance name is not specified");
+        }
+        if (Strings.isNullOrEmpty(buildDirectory)) {
+            buildDirectory = Files.createTempDir().getAbsolutePath();
+            logger.info("[{}] The build directory is not specified. Will use a temporary one {}", imageName, buildDirectory);
+        }
+        buildDirectory = DirectoryTools.pathTrailingSlash(buildDirectory);
+        ctx.setBuildDirectory(buildDirectory);
+
+        logger.info("[{}] Preparing build folder {}", imageName, buildDirectory);
+
+        List<Tuple2<String, String>> assetsPathAndContent = applicationDefinition.getAssetsPathAndContent();
+        logger.info("[{}] Copying {} asset files", imageName, assetsPathAndContent.size());
         for (Tuple2<String, String> assetPathAndContent : assetsPathAndContent) {
             String assetPath = assetPathAndContent.getA();
             String absoluteAssetPath = buildDirectory + assetPath;
@@ -205,8 +251,8 @@ public class DockerContainerOutput {
             FileTools.writeFile(content, absoluteAssetPath);
         }
 
-        List<IPApplicationDefinitionAssetsBundle> assetsBundles = transformedApplicationDefinition.getAssetsBundles();
-        logger.info("[{}] Copying {} assets bundles", instanceName, assetsBundles.size());
+        List<IPApplicationDefinitionAssetsBundle> assetsBundles = applicationDefinition.getAssetsBundles();
+        logger.info("[{}] Copying {} assets bundles", imageName, assetsBundles.size());
         for (IPApplicationDefinitionAssetsBundle assetBundles : assetsBundles) {
             String assetsFolderPath = assetBundles.getAssetsFolderPath();
             List<Tuple2<String, String>> assetsRelativePathAndContent = assetBundles.getAssetsRelativePathAndContent();
@@ -220,11 +266,11 @@ public class DockerContainerOutput {
 
         }
 
-        logger.info("[{}] Creating DockerBuild file", instanceName);
-        String dockerFileContent = DockerContainerOutput.toDockerfile(transformedApplicationDefinition, ctx);
+        logger.info("[{}] Creating DockerBuild file", imageName);
+        String dockerFileContent = DockerContainerOutput.toDockerfile(applicationDefinition, ctx);
         FileTools.writeFile(dockerFileContent, buildDirectory + "Dockerfile");
 
-        logger.info("[{}] Preparing build folder {} completed", instanceName, buildDirectory);
+        logger.info("[{}] Preparing build folder {} completed", imageName, buildDirectory);
 
     }
 
@@ -276,14 +322,25 @@ public class DockerContainerOutput {
             }
             content.append("\n");
         }
-        content.append("\n");
+
+        if (!applicationDefinition.getPortsExposed().isEmpty() || !applicationDefinition.getUdpPortsExposed().isEmpty()) {
+            content.append("\n");
+        }
 
         // Volumes
         if (!applicationDefinition.getVolumes().isEmpty()) {
             List<String> containerVolumes = applicationDefinition.getVolumes().stream().map(it -> it.getContainerFsFolder()).collect(Collectors.toList());
             content.append("VOLUME ").append(JsonTools.compactPrint(containerVolumes)).append("\n");
+            content.append("\n");
         }
-        content.append("\n");
+
+        // Environment
+        if (!applicationDefinition.getEnvironments().isEmpty()) {
+            for (Entry<String, String> environment : applicationDefinition.getEnvironments().entrySet()) {
+                content.append("ENV ").append(environment.getKey()).append("=").append(environment.getValue()).append("\n");
+            }
+            content.append("\n");
+        }
 
         // User
         content.append("USER ").append(applicationDefinition.getRunAs()).append("\n\n");
@@ -294,9 +351,17 @@ public class DockerContainerOutput {
             content.append("WORKDIR ").append(workingDirectory).append("\n\n");
         }
 
+        // Entrypoint
+        if (applicationDefinition.getEntrypoint() != null) {
+            content.append("ENTRYPOINT ");
+            content.append(JsonTools.compactPrint(applicationDefinition.getEntrypoint())).append("\n");
+        }
+
         // Command
-        content.append("CMD ");
-        content.append(applicationDefinition.getCommand()).append("\n");
+        if (applicationDefinition.getCommand() != null) {
+            content.append("CMD ");
+            content.append(applicationDefinition.getCommand()).append("\n");
+        }
 
         return content.toString();
     }

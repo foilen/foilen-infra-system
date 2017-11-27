@@ -25,13 +25,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import com.foilen.infra.plugin.v1.core.base.editors.ManualWebsiteCertificateEditor;
 import com.foilen.infra.plugin.v1.core.base.resources.Application;
 import com.foilen.infra.plugin.v1.core.base.resources.DnsEntry;
 import com.foilen.infra.plugin.v1.core.base.resources.DnsPointer;
 import com.foilen.infra.plugin.v1.core.base.resources.Domain;
+import com.foilen.infra.plugin.v1.core.base.resources.InfraConfig;
 import com.foilen.infra.plugin.v1.core.base.resources.Machine;
+import com.foilen.infra.plugin.v1.core.base.resources.MariaDBDatabase;
+import com.foilen.infra.plugin.v1.core.base.resources.MariaDBServer;
+import com.foilen.infra.plugin.v1.core.base.resources.MariaDBUser;
 import com.foilen.infra.plugin.v1.core.base.resources.UnixUser;
-import com.foilen.infra.plugin.v1.core.base.resources.UrlRedirection;
 import com.foilen.infra.plugin.v1.core.base.resources.Website;
 import com.foilen.infra.plugin.v1.core.base.resources.WebsiteCertificate;
 import com.foilen.infra.plugin.v1.core.base.resources.helper.UnixUserAvailableIdHelper;
@@ -90,6 +94,25 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    protected void assertInfraConfigApps(String resourceName) {
+
+        List<IPResource> resources = new ArrayList<>();
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Application.class) //
+                .propertyEquals(Application.PROPERTY_NAME, "infra_login")).get());
+        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Application.class) //
+                .propertyEquals(Application.PROPERTY_NAME, "infra_ui")).get());
+        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Website.class) //
+                .propertyEquals(Website.PROPERTY_DOMAIN_NAMES, "login.example.com")).get());
+        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Website.class) //
+                .propertyEquals(Website.PROPERTY_DOMAIN_NAMES, "ui.example.com")).get());
+
+        AssertTools.assertJsonComparison(resourceName, AbstractIPResourceServiceTest.class, resources);
+
+    }
 
     public void assertResourceCount(int expectedCount, Class<? extends IPResource> resourceType) {
 
@@ -154,7 +177,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Before
     public void createFakeData() {
         JunitsHelper.addResourcesDefinition(getInternalServicesContext());
-        JunitsHelper.createFakeData(getInternalServicesContext());
+        JunitsHelper.createFakeData(getCommonServicesContext(), getInternalServicesContext());
     }
 
     private WebsiteCertificate createWebsiteCertificate(String... domainNames) {
@@ -174,9 +197,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     private void deleteAllResources() {
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         for (IPResource resource : getInternalServicesContext().getInternalIPResourceService().resourceFindAll()) {
-            changes.getResourcesToDelete().add(resource.getInternalId());
+            changes.resourceDelete(resource);
         }
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
     }
@@ -224,14 +247,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Common
         List<JunitResource> entries;
         JunitResource resource;
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
         // Delete all
         entries = resourceService.resourceFindAll(resourceService.createResourceQuery(JunitResource.class));
         for (JunitResource entry : entries) {
-            changes.getResourcesToDelete().add(entry.getInternalId());
+            changes.resourceDelete(entry.getInternalId());
         }
         internalChangeService.changesExecute(changes);
 
@@ -240,17 +263,17 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Create some linked together
         JunitResource masterResource = new JunitResource("theMaster");
-        changes.getResourcesToAdd().add(masterResource);
+        changes.resourceAdd(masterResource);
 
         JunitResource slaveResource = new JunitResource("slave1");
-        changes.getResourcesToAdd().add(slaveResource);
-        changes.getLinksToAdd().add(new Tuple3<>(masterResource, "COMMANDS", slaveResource));
+        changes.resourceAdd(slaveResource);
+        changes.linkAdd(masterResource, "COMMANDS", slaveResource);
 
         slaveResource = new JunitResource("slave2");
-        changes.getResourcesToAdd().add(slaveResource);
-        changes.getLinksToAdd().add(new Tuple3<>(masterResource, "COMMANDS", slaveResource));
+        changes.resourceAdd(slaveResource);
+        changes.linkAdd(masterResource, "COMMANDS", slaveResource);
 
-        changes.getLinksToAdd().add(new Tuple3<>(slaveResource, "LIKES", masterResource));
+        changes.linkAdd(slaveResource, "LIKES", masterResource);
 
         internalChangeService.changesExecute(changes);
 
@@ -304,7 +327,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         masterResource = resourceService.resourceFindByPk(new JunitResource("theMaster")).get();
 
         slaveResource = new JunitResource("slave2");
-        changes.getLinksToAdd().add(new Tuple3<>(slaveResource, "LOVES", masterResource));
+        changes.linkAdd(slaveResource, "LOVES", masterResource);
 
         internalChangeService.changesExecute(changes);
 
@@ -327,9 +350,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Update the slave2 links (overwrite)
         slaveResource = resourceService.resourceFindByPk(new JunitResource("slave2")).get();
         for (Tuple2<String, ? extends IPResource> link : resourceService.linkFindAllByFromResource(slaveResource)) {
-            changes.getLinksToDelete().add(new Tuple3<>(slaveResource, link.getA(), link.getB()));
+            changes.linkDelete(slaveResource, link.getA(), link.getB());
         }
-        changes.getLinksToAdd().add(new Tuple3<>(slaveResource, "DISLIKE", masterResource));
+        changes.linkAdd(slaveResource, "DISLIKE", masterResource);
 
         internalChangeService.changesExecute(changes);
 
@@ -357,13 +380,13 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     public void testChanges_linksAndTagsAreNotKeptWhenDeleted() {
 
         // Create
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         JunitResource r1 = new JunitResource("1");
         JunitResource r2 = new JunitResource("2");
-        changes.getResourcesToAdd().add(r1);
-        changes.getResourcesToAdd().add(r2);
-        changes.getLinksToAdd().add(new Tuple3<>(r1, "link1", r2));
-        changes.getTagsToAdd().add(new Tuple2<>(r1, "tag1"));
+        changes.resourceAdd(r1);
+        changes.resourceAdd(r2);
+        changes.linkAdd(r1, "link1", r2);
+        changes.tagAdd(r1, "tag1");
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
@@ -373,14 +396,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals(Arrays.asList("tag1"), resourceService.tagFindAllByResource(r1).stream().sorted().collect(Collectors.toList()));
 
         // Delete it
-        changes.getResourcesToDelete().add(resourceService.resourceFindByPk(r1).get().getInternalId());
+        changes.resourceDelete(resourceService.resourceFindByPk(r1).get().getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         Assert.assertEquals(0, resourceService.linkFindAllByFromResource(r1).size());
         Assert.assertEquals(0, resourceService.tagFindAllByResource(r1).size());
 
         // Recreate it
-        changes.getResourcesToAdd().add(r1);
+        changes.resourceAdd(r1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         // Check no links and tags
@@ -392,17 +415,17 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testChanges_reduntantLinksAndTags() {
 
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         JunitResource r1 = new JunitResource("reduntant_1");
         JunitResource r2 = new JunitResource("reduntant_2");
-        changes.getResourcesToAdd().add(r1);
-        changes.getResourcesToAdd().add(r2);
-        changes.getLinksToAdd().add(new Tuple3<>(r1, "link1", r2));
-        changes.getLinksToAdd().add(new Tuple3<>(r1, "link1", r2));
-        changes.getLinksToAdd().add(new Tuple3<>(r1, "link2", r2));
-        changes.getTagsToAdd().add(new Tuple2<>(r1, "tag1"));
-        changes.getTagsToAdd().add(new Tuple2<>(r1, "tag1"));
-        changes.getTagsToAdd().add(new Tuple2<>(r1, "tag2"));
+        changes.resourceAdd(r1);
+        changes.resourceAdd(r2);
+        changes.linkAdd(r1, "link1", r2);
+        changes.linkAdd(r1, "link1", r2);
+        changes.linkAdd(r1, "link2", r2);
+        changes.tagAdd(r1, "tag1");
+        changes.tagAdd(r1, "tag1");
+        changes.tagAdd(r1, "tag2");
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         // Check
@@ -432,9 +455,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceCount(0, Domain.class);
 
         // Create both machines
-        ChangesContext changes = new ChangesContext();
-        changes.getResourcesToAdd().add(new Machine(machineName1, m1Ip1));
-        changes.getResourcesToAdd().add(new Machine(machineName2, m2Ip1));
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(new Machine(machineName1, m1Ip1));
+        changes.resourceAdd(new Machine(machineName2, m2Ip1));
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertResourceCount(2, Machine.class);
@@ -453,7 +476,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Delete the domain "m2.node.example.com" (must be back)
         long domain2Id = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
-        changes.getResourcesToDelete().add(domain2Id);
+        changes.resourceDelete(domain2Id);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertResourceCount(2, Machine.class);
@@ -474,8 +497,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertNotEquals(domain2Id, domain2Id_2);
 
         // Create extra links and tags
-        changes.getTagsToAdd().add(new Tuple2<IPResource, String>(m2, "extraTag"));
-        changes.getLinksToAdd().add(new Tuple3<IPResource, String, IPResource>(m1, "extraLink", m2));
+        changes.tagAdd(m2, "extraTag");
+        changes.linkAdd(m1, "extraLink", m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         // Get the list of ids
@@ -486,8 +509,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Collections.sort(allIds);
 
         // Delete the domain "m2.node.example.com", delete machine m1 and rename the machine m2 (to have a rollback)
-        changes.getResourcesToDelete().add(m1.getInternalId());
-        changes.getResourcesToUpdate().add(new Tuple2<>(m2.getInternalId(), new Machine("m3.node.example.com", m2Ip1)));
+        changes.resourceDelete(m1.getInternalId());
+        changes.resourceUpdate(m2.getInternalId(), new Machine("m3.node.example.com", m2Ip1));
         try {
             getInternalServicesContext().getInternalChangeService().changesExecute(changes);
             Assert.fail("Expecting exception");
@@ -535,7 +558,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         JunitResource resource;
         List<JunitResource> resources;
         Set<String> tags;
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -545,7 +568,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Delete all
         for (JunitResource entry : entries) {
-            changes.getResourcesToDelete().add(entry.getInternalId());
+            changes.resourceDelete(entry.getInternalId());
         }
         internalChangeService.changesExecute(changes);
 
@@ -554,14 +577,13 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Create 2
         resource = new JunitResource("example.com", JunitResourceEnum.A, 1);
-        changes.getResourcesToAdd().add(resource);
-        changes.getTagsToAdd().addAll(Arrays.asList( //
-                new Tuple2<>(resource, "tag1"), //
-                new Tuple2<>(resource, "asite")));
+        changes.resourceAdd(resource);
+        changes.tagAdd(resource, "tag1");
+        changes.tagAdd(resource, "asite");
 
         resource = new JunitResource("www.example.com", JunitResourceEnum.A, 1);
-        changes.getResourcesToAdd().add(resource);
-        changes.getTagsToAdd().add(new Tuple2<>(resource, "asite"));
+        changes.resourceAdd(resource);
+        changes.tagAdd(resource, "asite");
         internalChangeService.changesExecute(changes);
 
         entries = resourceService.resourceFindAll(resourceService.createResourceQuery(JunitResource.class));
@@ -569,8 +591,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Update add tags
         resource = resourceService.resourceFindByPk(new JunitResource("example.com", JunitResourceEnum.A, 1)).get();
-        changes.getTagsToAdd().add(new Tuple2<>(resource, "changed"));
-        changes.getResourcesToUpdate().add(new Tuple2<>(resource.getInternalId(), new JunitResource("example2.com", JunitResourceEnum.A, 2)));
+        changes.tagAdd(resource, "changed");
+        changes.resourceUpdate(resource.getInternalId(), new JunitResource("example2.com", JunitResourceEnum.A, 2));
         internalChangeService.changesExecute(changes);
 
         entries = resourceService.resourceFindAll(resourceService.createResourceQuery(JunitResource.class));
@@ -586,7 +608,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Update remove tags
         resource = resourceService.resourceFindByPk(new JunitResource("example2.com", JunitResourceEnum.A, 2)).get();
-        changes.getTagsToDelete().add(new Tuple2<>(resource, "tag1"));
+        changes.tagDelete(resource, "tag1");
         internalChangeService.changesExecute(changes);
 
         entries = resourceService.resourceFindAll(resourceService.createResourceQuery(JunitResource.class));
@@ -601,7 +623,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Add existing items (fail)
         try {
-            changes.getResourcesToAdd().add(new JunitResource("example2.com", JunitResourceEnum.A, 2));
+            changes.resourceAdd(new JunitResource("example2.com", JunitResourceEnum.A, 2));
             internalChangeService.changesExecute(changes);
             Assert.fail("Didn't get an exception");
         } catch (ResourcePrimaryKeyCollisionException e) {
@@ -611,7 +633,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Update non existing items (fail)
         try {
             resource = resourceService.resourceFindByPk(new JunitResource("not.existing.com", JunitResourceEnum.A, 1)).get();
-            changes.getResourcesToUpdate().add(new Tuple2<>(resource.getInternalId(), new JunitResource("example2.com", JunitResourceEnum.A, 5)));
+            changes.resourceUpdate(resource.getInternalId(), new JunitResource("example2.com", JunitResourceEnum.A, 5));
             internalChangeService.changesExecute(changes);
             Assert.fail("Didn't get an exception");
         } catch (Exception e) {
@@ -622,20 +644,20 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     public void testDuplicatePkSameResource_create() {
         // Common
         JunitResource resource;
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
 
         // Create 1 item
         resource = new JunitResource("t1", JunitResourceEnum.A, 1);
         resource.setLongNumber(10L);
-        changes.getResourcesToAdd().add(resource);
+        changes.resourceAdd(resource);
         internalChangeService.changesExecute(changes);
 
         // Create same. Not fine
         thrown.expect(ResourcePrimaryKeyCollisionException.class);
         resource = new JunitResource("t1", JunitResourceEnum.A, 1);
         resource.setLongNumber(30L);
-        changes.getResourcesToAdd().add(resource);
+        changes.resourceAdd(resource);
         internalChangeService.changesExecute(changes);
 
     }
@@ -644,24 +666,24 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     public void testDuplicatePkSameResource_update() {
         // Common
         JunitResource resource;
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
         // Create 2 items
         resource = new JunitResource("t1", JunitResourceEnum.A, 1);
         resource.setLongNumber(10L);
-        changes.getResourcesToAdd().add(resource);
+        changes.resourceAdd(resource);
         resource = new JunitResource("t2", JunitResourceEnum.A, 2);
         resource.setLongNumber(10L);
-        changes.getResourcesToAdd().add(resource);
+        changes.resourceAdd(resource);
         internalChangeService.changesExecute(changes);
 
         // Rename second item to same pk as first
         thrown.expect(ResourcePrimaryKeyCollisionException.class);
         resource = new JunitResource("t1", JunitResourceEnum.A, 1);
         resource.setLongNumber(20L);
-        changes.getResourcesToUpdate().add(new Tuple2<>(resourceService.resourceFindByPk(new JunitResource("t2", JunitResourceEnum.A, 2)).get().getInternalId(), resource));
+        changes.resourceUpdate(resourceService.resourceFindByPk(new JunitResource("t2", JunitResourceEnum.A, 2)).get().getInternalId(), resource);
         internalChangeService.changesExecute(changes);
 
     }
@@ -683,9 +705,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceCount(0, Domain.class);
 
         // Create both machines: m1 without ip and m2 with ip
-        ChangesContext changes = new ChangesContext();
-        changes.getResourcesToAdd().add(new Machine(machineName1));
-        changes.getResourcesToAdd().add(new Machine(machineName2, m2Ip1));
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(new Machine(machineName1));
+        changes.resourceAdd(new Machine(machineName2, m2Ip1));
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertResourceCount(2, Machine.class);
@@ -702,8 +724,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Update both machines: m1 with ip and m2 with a different ip
-        changes.getResourcesToUpdate().add(new Tuple2<>(m1.getInternalId(), new Machine(machineName1, m1Ip2)));
-        changes.getResourcesToUpdate().add(new Tuple2<>(m2.getInternalId(), new Machine(machineName2, m2Ip2)));
+        changes.resourceUpdate(m1.getInternalId(), new Machine(machineName1, m1Ip2));
+        changes.resourceUpdate(m2.getInternalId(), new Machine(machineName2, m2Ip2));
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertResourceCount(2, Machine.class);
@@ -721,7 +743,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Remove ip of m2
-        changes.getResourcesToUpdate().add(new Tuple2<>(m2.getInternalId(), new Machine(machineName2, null)));
+        changes.resourceUpdate(m2.getInternalId(), new Machine(machineName2, null));
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertResourceCount(2, Machine.class);
@@ -738,7 +760,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Delete m1
-        changes.getResourcesToDelete().add(m1.getInternalId());
+        changes.resourceDelete(m1.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertResourceCount(1, Machine.class);
@@ -752,7 +774,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Update name (fails)
         try {
-            changes.getResourcesToUpdate().add(new Tuple2<>(m2.getInternalId(), new Machine("anotherName.node.example.com")));
+            changes.resourceUpdate(m2.getInternalId(), new Machine("anotherName.node.example.com"));
             getInternalServicesContext().getInternalChangeService().changesExecute(changes);
             Assert.fail("Expecting an exception");
         } catch (IllegalUpdateException e) {
@@ -1092,9 +1114,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Modify its editor
         JunitResource resource = junitResourceOptional.get();
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         resource.setResourceEditorName("junit");
-        changes.getResourcesToUpdate().add(new Tuple2<>(expectedId, resource));
+        changes.resourceUpdate(expectedId, resource);
         internalChangeService.changesExecute(changes);
 
         // Get the resource
@@ -1551,7 +1573,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetDates_many_equal_0() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1568,7 +1590,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetDates_many_equal_1() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1592,7 +1614,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetDates_many_equal_2() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1616,7 +1638,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetDoubles_many_equal_0() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1633,7 +1655,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetDoubles_many_equal_1() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1656,7 +1678,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetDoubles_many_equal_2() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1680,7 +1702,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetEnumerations_many_equal_0() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1697,7 +1719,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetEnumerations_many_equal_1() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1720,7 +1742,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetEnumerations_many_equal_2() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1744,7 +1766,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetFloats_many_equal_0() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1761,7 +1783,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetFloats_many_equal_1() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1784,7 +1806,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetFloats_many_equal_2() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1808,7 +1830,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetIntegers_many_equal_0() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1825,7 +1847,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetIntegers_many_equal_1() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1848,7 +1870,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetIntegers_many_equal_2() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1872,7 +1894,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetLongs_many_equal_0() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1889,7 +1911,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetLongs_many_equal_1() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1912,7 +1934,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetLongs_many_equal_2() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1936,7 +1958,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetTexts_many_equal_0() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1953,7 +1975,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetTexts_many_equal_1() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -1977,7 +1999,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetTexts_many_equal_2() {
 
-        JunitsHelper.createFakeDataWithSets(getInternalServicesContext());
+        JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -2249,12 +2271,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Machine m3 = new Machine("m3.example.com", "199.141.1.301");
         UnixUser uu1 = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "user1", "/home/user1", null, null);
         UnixUser uu2 = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "user2", "/home/user2", null, null);
-        ChangesContext changes = new ChangesContext();
-        changes.getResourcesToAdd().add(m1);
-        changes.getResourcesToAdd().add(m2);
-        changes.getResourcesToAdd().add(m3);
-        changes.getResourcesToAdd().add(uu1);
-        changes.getResourcesToAdd().add(uu2);
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(m1);
+        changes.resourceAdd(m2);
+        changes.resourceAdd(m3);
+        changes.resourceAdd(uu1);
+        changes.resourceAdd(uu2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("ApplicationTest-state-0.json");
@@ -2269,11 +2291,11 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         a2.getDomainNames().add("d1.example.com");
         a2.getDomainNames().add("d2.example.com");
         a2.getApplicationDefinition().getPortsExposed().put(34, 12);
-        changes.getResourcesToAdd().add(a1);
-        changes.getResourcesToAdd().add(a2);
-        changes.getLinksToAdd().add(new Tuple3<>(a2, LinkTypeConstants.RUN_AS, uu2));
-        changes.getLinksToAdd().add(new Tuple3<>(a2, LinkTypeConstants.INSTALLED_ON, m2));
-        changes.getLinksToAdd().add(new Tuple3<>(a2, LinkTypeConstants.INSTALLED_ON, m3));
+        changes.resourceAdd(a1);
+        changes.resourceAdd(a2);
+        changes.linkAdd(a2, LinkTypeConstants.RUN_AS, uu2);
+        changes.linkAdd(a2, LinkTypeConstants.INSTALLED_ON, m2);
+        changes.linkAdd(a2, LinkTypeConstants.INSTALLED_ON, m3);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("ApplicationTest-state-1.json");
@@ -2283,8 +2305,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals((Integer) 2001, a2.getApplicationDefinition().getRunAs());
 
         // Update the application without links to have links
-        changes.getLinksToAdd().add(new Tuple3<>(a1, LinkTypeConstants.RUN_AS, uu1));
-        changes.getLinksToAdd().add(new Tuple3<>(a1, LinkTypeConstants.INSTALLED_ON, m1));
+        changes.linkAdd(a1, LinkTypeConstants.RUN_AS, uu1);
+        changes.linkAdd(a1, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("ApplicationTest-state-2.json");
@@ -2294,11 +2316,11 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals((Integer) 2001, a2.getApplicationDefinition().getRunAs());
 
         // Update the application with links to different links
-        changes.getLinksToAdd().add(new Tuple3<>(a2, LinkTypeConstants.RUN_AS, uu1));
-        changes.getLinksToDelete().add(new Tuple3<>(a2, LinkTypeConstants.RUN_AS, uu2));
-        changes.getLinksToAdd().add(new Tuple3<>(a2, LinkTypeConstants.INSTALLED_ON, m1));
-        changes.getLinksToDelete().add(new Tuple3<>(a2, LinkTypeConstants.INSTALLED_ON, m2));
-        changes.getLinksToDelete().add(new Tuple3<>(a2, LinkTypeConstants.INSTALLED_ON, m3));
+        changes.linkAdd(a2, LinkTypeConstants.RUN_AS, uu1);
+        changes.linkDelete(a2, LinkTypeConstants.RUN_AS, uu2);
+        changes.linkAdd(a2, LinkTypeConstants.INSTALLED_ON, m1);
+        changes.linkDelete(a2, LinkTypeConstants.INSTALLED_ON, m2);
+        changes.linkDelete(a2, LinkTypeConstants.INSTALLED_ON, m3);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("ApplicationTest-state-3.json");
@@ -2310,7 +2332,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Fail if they are both on the same machine with same exposed port
         try {
             a1.getApplicationDefinition().getPortsExposed().put(34, 55);
-            changes.getResourcesToUpdate().add(new Tuple2<>(a1.getInternalId(), a1));
+            changes.resourceUpdate(a1.getInternalId(), a1);
             getInternalServicesContext().getInternalChangeService().changesExecute(changes);
             Assert.fail("Expecting exception");
         } catch (IllegalUpdateException e) {
@@ -2320,7 +2342,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Fail if there are 2 running users on the same app
         try {
             changes.clear();
-            changes.getLinksToAdd().add(new Tuple3<>(a1, LinkTypeConstants.RUN_AS, uu2));
+            changes.linkAdd(a1, LinkTypeConstants.RUN_AS, uu2);
             getInternalServicesContext().getInternalChangeService().changesExecute(changes);
             Assert.fail("Expecting exception");
         } catch (IllegalUpdateException e) {
@@ -2329,14 +2351,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Delete application with links
         changes.clear();
-        changes.getResourcesToDelete().add(a2.getInternalId());
+        changes.resourceDelete(a2.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("ApplicationTest-state-4.json");
 
         // Remove all links on application
-        changes.getLinksToDelete().add(new Tuple3<>(a1, LinkTypeConstants.RUN_AS, uu1));
-        changes.getLinksToDelete().add(new Tuple3<>(a1, LinkTypeConstants.INSTALLED_ON, m1));
+        changes.linkDelete(a1, LinkTypeConstants.RUN_AS, uu1);
+        changes.linkDelete(a1, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("ApplicationTest-state-5.json");
@@ -2344,7 +2366,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals(null, a1.getApplicationDefinition().getRunAs());
 
         // Delete application (back to initial state)
-        changes.getResourcesToDelete().add(a1.getInternalId());
+        changes.resourceDelete(a1.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("ApplicationTest-state-0.json");
@@ -2360,28 +2382,28 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Create initial data
         Machine m1 = new Machine("m1.example.com", "199.141.1.101");
         Machine m2 = new Machine("m2.example.com", "199.141.1.201");
-        ChangesContext changes = new ChangesContext();
-        changes.getResourcesToAdd().add(m1);
-        changes.getResourcesToAdd().add(m2);
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(m1);
+        changes.resourceAdd(m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-0.json");
 
         // Points to no machine
         DnsPointer dp = new DnsPointer("pointer.example.com");
-        changes.getResourcesToAdd().add(dp);
+        changes.resourceAdd(dp);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-1.json");
 
         // Points to 1 machine
-        changes.getLinksToAdd().add(new Tuple3<>(dp, LinkTypeConstants.POINTS_TO, m1));
+        changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-2.json");
 
         // Points to 2 machines
-        changes.getLinksToAdd().add(new Tuple3<>(dp, LinkTypeConstants.POINTS_TO, m2));
+        changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-3.json");
@@ -2389,50 +2411,165 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Remove ip from m2
         m2 = resourceService.resourceFindByPk(m2).get();
         m2.setPublicIp(null);
-        changes.getResourcesToUpdate().add(new Tuple2<>(m2.getInternalId(), m2));
+        changes.resourceUpdate(m2.getInternalId(), m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-4.json");
 
         // Put back ip to m2
         m2.setPublicIp("199.141.1.201");
-        changes.getResourcesToUpdate().add(new Tuple2<>(m2.getInternalId(), m2));
+        changes.resourceUpdate(m2.getInternalId(), m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-3.json");
 
         // Rename
         dp = resourceService.resourceFindByPk(dp).get();
-        changes.getResourcesToUpdate().add(new Tuple2<>(dp.getInternalId(), new DnsPointer("pointer2.example.com")));
+        changes.resourceUpdate(dp.getInternalId(), new DnsPointer("pointer2.example.com"));
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
         dp = resourceService.resourceFindByPk(new DnsPointer("pointer2.example.com")).get();
 
         assertState("DnsPointerTest-state-5.json");
 
         // Points to 1 machine
-        changes.getLinksToDelete().add(new Tuple3<>(dp, LinkTypeConstants.POINTS_TO, m2));
+        changes.linkDelete(dp, LinkTypeConstants.POINTS_TO, m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-6.json");
 
         // Point to 2 machines
-        changes.getLinksToAdd().add(new Tuple3<>(dp, LinkTypeConstants.POINTS_TO, m2));
+        changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-5.json");
 
         // Delete the second machine
         m2 = resourceService.resourceFindByPk(m2).get();
-        changes.getResourcesToDelete().add(m2.getInternalId());
+        changes.resourceDelete(m2.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-7.json");
 
         // Delete
-        changes.getResourcesToDelete().add(dp.getInternalId());
+        changes.resourceDelete(dp.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("DnsPointerTest-state-8.json");
+    }
+
+    @Test
+    public void testResourceInfraConfig() {
+
+        deleteAllResources();
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // Create initial data
+        Machine machine = new Machine("m1.example.com", "199.141.1.101");
+        MariaDBServer loginMariaDBServer = new MariaDBServer("infra_login_db_server", "The database for the Login service", null);
+        MariaDBDatabase loginMariaDBDatabase = new MariaDBDatabase("infra_login_db", "The database for the Login service");
+        MariaDBUser loginMariaDBUser = new MariaDBUser("infra_login_user", "The database user for the Login service", "llll");
+        MariaDBServer uiMariaDBServer = new MariaDBServer("infra_ui_db_server", "The database for the UI service", null);
+        MariaDBDatabase uiMariaDBDatabase = new MariaDBDatabase("infra_ui_db", "The database for the UI service");
+        MariaDBUser uiMariaDBUser = new MariaDBUser("infra_ui_user", "The database user for the UI service", "uuuu");
+        UnixUser loginUnixUser = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "infra_login", "/home/infra_login", null, null);
+        UnixUser uiUnixUser = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "infra_ui", "/home/infra_ui", null, null);
+
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(machine);
+        changes.resourceAdd(loginMariaDBServer);
+        changes.resourceAdd(loginMariaDBDatabase);
+        changes.resourceAdd(loginMariaDBUser);
+        changes.resourceAdd(loginUnixUser);
+        changes.resourceAdd(uiMariaDBServer);
+        changes.resourceAdd(uiMariaDBDatabase);
+        changes.resourceAdd(uiMariaDBUser);
+        changes.resourceAdd(uiUnixUser);
+
+        changes.linkAdd(loginMariaDBServer, LinkTypeConstants.RUN_AS, loginUnixUser);
+        changes.linkAdd(loginMariaDBServer, LinkTypeConstants.INSTALLED_ON, machine);
+        changes.linkAdd(loginMariaDBDatabase, LinkTypeConstants.INSTALLED_ON, loginMariaDBServer);
+        changes.linkAdd(loginMariaDBUser, MariaDBUser.LINK_TYPE_ADMIN, loginMariaDBDatabase);
+        changes.linkAdd(loginMariaDBUser, MariaDBUser.LINK_TYPE_READ, loginMariaDBDatabase);
+        changes.linkAdd(loginMariaDBUser, MariaDBUser.LINK_TYPE_WRITE, loginMariaDBDatabase);
+
+        changes.linkAdd(uiMariaDBServer, LinkTypeConstants.RUN_AS, uiUnixUser);
+        changes.linkAdd(uiMariaDBServer, LinkTypeConstants.INSTALLED_ON, machine);
+        changes.linkAdd(uiMariaDBDatabase, LinkTypeConstants.INSTALLED_ON, uiMariaDBServer);
+        changes.linkAdd(uiMariaDBUser, MariaDBUser.LINK_TYPE_ADMIN, uiMariaDBDatabase);
+        changes.linkAdd(uiMariaDBUser, MariaDBUser.LINK_TYPE_READ, uiMariaDBDatabase);
+        changes.linkAdd(uiMariaDBUser, MariaDBUser.LINK_TYPE_WRITE, uiMariaDBDatabase);
+
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+
+        assertState("InfraConfigTest-state-0.json");
+
+        // Create the HTTP InfraConfig
+        InfraConfig infraConfig = new InfraConfig();
+        infraConfig.setLoginAdministratorEmail("login-admin@example.com");
+        infraConfig.setLoginDomainName("login.example.com");
+        infraConfig.setLoginEmailFrom("login-from@example.com");
+        infraConfig.setUiAlertsToEmail("ui-alerts@example.com");
+        infraConfig.setUiDomainName("ui.example.com");
+        infraConfig.setUiEmailFrom("ui-from@example.com");
+
+        infraConfig.setApplicationId("__the_app_id__");
+        infraConfig.setLoginCookieSignatureSalt("__login_cookie_signature_salt__");
+        infraConfig.setLoginCsrfSalt("__login_crsf_salt__");
+        infraConfig.setUiCsrfSalt("__ui_crsf_salt__");
+
+        changes.resourceAdd(infraConfig);
+
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginMariaDBServer);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginMariaDBDatabase);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginMariaDBUser);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginUnixUser);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_INSTALLED_ON, machine);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiMariaDBServer);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiMariaDBDatabase);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiMariaDBUser);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiUnixUser);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_INSTALLED_ON, machine);
+
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+        infraConfig = resourceService.resourceFindByPk(infraConfig).get();
+
+        assertState("InfraConfigTest-state-1.json");
+        assertInfraConfigApps("InfraConfigTest-apps-1.json");
+
+        // Change for HTTPS
+        WebsiteCertificate loginWebsiteCertificate = new WebsiteCertificate("__login_ca_cert__", "__login_thumbprint__", "__login_cert__", "__login_pub_key__", "__login_priv_key__",
+                DateTools.parseDateOnly("2000-01-01"), DateTools.parseDateOnly("2010-01-01"), "login.example.com");
+        loginWebsiteCertificate.setResourceEditorName(ManualWebsiteCertificateEditor.EDITOR_NAME);
+        WebsiteCertificate uiWebsiteCertificate = new WebsiteCertificate("__ui_ca_cert__", "__ui_thumbprint__", "__ui_cert__", "__ui_pub_key__", "__ui_priv_key__",
+                DateTools.parseDateOnly("2000-01-01"), DateTools.parseDateOnly("2010-01-01"), "ui.example.com");
+        uiWebsiteCertificate.setResourceEditorName(ManualWebsiteCertificateEditor.EDITOR_NAME);
+
+        changes.resourceAdd(loginWebsiteCertificate);
+        changes.resourceAdd(uiWebsiteCertificate);
+
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginWebsiteCertificate);
+        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiWebsiteCertificate);
+
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+
+        assertState("InfraConfigTest-state-2.json");
+        assertInfraConfigApps("InfraConfigTest-apps-2.json");
+
+        // Change for HTTP
+        changes.resourceDelete(loginWebsiteCertificate);
+        changes.resourceDelete(uiWebsiteCertificate);
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+
+        assertState("InfraConfigTest-state-1.json");
+        assertInfraConfigApps("InfraConfigTest-apps-1.json");
+
+        // Delete InfraConfig (back to initial state)
+        changes.resourceDelete(infraConfig);
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+
+        assertState("InfraConfigTest-state-0.json");
+
     }
 
     @Test
@@ -2443,9 +2580,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
         // Create one
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         Machine machine = new Machine("m1.node.example.com", "199.141.1.101");
-        changes.getResourcesToAdd().add(machine);
+        changes.resourceAdd(machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("MachineTest-state-1.json");
@@ -2453,28 +2590,28 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change IP
         machine = resourceService.resourceFindByPk(machine).get();
         machine.setPublicIp("199.141.1.102");
-        changes.getResourcesToUpdate().add(new Tuple2<>(machine.getInternalId(), machine));
+        changes.resourceUpdate(machine.getInternalId(), machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("MachineTest-state-2.json");
 
         // Remove IP
         machine.setPublicIp(null);
-        changes.getResourcesToUpdate().add(new Tuple2<>(machine.getInternalId(), machine));
+        changes.resourceUpdate(machine.getInternalId(), machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("MachineTest-state-3.json");
 
         // Put back IP
         machine.setPublicIp("199.141.1.102");
-        changes.getResourcesToUpdate().add(new Tuple2<>(machine.getInternalId(), machine));
+        changes.resourceUpdate(machine.getInternalId(), machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("MachineTest-state-2.json");
 
         // Change name (fail)
         machine.setName("m2.node.example.com");
-        changes.getResourcesToUpdate().add(new Tuple2<>(machine.getInternalId(), machine));
+        changes.resourceUpdate(machine.getInternalId(), machine);
         try {
             getInternalServicesContext().getInternalChangeService().changesExecute(changes);
             Assert.fail("Must fail since cannot change machine's name");
@@ -2482,53 +2619,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         }
 
         // Delete
-        changes.getResourcesToDelete().add(machine.getInternalId());
+        changes.resourceDelete(machine.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("MachineTest-state-4.json");
-
-    }
-
-    @Test
-    public void testResourceUrlRedirection() {
-
-        deleteAllResources();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        // Create initial data
-        Machine m1 = new Machine("m1.example.com", "199.141.1.101");
-        Machine m2 = new Machine("m2.example.com", "199.141.1.201");
-        ChangesContext changes = new ChangesContext();
-        changes.getResourcesToAdd().add(m1);
-        changes.getResourcesToAdd().add(m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertState("UrlRedirectionTest-state-0.json");
-
-        // Create a redirection
-        UrlRedirection urlRedirection = new UrlRedirection();
-        urlRedirection.setDomainName("redir.example.com");
-        urlRedirection.setHttpRedirectToUrl("https://google.com");
-
-        changes.getResourcesToAdd().add(urlRedirection);
-        changes.getLinksToAdd().add(new Tuple3<>(urlRedirection, LinkTypeConstants.INSTALLED_ON, m1));
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-        urlRedirection = resourceService.resourceFindByPk(urlRedirection).get();
-
-        assertState("UrlRedirectionTest-state-1.json");
-
-        // Change the list of machines
-        changes.getLinksToAdd().add(new Tuple3<>(urlRedirection, LinkTypeConstants.INSTALLED_ON, m2));
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertState("UrlRedirectionTest-state-2.json");
-
-        // Delete
-        changes.getResourcesToDelete().add(urlRedirection.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertState("UrlRedirectionTest-state-3.json");
 
     }
 
@@ -2546,11 +2640,11 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         wc1.setResourceEditorName("manual");
         WebsiteCertificate wc2 = createWebsiteCertificate("d3.example.com");
         wc2.setResourceEditorName("manual");
-        ChangesContext changes = new ChangesContext();
-        changes.getResourcesToAdd().add(m1);
-        changes.getResourcesToAdd().add(m2);
-        changes.getResourcesToAdd().add(wc1);
-        changes.getResourcesToAdd().add(wc2);
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(m1);
+        changes.resourceAdd(m2);
+        changes.resourceAdd(wc1);
+        changes.resourceAdd(wc2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-0.json");
@@ -2558,7 +2652,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Create one, non-https
         Website website = new Website();
         website.getDomainNames().add("d1.example.com");
-        changes.getResourcesToAdd().add(website);
+        changes.resourceAdd(website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
         website = resourceService.resourceFindByPk(website).get();
 
@@ -2567,14 +2661,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Add one application
         Application application = new Application();
         application.setName("my_web_app");
-        changes.getResourcesToAdd().add(application);
-        changes.getLinksToAdd().add(new Tuple3<>(website, LinkTypeConstants.POINTS_TO, application));
+        changes.resourceAdd(application);
+        changes.linkAdd(website, LinkTypeConstants.POINTS_TO, application);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-2.json");
 
         // Change the list of machines
-        changes.getLinksToAdd().add(new Tuple3<>(application, LinkTypeConstants.INSTALLED_ON, m1));
+        changes.linkAdd(application, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-3.json");
@@ -2583,7 +2677,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         website = resourceService.resourceFindByPk(website).get();
         website.getDomainNames().clear();
         website.getDomainNames().add("d2.example.com");
-        changes.getResourcesToUpdate().add(new Tuple2<>(website.getInternalId(), website));
+        changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-4.json");
@@ -2591,7 +2685,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change to https
         website = resourceService.resourceFindByPk(website).get();
         website.setHttps(true);
-        changes.getResourcesToUpdate().add(new Tuple2<>(website.getInternalId(), website));
+        changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-5.json");
@@ -2599,7 +2693,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change to http
         website = resourceService.resourceFindByPk(website).get();
         website.setHttps(false);
-        changes.getResourcesToUpdate().add(new Tuple2<>(website.getInternalId(), website));
+        changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-4.json"); // Same as previous
@@ -2607,7 +2701,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change to https
         website = resourceService.resourceFindByPk(website).get();
         website.setHttps(true);
-        changes.getResourcesToUpdate().add(new Tuple2<>(website.getInternalId(), website));
+        changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-5.json");
@@ -2616,7 +2710,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         website = resourceService.resourceFindByPk(website).get();
         website.getDomainNames().clear();
         website.getDomainNames().add("d3.example.com");
-        changes.getResourcesToUpdate().add(new Tuple2<>(website.getInternalId(), website));
+        changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-6.json");
@@ -2625,7 +2719,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         website = resourceService.resourceFindByPk(website).get();
         website.getDomainNames().clear();
         website.getDomainNames().add("d4.example.com");
-        changes.getResourcesToUpdate().add(new Tuple2<>(website.getInternalId(), website));
+        changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         Optional<WebsiteCertificate> websiteCertificateOptional = resourceService.resourceFind(resourceService.createResourceQuery(WebsiteCertificate.class) //
@@ -2635,13 +2729,13 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         websiteCertificate.setThumbprint("XXXXXXXXd4XXXXXX");
         websiteCertificate.setStart(DateTools.parseDateOnly("2001-07-01"));
         websiteCertificate.setEnd(DateTools.parseDateOnly("2001-08-01"));
-        changes.getResourcesToUpdate().add(new Tuple2<>(websiteCertificate.getInternalId(), websiteCertificate));
+        changes.resourceUpdate(websiteCertificate.getInternalId(), websiteCertificate);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-7.json");
 
         // Delete
-        changes.getResourcesToDelete().add(website.getInternalId());
+        changes.resourceDelete(website.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-8.json");
@@ -2666,8 +2760,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         WebsiteCertificate c1 = CertificateHelper.toWebsiteCertificate(null, rsaCert);
         c1.setThumbprint("my_thumb");
-        ChangesContext changes = new ChangesContext();
-        changes.getResourcesToAdd().add(c1);
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(c1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
         c1 = resourceService.resourceFindByPk(c1).get();
 
@@ -2683,13 +2777,13 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         WebsiteCertificate c2 = CertificateHelper.toWebsiteCertificate(null, rsaCert);
         c2.setThumbprint("my_thumb");
-        changes.getResourcesToUpdate().add(new Tuple2<>(c1.getInternalId(), c2));
+        changes.resourceUpdate(c1.getInternalId(), c2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteCertificateTest-state-2.json");
 
         // Delete
-        changes.getResourcesToDelete().add(c1.getInternalId());
+        changes.resourceDelete(c1.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteCertificateTest-state-3.json");

@@ -50,7 +50,7 @@ public class UrlRedirectionUpdateHandler extends AbstractUpdateEventHandler<UrlR
 
         neededManagedResources.add(dnsPointer);
 
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class));
     }
 
     @Override

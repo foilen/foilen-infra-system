@@ -45,7 +45,6 @@ import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.LogbackTools;
 import com.foilen.smalltools.tuple.Tuple2;
-import com.foilen.smalltools.tuple.Tuple3;
 import com.google.common.io.Files;
 
 public class StartResourcesApp {
@@ -109,7 +108,7 @@ public class StartResourcesApp {
                 return file.isDirectory();
             }
         });
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(resourceService);
         System.out.println("---[ Importing Resources ]---");
         for (File subDirectory : subDirectories) {
             String resourceType = subDirectory.getName();
@@ -124,7 +123,7 @@ public class StartResourcesApp {
                 IPResource resource = JsonTools.readFromFile(resourceFile, resourceClass);
                 resourcesByFullName.put(resourceType + "/" + resourceName, resource);
 
-                changes.getResourcesToAdd().add(resource);
+                changes.resourceAdd(resource);
             }
         }
 
@@ -154,7 +153,7 @@ public class StartResourcesApp {
                     System.exit(1);
                 }
 
-                changes.getTagsToAdd().add(new Tuple2<>(resource, tagName));
+                changes.tagAdd(resource, tagName);
 
             }
         }
@@ -187,7 +186,7 @@ public class StartResourcesApp {
                     System.exit(1);
                 }
 
-                changes.getLinksToAdd().add(new Tuple3<>(fromResource, linkType, toResource));
+                changes.linkAdd(fromResource, linkType, toResource);
 
             }
         }

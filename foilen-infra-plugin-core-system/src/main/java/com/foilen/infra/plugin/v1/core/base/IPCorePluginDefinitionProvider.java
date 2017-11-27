@@ -22,6 +22,7 @@ import com.foilen.infra.plugin.v1.core.base.resources.Application;
 import com.foilen.infra.plugin.v1.core.base.resources.DnsEntry;
 import com.foilen.infra.plugin.v1.core.base.resources.DnsPointer;
 import com.foilen.infra.plugin.v1.core.base.resources.Domain;
+import com.foilen.infra.plugin.v1.core.base.resources.InfraConfig;
 import com.foilen.infra.plugin.v1.core.base.resources.Machine;
 import com.foilen.infra.plugin.v1.core.base.resources.MariaDBDatabase;
 import com.foilen.infra.plugin.v1.core.base.resources.MariaDBServer;
@@ -36,6 +37,7 @@ import com.foilen.infra.plugin.v1.core.base.updatehandlers.ApplicationUpdateHand
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.DnsEntryUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.DnsPointerUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.DomainUpdateHandler;
+import com.foilen.infra.plugin.v1.core.base.updatehandlers.InfraConfigUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.MachineUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.MariaDBServerUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.UnixUserUpdateHandler;
@@ -151,6 +153,10 @@ public class IPCorePluginDefinitionProvider implements IPPluginDefinitionProvide
                         MariaDBUser.PROPERTY_DESCRIPTION //
                 ));
 
+        pluginDefinitionV1.addCustomResource(InfraConfig.class, "Infrastructure Configuration", //
+                Arrays.asList(), //
+                Arrays.asList());
+
         // Resource editors
         pluginDefinitionV1.addTranslations("/com/foilen/infra/plugin/v1/core/base/messages");
         pluginDefinitionV1.addResourceEditor(new DomainEditor(), DomainEditor.EDITOR_NAME);
@@ -171,6 +177,7 @@ public class IPCorePluginDefinitionProvider implements IPPluginDefinitionProvide
         pluginDefinitionV1.addUpdateHandler(new WebsiteUpdateHandler());
         pluginDefinitionV1.addUpdateHandler(new WebsiteCertificateUpdateHandler());
         pluginDefinitionV1.addUpdateHandler(new MariaDBServerUpdateHandler());
+        pluginDefinitionV1.addUpdateHandler(new InfraConfigUpdateHandler());
 
         // Timers
         pluginDefinitionV1.addTimer(new SelfSignedWebsiteCertificateRefreshTimer(), //

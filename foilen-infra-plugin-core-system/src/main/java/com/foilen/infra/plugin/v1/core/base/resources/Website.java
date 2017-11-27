@@ -22,16 +22,16 @@ import com.google.common.base.Joiner;
  * Links to:
  * <ul>
  * <li>{@link Application}: (required / many) POINTS_TO - The applications that are serving that website.</li>
+ * <li>{@link WebsiteCertificate}: (optional / 1) USES - When using HTTPS needs one certificate.</li>
  * </ul>
  *
  * Manages:
  * <ul>
  * <li>{@link DnsPointer}: (optional / many) POINTS_TO - Some domain names that will automatically point to the {@link Machine}s on which it is INSTALLED_ON</li>
- * <li>{@link WebsiteCertificate}: (optional / 1) USES - When using HTTPS needs one certificate.</li>
  * </ul>
  */
 public class Website extends AbstractIPResource {
-
+    // TODO Website - Add an update handler for the Haproxy Application on each machine (port 80 and 443)
     public static final String PROPERTY_DOMAIN_NAMES = "domainNames";
     public static final String PROPERTY_IS_HTTPS = "isHttps";
     public static final String PROPERTY_APPLICATION_ENDPOINT = "applicationEndpoint";

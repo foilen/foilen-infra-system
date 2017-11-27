@@ -20,7 +20,6 @@ import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.tools.StringTools;
-import com.foilen.smalltools.tuple.Tuple2;
 import com.foilen.smalltools.tuple.Tuple3;
 
 public class UnixUserUpdateHandler extends AbstractUpdateEventHandler<UnixUser> {
@@ -33,7 +32,7 @@ public class UnixUserUpdateHandler extends AbstractUpdateEventHandler<UnixUser> 
         // Choose the next id
         if (resource.getId() == null) {
             resource.setId(UnixUserAvailableIdHelper.getNextAvailableId());
-            changes.getResourcesToUpdate().add(new Tuple2<>(resource.getInternalId(), resource));
+            changes.resourceUpdate(resource.getInternalId(), resource);
         }
 
     }

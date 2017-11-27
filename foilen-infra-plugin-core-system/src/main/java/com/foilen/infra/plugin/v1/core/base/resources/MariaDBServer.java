@@ -42,6 +42,12 @@ public class MariaDBServer extends AbstractIPResource implements Comparable<Mari
     public MariaDBServer() {
     }
 
+    public MariaDBServer(String name, String description, String rootPassword) {
+        this.name = name;
+        this.description = description;
+        this.rootPassword = rootPassword;
+    }
+
     @Override
     public int compareTo(MariaDBServer o) {
         return ComparisonChain.start() //

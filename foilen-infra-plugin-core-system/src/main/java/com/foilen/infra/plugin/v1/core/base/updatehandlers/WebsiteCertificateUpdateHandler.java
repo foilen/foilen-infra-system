@@ -41,7 +41,7 @@ public class WebsiteCertificateUpdateHandler extends AbstractUpdateEventHandler<
             neededManagedResources.add(new Domain(domainName, DomainHelper.reverseDomainName(domainName)));
         }
 
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(Domain.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(Domain.class));
     }
 
     @Override

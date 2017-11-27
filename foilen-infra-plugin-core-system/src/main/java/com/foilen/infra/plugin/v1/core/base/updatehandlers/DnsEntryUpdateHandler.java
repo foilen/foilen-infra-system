@@ -37,7 +37,7 @@ public class DnsEntryUpdateHandler extends AbstractUpdateEventHandler<DnsEntry> 
     private void commonHandler(CommonServicesContext services, ChangesContext changes, DnsEntry resource) {
         List<IPResource> neededManagedResources = new ArrayList<>();
         neededManagedResources.add(new Domain(resource.getName(), DomainHelper.reverseDomainName(resource.getName())));
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(Domain.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(Domain.class));
     }
 
     @Override

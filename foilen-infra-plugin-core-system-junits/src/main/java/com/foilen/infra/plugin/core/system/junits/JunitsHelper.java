@@ -14,13 +14,13 @@ import java.util.Date;
 import java.util.Set;
 
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
+import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.model.junit.JunitResource;
 import com.foilen.infra.plugin.v1.model.junit.JunitResourceEnum;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.tools.DateTools;
-import com.foilen.smalltools.tuple.Tuple2;
 import com.google.common.collect.Sets;
 
 public class JunitsHelper {
@@ -48,35 +48,33 @@ public class JunitsHelper {
         ctx.getInternalIPResourceService().resourceAdd(resourceDefinition);
     }
 
-    public static void createFakeData(InternalServicesContext ctx) {
+    public static void createFakeData(CommonServicesContext commonCtx, InternalServicesContext internalCtx) {
 
         // JunitResource
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(commonCtx.getResourceService());
         JunitResource junitResource = new JunitResource("www.example.com", JunitResourceEnum.A, 1);
-        changes.getResourcesToAdd().add(junitResource);
-        changes.getTagsToAdd().addAll(Arrays.asList( //
-                new Tuple2<>(junitResource, "tag1"), //
-                new Tuple2<>(junitResource, "asite")));
+        changes.resourceAdd(junitResource);
+        changes.tagAdd(junitResource, "tag1");
+        changes.tagAdd(junitResource, "asite");
         junitResource = new JunitResource("www.example.com", JunitResourceEnum.A, 2);
-        changes.getResourcesToAdd().add(junitResource);
-        changes.getTagsToAdd().addAll(Arrays.asList( //
-                new Tuple2<>(junitResource, "asite")));
-        changes.getResourcesToAdd().add(new JunitResource("example.com", JunitResourceEnum.B, 3));
+        changes.resourceAdd(junitResource);
+        changes.tagAdd(junitResource, "asite");
+        changes.resourceAdd(new JunitResource("example.com", JunitResourceEnum.B, 3));
 
-        changes.getResourcesToAdd().add(new JunitResource("t1_aaa", JunitResourceEnum.A, DateTools.parseFull("2000-01-01 00:00:00"), 1, 1L, 1.0, 1.0f, true, "one", "two"));
-        changes.getResourcesToAdd().add(new JunitResource("t2_aaa", JunitResourceEnum.C, DateTools.parseFull("2000-06-01 00:00:00"), 5, 8L, 1.5, 7.3f, false, "one", "three"));
-        changes.getResourcesToAdd().add(new JunitResource("zz", JunitResourceEnum.B, DateTools.parseFull("2000-04-01 00:00:00"), 80, 4L, 77.6, 3.1f, true));
+        changes.resourceAdd(new JunitResource("t1_aaa", JunitResourceEnum.A, DateTools.parseFull("2000-01-01 00:00:00"), 1, 1L, 1.0, 1.0f, true, "one", "two"));
+        changes.resourceAdd(new JunitResource("t2_aaa", JunitResourceEnum.C, DateTools.parseFull("2000-06-01 00:00:00"), 5, 8L, 1.5, 7.3f, false, "one", "three"));
+        changes.resourceAdd(new JunitResource("zz", JunitResourceEnum.B, DateTools.parseFull("2000-04-01 00:00:00"), 80, 4L, 77.6, 3.1f, true));
 
-        ctx.getInternalChangeService().changesExecute(changes);
+        internalCtx.getInternalChangeService().changesExecute(changes);
 
     }
 
-    public static void createFakeDataWithSets(InternalServicesContext ctx) {
+    public static void createFakeDataWithSets(CommonServicesContext commonCtx, InternalServicesContext internalCtx) {
 
         // JunitResource
-        ChangesContext changes = new ChangesContext();
+        ChangesContext changes = new ChangesContext(commonCtx.getResourceService());
 
-        changes.getResourcesToAdd().add(createWithSets( //
+        changes.resourceAdd(createWithSets( //
                 "sets_0.0", //
                 Sets.newHashSet(), //
                 Sets.newHashSet(), //
@@ -86,7 +84,7 @@ public class JunitsHelper {
                 Sets.newHashSet(), //
                 Sets.newHashSet() //
         ));
-        changes.getResourcesToAdd().add(createWithSets( //
+        changes.resourceAdd(createWithSets( //
                 "sets_1.1", //
                 Sets.newHashSet(DateTools.parseDateOnly("2000-01-01")), //
                 Sets.newHashSet(1.0d), //
@@ -96,7 +94,7 @@ public class JunitsHelper {
                 Sets.newHashSet(1), //
                 Sets.newHashSet("1") //
         ));
-        changes.getResourcesToAdd().add(createWithSets( //
+        changes.resourceAdd(createWithSets( //
                 "sets_1.2", //
                 Sets.newHashSet(DateTools.parseDateOnly("2000-01-02")), //
                 Sets.newHashSet(2.0d), //
@@ -106,7 +104,7 @@ public class JunitsHelper {
                 Sets.newHashSet(2), //
                 Sets.newHashSet("2") //
         ));
-        changes.getResourcesToAdd().add(createWithSets( //
+        changes.resourceAdd(createWithSets( //
                 "sets_2.1", //
                 Sets.newHashSet(DateTools.parseDateOnly("2000-01-01"), DateTools.parseDateOnly("2000-02-01")), //
                 Sets.newHashSet(1.0d, 2.0d), //
@@ -116,7 +114,7 @@ public class JunitsHelper {
                 Sets.newHashSet(1, 2), //
                 Sets.newHashSet("1", "2") //
         ));
-        changes.getResourcesToAdd().add(createWithSets( //
+        changes.resourceAdd(createWithSets( //
                 "sets_2.2", //
                 Sets.newHashSet(DateTools.parseDateOnly("2000-01-02"), DateTools.parseDateOnly("2000-02-02")), //
                 Sets.newHashSet(3.0d, 4.0d), //
@@ -127,7 +125,7 @@ public class JunitsHelper {
                 Sets.newHashSet("3", "4") //
         ));
 
-        ctx.getInternalChangeService().changesExecute(changes);
+        internalCtx.getInternalChangeService().changesExecute(changes);
 
     }
 

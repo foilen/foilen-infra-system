@@ -21,7 +21,6 @@ import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourceFieldPageIt
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourcesFieldPageItem;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
-import com.foilen.smalltools.tuple.Tuple3;
 
 public class CommonResourceLink {
 
@@ -127,7 +126,7 @@ public class CommonResourceLink {
             List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
             currentLinks.stream() //
                     .forEach(it -> {
-                        changesContext.getLinksToDelete().add(new Tuple3<>(editedResource, linkType, it));
+                        changesContext.linkDelete(editedResource, linkType, it);
                     });
         } else {
             Long linkedResourceId;
@@ -152,12 +151,12 @@ public class CommonResourceLink {
             currentLinks.stream() //
                     .filter(it -> !finalLink.equals(it)) //
                     .forEach(it -> {
-                        changesContext.getLinksToDelete().add(new Tuple3<>(editedResource, linkType, it));
+                        changesContext.linkDelete(editedResource, linkType, it);
                     });
 
             // Add the new links if not the right ones or there were none
             if (!currentLinks.contains(finalLink)) {
-                changesContext.getLinksToAdd().add(new Tuple3<>(editedResource, linkType, finalLink));
+                changesContext.linkAdd(editedResource, linkType, finalLink);
             }
 
         }
@@ -191,7 +190,7 @@ public class CommonResourceLink {
             List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
             currentLinks.stream() //
                     .forEach(it -> {
-                        changesContext.getLinksToDelete().add(new Tuple3<>(editedResource, linkType, it));
+                        changesContext.linkDelete(editedResource, linkType, it);
                     });
         } else {
             String[] valuesParts = values.split(",");
@@ -215,14 +214,14 @@ public class CommonResourceLink {
             currentLinks.stream() //
                     .filter(it -> !finalLinks.contains(it)) //
                     .forEach(it -> {
-                        changesContext.getLinksToDelete().add(new Tuple3<>(editedResource, linkType, it));
+                        changesContext.linkDelete(editedResource, linkType, it);
                     });
 
             // Add the new links if not the right ones or there were none
             finalLinks.stream() //
                     .filter(it -> !currentLinks.contains(it)) //
                     .forEach(it -> {
-                        changesContext.getLinksToAdd().add(new Tuple3<>(editedResource, linkType, it));
+                        changesContext.linkAdd(editedResource, linkType, it);
                     });
         }
 

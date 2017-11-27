@@ -52,7 +52,7 @@ public class DnsPointerUpdateHandler extends AbstractUpdateEventHandler<DnsPoint
             }
         }
 
-        manageNeededResources(services, changes, resource, neededManagedResources, Arrays.asList(DnsEntry.class));
+        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(DnsEntry.class));
     }
 
     @Override

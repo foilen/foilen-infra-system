@@ -19,13 +19,16 @@ import java.util.stream.Collectors;
 
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
+import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.exception.ResourceNotFromRepositoryException;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.foilen.smalltools.listscomparator.ListComparatorHandler;
 import com.foilen.smalltools.listscomparator.ListsComparator;
+import com.foilen.smalltools.reflection.ReflectionTools;
 import com.foilen.smalltools.tools.AbstractBasics;
+import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tuple.Tuple3;
 
 public abstract class AbstractUpdateEventHandler<R extends IPResource> extends AbstractBasics implements UpdateEventHandler<R> {
@@ -72,7 +75,7 @@ public abstract class AbstractUpdateEventHandler<R extends IPResource> extends A
                 .collect(Collectors.toList());
     }
 
-    protected void manageNeededResources(CommonServicesContext services, ChangesContext changes, IPResource resource, List<IPResource> neededManagedResources,
+    protected void manageNeededResourcesNoUpdates(CommonServicesContext services, ChangesContext changes, IPResource resource, List<IPResource> neededManagedResources,
             List<Class<? extends IPResource>> managedResourceTypes) {
 
         IPResourceService resourceService = services.getResourceService();
@@ -89,7 +92,57 @@ public abstract class AbstractUpdateEventHandler<R extends IPResource> extends A
         // Create the links
         List<Long> neededManagedResourceIds = new ArrayList<>();
         for (IPResource neededManagedResource : neededManagedResources) {
-            changes.getLinksToAdd().add(new Tuple3<>(resource, LinkTypeConstants.MANAGES, neededManagedResource));
+            changes.linkAdd(resource, LinkTypeConstants.MANAGES, neededManagedResource);
+            if (neededManagedResource.getInternalId() != null) {
+                neededManagedResourceIds.add(neededManagedResource.getInternalId());
+            }
+        }
+
+        // Remove the previously no more used links
+        for (IPResource currentlyManagedResource : currentlyManagedResources) {
+            if (!neededManagedResourceIds.contains(currentlyManagedResource.getInternalId())) {
+                removeManagedLinkAndDeleteIfNotManagedByAnyoneElse(resourceService, changes, currentlyManagedResource, resource);
+            }
+        }
+    }
+
+    protected void manageNeededResourcesWithContentUpdates(CommonServicesContext services, ChangesContext changes, IPResource resource, List<IPResource> neededManagedResources,
+            List<Class<? extends IPResource>> managedResourceTypes) {
+
+        IPResourceService resourceService = services.getResourceService();
+
+        // Get the currently managed resources
+        List<IPResource> currentlyManagedResources = new ArrayList<>();
+        for (Class<? extends IPResource> managedResourceType : managedResourceTypes) {
+            currentlyManagedResources.addAll(resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(resource, LinkTypeConstants.MANAGES, managedResourceType));
+        }
+
+        // Find or create the needed resources
+        List<IPResource> createdOrFoundNeededManagedResources = neededManagedResources.stream().map(it -> retrieveAndUpdateOrCreateResource(resourceService, changes, it)).collect(Collectors.toList());
+
+        // Check only one resource is managing each
+        for (IPResource createdOrFoundNeededManagedResource : createdOrFoundNeededManagedResources) {
+            if (createdOrFoundNeededManagedResource.getInternalId() == null) {
+                continue;
+            }
+
+            List<? extends IPResource> managers = resourceService.linkFindAllByLinkTypeAndToResource(LinkTypeConstants.MANAGES, createdOrFoundNeededManagedResource);
+            if (managers.size() > 1) {
+                throw new IllegalUpdateException("The resource " + createdOrFoundNeededManagedResource.getResourceName() + " of type " + createdOrFoundNeededManagedResource.getClass()
+                        + " is already managed by another resouce");
+            }
+            if (managers.size() == 1) {
+                if (resource.getInternalId() == null || managers.get(0).getInternalId() != resource.getInternalId()) {
+                    throw new IllegalUpdateException("The resource " + createdOrFoundNeededManagedResource.getResourceName() + " of type " + createdOrFoundNeededManagedResource.getClass()
+                            + " is already managed by another resouce");
+                }
+            }
+        }
+
+        // Create the links
+        List<Long> neededManagedResourceIds = new ArrayList<>();
+        for (IPResource neededManagedResource : createdOrFoundNeededManagedResources) {
+            changes.linkAdd(resource, LinkTypeConstants.MANAGES, neededManagedResource);
             if (neededManagedResource.getInternalId() != null) {
                 neededManagedResourceIds.add(neededManagedResource.getInternalId());
             }
@@ -123,15 +176,51 @@ public abstract class AbstractUpdateEventHandler<R extends IPResource> extends A
         for (IPResource fromResource : fromResources) {
             if (removeLinksFromIds.contains(fromResource.getInternalId())) {
                 ++removedLinks;
-                changes.getLinksToDelete().add(new Tuple3<>(fromResource, LinkTypeConstants.MANAGES, managedResource));
+                changes.linkDelete(fromResource, LinkTypeConstants.MANAGES, managedResource);
             }
         }
         logger.debug("Resource {} is now managed by {} other resources", managedResource, fromResources.size() - removedLinks);
 
         // All managed links removed and not manually edited-> Delete the resource
         if (fromResources.size() - removedLinks == 0 && managedResource.getResourceEditorName() == null) {
-            changes.getResourcesToDelete().add(managedResource.getInternalId());
+            changes.resourceDelete(managedResource.getInternalId());
         }
+    }
+
+    protected IPResource retrieveAndUpdateOrCreateResource(IPResourceService resourceService, ChangesContext changes, IPResource resource) {
+
+        // Search in current changes
+        Optional<IPResource> foundOptional = changes.getResourcesToAdd().stream() //
+                .filter(it -> resourceService.resourceEqualsPk(resource, it)) //
+                .findAny();
+        if (foundOptional.isPresent()) {
+            updateResourceIfDifferent(resource, foundOptional.get());
+            return foundOptional.get();
+        }
+
+        foundOptional = changes.getResourcesToUpdate().stream() //
+                .filter(it -> resourceService.resourceEqualsPk(resource, it.getB())) //
+                .map(it -> it.getB()) //
+                .findAny();
+        if (foundOptional.isPresent()) {
+            updateResourceIfDifferent(resource, foundOptional.get());
+            return foundOptional.get();
+        }
+
+        // Search in repository
+        foundOptional = resourceService.resourceFindByPk(resource);
+        if (foundOptional.isPresent()) {
+            IPResource foundResource = foundOptional.get();
+            if (updateResourceIfDifferent(resource, foundResource)) {
+                changes.resourceUpdate(foundResource, foundResource);
+            }
+            return foundResource;
+        }
+
+        // Create new
+        changes.resourceAdd(resource);
+        return resource;
+
     }
 
     protected IPResource retrieveOrCreateResource(IPResourceService resourceService, ChangesContext changes, IPResource resource) {
@@ -159,12 +248,12 @@ public abstract class AbstractUpdateEventHandler<R extends IPResource> extends A
         }
 
         // Create new
-        changes.getResourcesToAdd().add(resource);
+        changes.resourceAdd(resource);
         return resource;
 
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked" })
     protected <T extends IPResource> T retrieveOrCreateResource(IPResourceService resourceService, ChangesContext changes, T resource, Class<T> resourceClass) {
 
         // Search in current changes
@@ -191,7 +280,7 @@ public abstract class AbstractUpdateEventHandler<R extends IPResource> extends A
         }
 
         // Create new
-        changes.getResourcesToAdd().add(resource);
+        changes.resourceAdd(resource);
         return resource;
 
     }
@@ -219,15 +308,33 @@ public abstract class AbstractUpdateEventHandler<R extends IPResource> extends A
             @Override
             public void leftOnly(T left) {
                 // Create
-                changes.getLinksToAdd().add(new Tuple3<>(fromDnsPointer, linkType, left));
+                changes.linkAdd(fromDnsPointer, linkType, left);
             }
 
             @Override
             public void rightOnly(T right) {
                 // Remove
-                changes.getLinksToDelete().add(new Tuple3<>(fromDnsPointer, linkType, right));
+                changes.linkDelete(fromDnsPointer, linkType, right);
             }
         });
+    }
+
+    protected boolean updateResourceIfDifferent(IPResource desired, IPResource current) {
+        Long previousId = desired.getInternalId();
+
+        desired.setInternalId(current.getInternalId());
+        String desiredJson = JsonTools.compactPrint(desired);
+        String currentJson = JsonTools.compactPrint(current);
+
+        boolean different = !currentJson.equals(desiredJson);
+
+        if (different) {
+            logger.debug("Need to update resource {} to {}", current, desired);
+            ReflectionTools.copyAllProperties(desired.deepClone(), current);
+        }
+
+        desired.setInternalId(previousId);
+        return different;
     }
 
 }

@@ -40,7 +40,6 @@ import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.SecureRandomTools;
-import com.foilen.smalltools.tuple.Tuple2;
 import com.foilen.smalltools.tuple.Tuple3;
 import com.google.common.base.Strings;
 
@@ -64,7 +63,7 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
         // Create a root password if none is set
         if (Strings.isNullOrEmpty(mariaDBServer.getRootPassword())) {
             mariaDBServer.setRootPassword(SecureRandomTools.randomHexString(25));
-            changes.getResourcesToUpdate().add(new Tuple2<>(mariaDBServer.getInternalId(), mariaDBServer));
+            changes.resourceUpdate(mariaDBServer.getInternalId(), mariaDBServer);
         }
 
         // Get the user and machines
@@ -174,19 +173,24 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
 
             // Manage the app
             neededManagedResources.add(application);
-            manageNeededResources(services, changes, mariaDBServer, neededManagedResources, Arrays.asList(Application.class));
+            manageNeededResourcesWithContentUpdates(services, changes, mariaDBServer, neededManagedResources, Arrays.asList(Application.class));
 
             // add Machine INSTALLED_ON to mysqlApplicationDefinition (only 0 or 1)
             if (machines.size() == 1) {
                 Machine machine = machines.get(0);
-                changes.getLinksToAdd().add(new Tuple3<>(application, LinkTypeConstants.INSTALLED_ON, machine));
+                changes.linkAdd(application, LinkTypeConstants.INSTALLED_ON, machine);
             }
 
             // add UnixUser RUN_AS to mysqlApplicationDefinition (only 1)
-            changes.getLinksToAdd().add(new Tuple3<>(application, LinkTypeConstants.RUN_AS, unixUser));
+            changes.linkAdd(application, LinkTypeConstants.RUN_AS, unixUser);
         } else {
-            manageNeededResources(services, changes, mariaDBServer, neededManagedResources, Arrays.asList(Application.class));
+            manageNeededResourcesWithContentUpdates(services, changes, mariaDBServer, neededManagedResources, Arrays.asList(Application.class));
         }
+    }
+
+    @Override
+    public void deleteHandler(CommonServicesContext services, ChangesContext changes, MariaDBServer resource, List<Tuple3<IPResource, String, IPResource>> previousLinks) {
+        detachManagedResources(services, changes, resource, previousLinks);
     }
 
     private List<MysqlManagerConfigGrant> getGrantsByUserAndDatabase(Map<String, MysqlManagerConfigPermission> userConfigByName, MariaDBUser mariaDBUser, String databaseName) {
@@ -207,11 +211,6 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
         }
         return grants;
 
-    }
-
-    @Override
-    public void deleteHandler(CommonServicesContext services, ChangesContext changes, MariaDBServer resource, List<Tuple3<IPResource, String, IPResource>> previousLinks) {
-        detachManagedResources(services, changes, resource, previousLinks);
     }
 
     @Override
