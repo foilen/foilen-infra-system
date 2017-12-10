@@ -11,6 +11,7 @@ package com.foilen.infra.plugin.v1.core.resource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ public class IPResourceQuery<T extends IPResource> {
     private static final Map<String, Class<?>> CLASS_BY_PREMITIVE = new HashMap<>();
 
     private static final Set<Class<?>> SUPPORTS_EQUALS = new HashSet<>();
+    private static final Set<Class<?>> SUPPORTS_CONTAINS = new HashSet<>();
     private static final Set<Class<?>> SUPPORTS_LIKE = new HashSet<>();
     private static final Set<Class<?>> SUPPORTS_RANGE = new HashSet<>();
 
@@ -60,10 +62,11 @@ public class IPResourceQuery<T extends IPResource> {
         SUPPORTS_EQUALS.add(Float.class);
         SUPPORTS_EQUALS.add(Integer.class);
         SUPPORTS_EQUALS.add(Long.class);
-        SUPPORTS_EQUALS.add(Set.class);
+        SUPPORTS_EQUALS.add(Collection.class);
         SUPPORTS_EQUALS.add(String.class);
 
-        SUPPORTS_LIKE.add(Set.class);
+        SUPPORTS_CONTAINS.add(Collection.class);
+
         SUPPORTS_LIKE.add(String.class);
 
         SUPPORTS_RANGE.add(Character.class);
@@ -83,6 +86,7 @@ public class IPResourceQuery<T extends IPResource> {
 
     // On properties
     private Map<String, Object> propertyEquals = new HashMap<>();
+    private Map<String, Object> propertyContains = new HashMap<>();
     private Map<String, String> propertyLike = new HashMap<>();
     private Map<String, Object> propertyLesserAndEquals = new HashMap<>();
     private Map<String, Object> propertyLesser = new HashMap<>();
@@ -132,6 +136,10 @@ public class IPResourceQuery<T extends IPResource> {
             if (!validTypes.contains(Enum.class)) {
                 throw new SmallToolsException("Property [" + propertyName + "] does not support querying " + invalidTypeReason);
             }
+        } else if (Collection.class.isAssignableFrom(expectedValueType)) {
+            if (!validTypes.contains(Collection.class)) {
+                throw new SmallToolsException("Property [" + propertyName + "] does not support querying " + invalidTypeReason);
+            }
         } else if (!validTypes.contains(expectedValueType)) {
             throw new SmallToolsException("Property [" + propertyName + "] does not support querying " + invalidTypeReason);
         }
@@ -139,8 +147,11 @@ public class IPResourceQuery<T extends IPResource> {
         // Check if the value is of the right type
         if (value != null) {
             Class<?> valueType = getNonPremitiveType(value.getClass());
-            if ((!expectedValueType.isAssignableFrom(valueType)) //
-                    && !(expectedValueType.equals(Set.class) && valueType.equals(String.class))) {
+            boolean typeOk = false;
+            typeOk |= expectedValueType.isAssignableFrom(valueType);
+            typeOk |= Collection.class.isAssignableFrom(expectedValueType) && Collection.class.isAssignableFrom(valueType);
+
+            if (!typeOk) {
                 throw new SmallToolsException("Expected type for property [" + propertyName + "] is [" + expectedValueType.getName() + "], but got [" + valueType.getName() + "]");
             }
         }
@@ -167,6 +178,10 @@ public class IPResourceQuery<T extends IPResource> {
         }
 
         return type;
+    }
+
+    public Map<String, Object> getPropertyContains() {
+        return Collections.unmodifiableMap(propertyContains);
     }
 
     public Map<String, Object> getPropertyEquals() {
@@ -221,6 +236,16 @@ public class IPResourceQuery<T extends IPResource> {
             }
         }
 
+        return this;
+    }
+
+    public IPResourceQuery<T> propertyContains(String propertyName, Collection<?> value) {
+        assertProperty(propertyName, value, SUPPORTS_CONTAINS, "contain");
+        assertPropertyNotUsed(propertyName);
+        if (value.isEmpty()) {
+            throw new SmallToolsException("Property [" + propertyName + "] cannot be queried with an empty 'contains'");
+        }
+        propertyContains.put(propertyName, value);
         return this;
     }
 

@@ -172,6 +172,10 @@ public class ChangesContext {
 
     }
 
+    public void resourceUpdate(IPResource resource) {
+        resourceUpdate(resource.getInternalId(), resource);
+    }
+
     public void resourceUpdate(IPResource resource, IPResource updatedResource) {
         resourceUpdate(resource.getInternalId(), updatedResource);
     }

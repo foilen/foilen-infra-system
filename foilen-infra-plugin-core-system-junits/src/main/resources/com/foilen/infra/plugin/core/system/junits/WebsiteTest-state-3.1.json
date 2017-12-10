@@ -17,10 +17,10 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "DnsEntry | d2.example.com / A | 199.141.1.101",
+    "resource" : "DnsEntry | d1.example.com / A | 199.141.1.101",
     "links" : [ {
       "type" : "MANAGES",
-      "to" : "Domain | d2.example.com | Domain for d2.example.com"
+      "to" : "Domain | d1.example.com | Domain for d1.example.com"
     } ],
     "tags" : [ ]
   }, {
@@ -38,10 +38,10 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "DnsPointer | d2.example.com | d2.example.com",
+    "resource" : "DnsPointer | d1.example.com | d1.example.com",
     "links" : [ {
       "type" : "MANAGES",
-      "to" : "DnsEntry | d2.example.com / A | 199.141.1.101"
+      "to" : "DnsEntry | d1.example.com / A | 199.141.1.101"
     }, {
       "type" : "POINTS_TO",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
@@ -105,16 +105,13 @@
     "links" : [ ],
     "tags" : [ ]
   }, {
-    "resource" : "Website | d2.example.com | d2.example.com",
+    "resource" : "Website | d1.example.com | d1.example.com",
     "links" : [ {
       "type" : "INSTALLED_ON",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
     }, {
       "type" : "MANAGES",
-      "to" : "DnsPointer | d2.example.com | d2.example.com"
-    }, {
-      "type" : "MANAGES",
-      "to" : "WebsiteCertificate | d1.example.com, d2.example.com | e7ae5241ec01c2919aa2422624d6df235959368a, 2001-07-01, 2001-08-01"
+      "to" : "DnsPointer | d1.example.com | d1.example.com"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | my_web_app | null"

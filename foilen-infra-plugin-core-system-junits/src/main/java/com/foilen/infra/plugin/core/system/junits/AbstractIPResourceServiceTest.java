@@ -106,9 +106,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Application.class) //
                 .propertyEquals(Application.PROPERTY_NAME, "infra_ui")).get());
         resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Website.class) //
-                .propertyEquals(Website.PROPERTY_DOMAIN_NAMES, "login.example.com")).get());
+                .propertyEquals(Website.PROPERTY_NAME, "infra_login")).get());
         resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Website.class) //
-                .propertyEquals(Website.PROPERTY_DOMAIN_NAMES, "ui.example.com")).get());
+                .propertyEquals(Website.PROPERTY_NAME, "infra_ui")).get());
 
         AssertTools.assertJsonComparison(resourceName, AbstractIPResourceServiceTest.class, resources);
 
@@ -1107,7 +1107,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Get the initial id
         Optional<JunitResource> junitResourceOptional = resourceService.resourceFind(resourceService.createResourceQuery(JunitResource.class) //
-                .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, "two")//
+                .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("two"))//
         );
         Assert.assertTrue(junitResourceOptional.isPresent());
         long expectedId = junitResourceOptional.get().getInternalId();
@@ -1316,7 +1316,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         // Get the initial id
         Optional<JunitResource> junitResourceOptional = resourceService.resourceFind(resourceService.createResourceQuery(JunitResource.class) //
-                .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, "two")//
+                .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("two"))//
         );
         Assert.assertTrue(junitResourceOptional.isPresent());
         long expectedId = junitResourceOptional.get().getInternalId();
@@ -1956,6 +1956,43 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
+    public void testQuerySetTexts_equal_yes() {
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // one
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("one")) //
+        );
+        Assert.assertEquals(0, items.size());
+
+        // one two
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("one", "two")) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("t1_aaa", items.get(0).getText());
+
+        // three
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("three")) //
+        );
+        Assert.assertEquals(0, items.size());
+
+        // one three
+        items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("one", "three")) //
+        );
+        Assert.assertEquals(1, items.size());
+        Assert.assertEquals("t2_aaa", items.get(0).getText());
+
+    }
+
+    @Test
     public void testQuerySetTexts_many_equal_0() {
 
         JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
@@ -2021,14 +2058,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_single_equal_yes() {
+    public void testQuerySetTexts_single_contains_yes() {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
         // one
         List<JunitResource> items = resourceService.resourceFindAll( //
                 resourceService.createResourceQuery(JunitResource.class) //
-                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, "one") //
+                        .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("one")) //
         );
         Assert.assertEquals(2, items.size());
         Assert.assertEquals("t1_aaa", items.get(0).getText());
@@ -2037,7 +2074,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // three
         items = resourceService.resourceFindAll( //
                 resourceService.createResourceQuery(JunitResource.class) //
-                        .propertyEquals(JunitResource.PROPERTY_SET_TEXTS, "three") //
+                        .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("three")) //
         );
         Assert.assertEquals(1, items.size());
         Assert.assertEquals("t2_aaa", items.get(0).getText());
@@ -2093,27 +2130,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testQuerySetTexts_single_like_yes() {
+    public void testQuerySetTexts_single_like_no() {
+
+        thrown.expectMessage("Property [setTexts] does not support querying like");
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        // t%
-        List<JunitResource> items = resourceService.resourceFindAll( //
-                resourceService.createResourceQuery(JunitResource.class) //
-                        .propertyLike(JunitResource.PROPERTY_SET_TEXTS, "t%") //
-        );
-        Assert.assertEquals(2, items.size());
-        Assert.assertEquals("t1_aaa", items.get(0).getText());
-        Assert.assertEquals("t2_aaa", items.get(1).getText());
-
-        // %w%
-        items = resourceService.resourceFindAll( //
-                resourceService.createResourceQuery(JunitResource.class) //
-                        .propertyLike(JunitResource.PROPERTY_SET_TEXTS, "%w%") //
-        );
-        Assert.assertEquals(1, items.size());
-        Assert.assertEquals("t1_aaa", items.get(0).getText());
-
+        resourceService.createResourceQuery(JunitResource.class) //
+                .propertyLike(JunitResource.PROPERTY_SET_TEXTS, "t%"); //
     }
 
     @Test
@@ -2517,6 +2541,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         infraConfig.setLoginCookieSignatureSalt("__login_cookie_signature_salt__");
         infraConfig.setLoginCsrfSalt("__login_crsf_salt__");
         infraConfig.setUiCsrfSalt("__ui_crsf_salt__");
+        infraConfig.setUiLoginCookieSignatureSalt("__ui_login_cookie_signature_salt__");
 
         changes.resourceAdd(infraConfig);
 
@@ -2568,7 +2593,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceDelete(infraConfig);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("InfraConfigTest-state-0.json");
+        assertState("InfraConfigTest-state-0.1.json");
 
     }
 
@@ -2650,7 +2675,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertState("WebsiteTest-state-0.json");
 
         // Create one, non-https
-        Website website = new Website();
+        Website website = new Website("d1.example.com");
         website.getDomainNames().add("d1.example.com");
         changes.resourceAdd(website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
@@ -2667,17 +2692,24 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         assertState("WebsiteTest-state-2.json");
 
-        // Change the list of machines
+        // Change the list of machines on the application
         changes.linkAdd(application, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-3.json");
+        assertState("WebsiteTest-state-3.0.json");
+
+        // Change the list of machines on the website
+        changes.linkAdd(website, LinkTypeConstants.INSTALLED_ON, m1);
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+
+        assertState("WebsiteTest-state-3.1.json");
 
         // Change domain names
         website = resourceService.resourceFindByPk(website).get();
         website.getDomainNames().clear();
+        website.setName("d2.example.com");
         website.getDomainNames().add("d2.example.com");
-        changes.resourceUpdate(website.getInternalId(), website);
+        changes.resourceUpdate(website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         assertState("WebsiteTest-state-4.json");
@@ -2709,6 +2741,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change to another domain with another cert
         website = resourceService.resourceFindByPk(website).get();
         website.getDomainNames().clear();
+        website.setName("d3.example.com");
         website.getDomainNames().add("d3.example.com");
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
@@ -2718,12 +2751,13 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change to another domain with a cert that does not exists yet
         website = resourceService.resourceFindByPk(website).get();
         website.getDomainNames().clear();
+        website.setName("d4.example.com");
         website.getDomainNames().add("d4.example.com");
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
         Optional<WebsiteCertificate> websiteCertificateOptional = resourceService.resourceFind(resourceService.createResourceQuery(WebsiteCertificate.class) //
-                .propertyEquals(WebsiteCertificate.PROPERTY_DOMAIN_NAMES, "d4.example.com"));
+                .propertyEquals(WebsiteCertificate.PROPERTY_DOMAIN_NAMES, Arrays.asList("d4.example.com")));
         Assert.assertTrue(websiteCertificateOptional.isPresent());
         WebsiteCertificate websiteCertificate = websiteCertificateOptional.get();
         websiteCertificate.setThumbprint("XXXXXXXXd4XXXXXX");

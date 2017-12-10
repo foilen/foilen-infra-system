@@ -20,6 +20,11 @@ public class HaProxyConfigPortTcp extends HaProxyConfigPort {
 
     @SafeVarargs
     public HaProxyConfigPortTcp(Tuple2<String, Integer>... endpointHostPorts) {
+        addEndpoints(endpointHostPorts);
+    }
+
+    @SafeVarargs
+    public final void addEndpoints(Tuple2<String, Integer>... endpointHostPorts) {
         for (Tuple2<String, Integer> endpointHostPort : endpointHostPorts) {
             String host = endpointHostPort.getA();
             if (host == null) {

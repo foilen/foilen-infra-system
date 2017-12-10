@@ -40,20 +40,16 @@ public class IPApplicationDefinitionService extends AbstractBasics {
         return command;
     }
 
-    public String getWorkingDirectory() {
-        return workingDirectory;
-    }
-
-    public void setWorkingDirectory(String workingDirectory) {
-        this.workingDirectory = workingDirectory;
-    }
-
     public String getName() {
         return name;
     }
 
     public Integer getRunAs() {
         return runAs;
+    }
+
+    public String getWorkingDirectory() {
+        return workingDirectory;
     }
 
     public void setCommand(String command) {
@@ -66,6 +62,10 @@ public class IPApplicationDefinitionService extends AbstractBasics {
 
     public void setRunAs(Integer runAs) {
         this.runAs = runAs;
+    }
+
+    public void setWorkingDirectory(String workingDirectory) {
+        this.workingDirectory = workingDirectory;
     }
 
 }

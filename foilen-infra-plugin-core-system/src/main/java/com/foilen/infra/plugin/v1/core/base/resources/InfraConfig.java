@@ -58,6 +58,7 @@ public class InfraConfig extends AbstractIPResource {
     public static final String PROPERTY_UI_EMAIL_FROM = "uiEmailFrom";
     public static final String PROPERTY_UI_ALERTS_TO_EMAIL = "uiAlertsToEmail";
     public static final String PROPERTY_UI_CSRF_SALT = "uiCsrfSalt";
+    public static final String PROPERTY_UI_LOGIN_COOKIE_SIGNATURE_SALT = "uiLoginCookieSignatureSalt";
 
     // Common
     private String applicationId;
@@ -74,6 +75,7 @@ public class InfraConfig extends AbstractIPResource {
     private String uiEmailFrom;
     private String uiAlertsToEmail;
     private String uiCsrfSalt;
+    private String uiLoginCookieSignatureSalt;
 
     public InfraConfig() {
     }
@@ -133,6 +135,10 @@ public class InfraConfig extends AbstractIPResource {
         return uiEmailFrom;
     }
 
+    public String getUiLoginCookieSignatureSalt() {
+        return uiLoginCookieSignatureSalt;
+    }
+
     public void setApplicationId(String applicationId) {
         this.applicationId = applicationId;
     }
@@ -171,6 +177,10 @@ public class InfraConfig extends AbstractIPResource {
 
     public void setUiEmailFrom(String uiEmailFrom) {
         this.uiEmailFrom = uiEmailFrom;
+    }
+
+    public void setUiLoginCookieSignatureSalt(String uiLoginCookieSignatureSalt) {
+        this.uiLoginCookieSignatureSalt = uiLoginCookieSignatureSalt;
     }
 
 }

@@ -55,7 +55,7 @@
       "assetsFolderPath" : "_assets_1/",
       "assetsRelativePathAndContent" : [ {
         "a" : "/ui_config.json",
-        "b" : "{\n  \"baseUrl\" : \"https://ui.example.com\",\n  \"csrfSalt\" : \"__ui_crsf_salt__\",\n  \"loginConfigDetails\" : {\n    \"appId\" : \"__the_app_id__\",\n    \"baseUrl\" : \"https://login.example.com\",\n    \"certFile\" : null,\n    \"certText\" : \"__login_cert__\"\n  },\n  \"mailAlertsTo\" : \"ui-alerts@example.com\",\n  \"mailFrom\" : \"ui-from@example.com\",\n  \"mailHost\" : \"127.0.0.1\",\n  \"mailPassword\" : null,\n  \"mailPort\" : 25,\n  \"mailUsername\" : null,\n  \"mysqlDatabaseName\" : \"infra_ui_db\",\n  \"mysqlDatabasePassword\" : \"uuuu\",\n  \"mysqlDatabaseUserName\" : \"infra_ui_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
+        "b" : "{\n  \"baseUrl\" : \"https://ui.example.com\",\n  \"csrfSalt\" : \"__ui_crsf_salt__\",\n  \"loginConfigDetails\" : {\n    \"appId\" : \"__the_app_id__\",\n    \"baseUrl\" : \"https://login.example.com\",\n    \"certFile\" : null,\n    \"certText\" : \"__login_cert__\"\n  },\n  \"loginCookieSignatureSalt\" : \"__ui_login_cookie_signature_salt__\",\n  \"mailAlertsTo\" : \"ui-alerts@example.com\",\n  \"mailFrom\" : \"ui-from@example.com\",\n  \"mailHost\" : \"127.0.0.1\",\n  \"mailPassword\" : null,\n  \"mailPort\" : 25,\n  \"mailUsername\" : null,\n  \"mysqlDatabaseName\" : \"infra_ui_db\",\n  \"mysqlDatabasePassword\" : \"uuuu\",\n  \"mysqlDatabaseUserName\" : \"infra_ui_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
       } ]
     } ],
     "assetsPathAndContent" : [ ],
@@ -102,16 +102,18 @@
   "applicationEndpoint" : "HTTP_TCP",
   "domainNames" : [ "login.example.com" ],
   "https" : true,
+  "name" : "infra_login",
   "resourceCategory" : "NET",
   "resourceDescription" : "login.example.com",
   "resourceEditorName" : null,
-  "resourceName" : "login.example.com"
+  "resourceName" : "infra_login"
 }, {
   "applicationEndpoint" : "HTTP_TCP",
   "domainNames" : [ "ui.example.com" ],
   "https" : true,
+  "name" : "infra_ui",
   "resourceCategory" : "NET",
   "resourceDescription" : "ui.example.com",
   "resourceEditorName" : null,
-  "resourceName" : "ui.example.com"
+  "resourceName" : "infra_ui"
 } ]

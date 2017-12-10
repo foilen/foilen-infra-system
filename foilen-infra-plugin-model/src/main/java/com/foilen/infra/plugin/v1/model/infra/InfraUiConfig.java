@@ -38,6 +38,7 @@ public class InfraUiConfig {
 
     // Login
     private InfraLoginConfigDetails loginConfigDetails = new InfraLoginConfigDetails();
+    private String loginCookieSignatureSalt;
 
     // Security
     private String csrfSalt;
@@ -52,6 +53,10 @@ public class InfraUiConfig {
 
     public InfraLoginConfigDetails getLoginConfigDetails() {
         return loginConfigDetails;
+    }
+
+    public String getLoginCookieSignatureSalt() {
+        return loginCookieSignatureSalt;
     }
 
     public String getMailAlertsTo() {
@@ -108,6 +113,10 @@ public class InfraUiConfig {
 
     public void setLoginConfigDetails(InfraLoginConfigDetails loginConfigDetails) {
         this.loginConfigDetails = loginConfigDetails;
+    }
+
+    public void setLoginCookieSignatureSalt(String loginCookieSignatureSalt) {
+        this.loginCookieSignatureSalt = loginCookieSignatureSalt;
     }
 
     public void setMailAlertsTo(String mailAlertsTo) {

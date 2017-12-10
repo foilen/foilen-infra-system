@@ -38,6 +38,7 @@ import com.foilen.infra.plugin.v1.core.base.updatehandlers.DnsEntryUpdateHandler
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.DnsPointerUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.DomainUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.InfraConfigUpdateHandler;
+import com.foilen.infra.plugin.v1.core.base.updatehandlers.MachineHaProxyUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.MachineUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.MariaDBServerUpdateHandler;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.UnixUserUpdateHandler;
@@ -116,9 +117,10 @@ public class IPCorePluginDefinitionProvider implements IPPluginDefinitionProvide
 
         pluginDefinitionV1.addCustomResource(Website.class, "Website", //
                 Arrays.asList( //
-                        Website.PROPERTY_DOMAIN_NAMES //
+                        Website.PROPERTY_NAME //
                 ), //
                 Arrays.asList( //
+                        Website.PROPERTY_NAME, //
                         Website.PROPERTY_DOMAIN_NAMES //
                 ));
 
@@ -171,6 +173,7 @@ public class IPCorePluginDefinitionProvider implements IPPluginDefinitionProvide
         pluginDefinitionV1.addUpdateHandler(new DnsEntryUpdateHandler());
         pluginDefinitionV1.addUpdateHandler(new DnsPointerUpdateHandler());
         pluginDefinitionV1.addUpdateHandler(new DomainUpdateHandler());
+        pluginDefinitionV1.addUpdateHandler(new MachineHaProxyUpdateHandler());
         pluginDefinitionV1.addUpdateHandler(new MachineUpdateHandler());
         pluginDefinitionV1.addUpdateHandler(new UnixUserUpdateHandler());
         pluginDefinitionV1.addUpdateHandler(new UrlRedirectionUpdateHandler());

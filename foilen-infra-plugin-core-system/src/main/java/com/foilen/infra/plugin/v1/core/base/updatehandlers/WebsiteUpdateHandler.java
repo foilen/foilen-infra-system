@@ -12,13 +12,10 @@ package com.foilen.infra.plugin.v1.core.base.updatehandlers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.foilen.infra.plugin.v1.core.base.resources.Application;
 import com.foilen.infra.plugin.v1.core.base.resources.DnsPointer;
 import com.foilen.infra.plugin.v1.core.base.resources.Machine;
 import com.foilen.infra.plugin.v1.core.base.resources.Website;
@@ -55,11 +52,7 @@ public class WebsiteUpdateHandler extends AbstractUpdateEventHandler<Website> {
         List<IPResource> neededManagedResources = new ArrayList<>();
 
         // Create and manage : DnsPointer (attach Machines from the Application)
-        List<Application> applications = resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(resource, LinkTypeConstants.POINTS_TO, Application.class);
-        Set<Machine> installOnMachines = new HashSet<>();
-        applications.forEach(application -> {
-            installOnMachines.addAll(resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(application, LinkTypeConstants.INSTALLED_ON, Machine.class));
-        });
+        List<Machine> installOnMachines = resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(resource, LinkTypeConstants.INSTALLED_ON, Machine.class);
         for (String domainName : resource.getDomainNames()) {
             DnsPointer dnsPointer = new DnsPointer(domainName);
             dnsPointer = retrieveOrCreateResource(resourceService, changes, dnsPointer, DnsPointer.class);
@@ -80,7 +73,7 @@ public class WebsiteUpdateHandler extends AbstractUpdateEventHandler<Website> {
                 } else {
                     // Find that already exists
                     List<WebsiteCertificate> websiteCertificates = resourceService.resourceFindAll(resourceService.createResourceQuery(WebsiteCertificate.class) //
-                            .propertyEquals(WebsiteCertificate.PROPERTY_DOMAIN_NAMES, domainName));
+                            .propertyContains(WebsiteCertificate.PROPERTY_DOMAIN_NAMES, Arrays.asList(domainName)));
                     if (websiteCertificates.isEmpty()) {
                         // Create one
                         websiteCertificate = new WebsiteCertificate();

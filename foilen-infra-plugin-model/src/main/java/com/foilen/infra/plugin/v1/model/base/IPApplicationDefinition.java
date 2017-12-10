@@ -38,14 +38,6 @@ public class IPApplicationDefinition {
     private List<String> entrypoint = null;
     private String command = null;
 
-    public List<String> getEntrypoint() {
-        return entrypoint;
-    }
-
-    public void setEntrypoint(List<String> entrypoint) {
-        this.entrypoint = entrypoint;
-    }
-
     // Image - Extra features
     private List<IPApplicationDefinitionService> services = new ArrayList<>();
     private List<Tuple2<String, Integer>> containerUsersToChangeId = new ArrayList<>();
@@ -159,6 +151,10 @@ public class IPApplicationDefinition {
         return copyWhenStartedPathAndContentFiles;
     }
 
+    public List<String> getEntrypoint() {
+        return entrypoint;
+    }
+
     public Map<String, String> getEnvironments() {
         return environments;
     }
@@ -233,6 +229,10 @@ public class IPApplicationDefinition {
 
     public void setCopyWhenStartedPathAndContentFiles(List<Tuple2<String, String>> copyWhenStartedPathAndContentFiles) {
         this.copyWhenStartedPathAndContentFiles = copyWhenStartedPathAndContentFiles;
+    }
+
+    public void setEntrypoint(List<String> entrypoint) {
+        this.entrypoint = entrypoint;
     }
 
     public void setEnvironments(Map<String, String> environments) {

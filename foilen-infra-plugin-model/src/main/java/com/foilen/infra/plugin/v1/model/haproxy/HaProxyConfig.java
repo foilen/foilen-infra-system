@@ -12,6 +12,8 @@ package com.foilen.infra.plugin.v1.model.haproxy;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.foilen.infra.plugin.v1.model.ModelsException;
+import com.foilen.smalltools.tools.StringTools;
 import com.foilen.smalltools.tuple.Tuple2;
 
 public class HaProxyConfig {
@@ -31,22 +33,52 @@ public class HaProxyConfig {
     private Map<Integer, HaProxyConfigPort> ports = new TreeMap<>();
 
     public HaProxyConfigPortHttp addPortHttp(int port) {
-        HaProxyConfigPortHttp configPort = new HaProxyConfigPortHttp();
-        ports.put(port, configPort);
-        return configPort;
+        HaProxyConfigPort configPort = ports.get(port);
+        if (configPort != null) {
+            if (configPort instanceof HaProxyConfigPortHttp) {
+                return (HaProxyConfigPortHttp) configPort;
+            } else {
+                throw new ModelsException("Port " + port + " is already used for another type of port");
+            }
+        }
+        HaProxyConfigPortHttp configPortHttp = new HaProxyConfigPortHttp();
+        ports.put(port, configPortHttp);
+        return configPortHttp;
     }
 
     public HaProxyConfigPortHttps addPortHttps(int port, String certificatesDirectory) {
-        HaProxyConfigPortHttps configPort = new HaProxyConfigPortHttps(certificatesDirectory);
-        ports.put(port, configPort);
-        return configPort;
+        HaProxyConfigPort configPort = ports.get(port);
+        if (configPort != null) {
+            if (configPort instanceof HaProxyConfigPortHttps) {
+                HaProxyConfigPortHttps configPortHttps = (HaProxyConfigPortHttps) configPort;
+                if (!StringTools.safeEquals(configPortHttps.getCertificatesDirectory(), certificatesDirectory)) {
+                    throw new ModelsException("Port " + port + " is already used for HTTPS, but with anothercertificate folder");
+                }
+                return configPortHttps;
+            } else {
+                throw new ModelsException("Port " + port + " is already used for another type of port");
+            }
+        }
+        HaProxyConfigPortHttps configPortHttps = new HaProxyConfigPortHttps(certificatesDirectory);
+        ports.put(port, configPortHttps);
+        return configPortHttps;
     }
 
     @SafeVarargs
     public final HaProxyConfigPortTcp addPortTcp(int port, Tuple2<String, Integer>... endpointHostPorts) {
-        HaProxyConfigPortTcp configPort = new HaProxyConfigPortTcp(endpointHostPorts);
-        ports.put(port, configPort);
-        return configPort;
+        HaProxyConfigPort configPort = ports.get(port);
+        if (configPort != null) {
+            if (configPort instanceof HaProxyConfigPortTcp) {
+                HaProxyConfigPortTcp configPortTcp = (HaProxyConfigPortTcp) configPort;
+                configPortTcp.addEndpoints(endpointHostPorts);
+                return configPortTcp;
+            } else {
+                throw new ModelsException("Port " + port + " is already used for another type of port");
+            }
+        }
+        HaProxyConfigPortTcp configPortTcp = new HaProxyConfigPortTcp(endpointHostPorts);
+        ports.put(port, configPortTcp);
+        return configPortTcp;
     }
 
     public String getChroot() {

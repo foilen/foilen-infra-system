@@ -749,16 +749,70 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                                 }
                             }
                             if (currentValue instanceof Set) {
-                                if (propertyValue instanceof Set) {
-                                    return currentValue.equals(propertyValue);
+                                Set currentValueSet = (Set) currentValue;
+                                if (propertyValue instanceof Collection) {
+                                    Collection<?> propertyValueCollection = (Collection<?>) propertyValue;
+                                    if (currentValueSet.size() != propertyValueCollection.size()) {
+                                        return false;
+                                    }
+                                    for (Object it : currentValueSet) {
+                                        if (!propertyValueCollection.contains(it)) {
+                                            return false;
+                                        }
+                                    }
+                                    for (Object it : propertyValueCollection) {
+                                        if (!currentValueSet.contains(it)) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
                                 } else {
-                                    return ((Set) currentValue).contains(propertyValue);
+                                    return false;
                                 }
                             } else {
                                 if (!propertyValue.equals(currentValue)) {
                                     // Wrong value
                                     return false;
                                 }
+                            }
+                        } catch (Exception e) {
+                            return false;
+                        }
+
+                    }
+
+                    // Contains
+                    for (Entry<String, Object> entry : query.getPropertyContains().entrySet()) {
+                        String propertyName = entry.getKey();
+                        Object propertyValue = entry.getValue();
+
+                        try {
+                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            if (propertyValue == null) {
+                                if (currentValue == null) {
+                                    // Good value
+                                    continue;
+                                } else {
+                                    // Wrong value
+                                    return false;
+                                }
+                            }
+                            if (currentValue instanceof Set) {
+                                Set currentValueSet = (Set) currentValue;
+                                if (propertyValue instanceof Collection) {
+                                    Collection<?> propertyValueCollection = (Collection<?>) propertyValue;
+                                    for (Object it : propertyValueCollection) {
+                                        if (!currentValueSet.contains(it)) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            } else {
+                                // Wrong value
+                                return false;
                             }
                         } catch (Exception e) {
                             return false;

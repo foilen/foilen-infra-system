@@ -9,6 +9,7 @@
  */
 package com.foilen.infra.plugin.v1.model.haproxy;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -18,6 +19,13 @@ public class HaProxyConfigPortHttp extends HaProxyConfigPort {
 
     protected HaProxyConfigPortHttpService defaultService;
     protected Map<String, HaProxyConfigPortHttpService> serviceByHostname = new TreeMap<>();
+
+    @SafeVarargs
+    public final void addService(Collection<String> hostnames, Tuple2<String, Integer>... endpointHostPorts) {
+        for (String hostname : hostnames) {
+            serviceByHostname.put(hostname, new HaProxyConfigPortHttpService(endpointHostPorts));
+        }
+    }
 
     @SafeVarargs
     public final void addService(String hostname, Tuple2<String, Integer>... endpointHostPorts) {

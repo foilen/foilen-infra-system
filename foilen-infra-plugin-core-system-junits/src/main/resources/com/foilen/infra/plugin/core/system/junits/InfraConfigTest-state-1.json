@@ -40,6 +40,16 @@
     } ],
     "tags" : [ ]
   }, {
+    "resource" : "Application | infra_web-m1_example_com | Web HA Proxy for m1.example.com",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | infra_web | /home/infra_web"
+    } ],
+    "tags" : [ ]
+  }, {
     "resource" : "DnsEntry | login.example.com / A | 199.141.1.101",
     "links" : [ {
       "type" : "MANAGES",
@@ -130,10 +140,10 @@
       "to" : "Application | infra_ui | UI service"
     }, {
       "type" : "MANAGES",
-      "to" : "Website | login.example.com | login.example.com"
+      "to" : "Website | infra_login | login.example.com"
     }, {
       "type" : "MANAGES",
-      "to" : "Website | ui.example.com | ui.example.com"
+      "to" : "Website | infra_ui | ui.example.com"
     }, {
       "type" : "UI_INSTALLED_ON",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
@@ -233,8 +243,15 @@
     "links" : [ ],
     "tags" : [ ]
   }, {
-    "resource" : "Website | login.example.com | login.example.com",
+    "resource" : "UnixUser | infra_web | /home/infra_web",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Website | infra_login | login.example.com",
     "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | login.example.com | login.example.com"
     }, {
@@ -243,8 +260,11 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "Website | ui.example.com | ui.example.com",
+    "resource" : "Website | infra_ui | ui.example.com",
     "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | ui.example.com | ui.example.com"
     }, {

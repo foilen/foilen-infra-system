@@ -85,6 +85,10 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
             infraConfig.setUiCsrfSalt(SecureRandomTools.randomHexString(25));
             infraConfigNeedsUpdate = true;
         }
+        if (Strings.isNullOrEmpty(infraConfig.getUiLoginCookieSignatureSalt())) {
+            infraConfig.setUiLoginCookieSignatureSalt(SecureRandomTools.randomHexString(25));
+            infraConfigNeedsUpdate = true;
+        }
 
         // Get the user and machines
         List<WebsiteCertificate> loginWebsiteCertificates = resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES,
@@ -166,7 +170,6 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
 
                 loginApplicationDefinition.setRunAs(loginUnixUser.getId());
                 loginApplicationDefinition.setWorkingDirectory("/app");
-                ;
                 loginApplicationDefinition.setCommand("java -jar foilen-login.jar");
 
                 neededManagedResources.add(loginApplication);
@@ -177,7 +180,7 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 changes.linkAdd(loginApplication, LinkTypeConstants.RUN_AS, loginUnixUser);
 
                 // Login Website
-                Website loginWebsite = new Website();
+                Website loginWebsite = new Website("infra_login");
                 loginWebsite.setApplicationEndpoint(DockerContainerEndpoints.HTTP_TCP);
                 loginWebsite.getDomainNames().add(infraConfig.getLoginDomainName());
                 loginWebsite.setHttps(loginIsHttps);
@@ -185,6 +188,9 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 changes.linkAdd(loginWebsite, LinkTypeConstants.POINTS_TO, loginApplication);
                 if (loginIsHttps) {
                     changes.linkAdd(loginWebsite, LinkTypeConstants.USES, loginWebsiteCertificates.get(0));
+                }
+                for (Machine loginMachine : loginMachines) {
+                    changes.linkAdd(loginWebsite, LinkTypeConstants.INSTALLED_ON, loginMachine);
                 }
 
                 // Prepare the UI config
@@ -211,6 +217,8 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
 
                 infraUiConfig.setMailFrom(infraConfig.getUiEmailFrom());
                 infraUiConfig.setMailAlertsTo(infraConfig.getUiAlertsToEmail());
+
+                infraUiConfig.setLoginCookieSignatureSalt(infraConfig.getUiLoginCookieSignatureSalt());
 
                 InfraLoginConfigDetails loginConfigDetails = infraUiConfig.getLoginConfigDetails();
                 loginConfigDetails.setAppId(infraConfig.getApplicationId());
@@ -248,7 +256,7 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 changes.linkAdd(uiApplication, LinkTypeConstants.RUN_AS, uiUnixUser);
 
                 // UI Website
-                Website uiWebsite = new Website();
+                Website uiWebsite = new Website("infra_ui");
                 uiWebsite.setApplicationEndpoint(DockerContainerEndpoints.HTTP_TCP);
                 uiWebsite.getDomainNames().add(infraConfig.getUiDomainName());
                 uiWebsite.setHttps(uiIsHttps);
@@ -256,6 +264,9 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 changes.linkAdd(uiWebsite, LinkTypeConstants.POINTS_TO, uiApplication);
                 if (uiIsHttps) {
                     changes.linkAdd(uiWebsite, LinkTypeConstants.USES, uiWebsiteCertificates.get(0));
+                }
+                for (Machine uiMachine : uiMachines) {
+                    changes.linkAdd(uiWebsite, LinkTypeConstants.INSTALLED_ON, uiMachine);
                 }
 
             }

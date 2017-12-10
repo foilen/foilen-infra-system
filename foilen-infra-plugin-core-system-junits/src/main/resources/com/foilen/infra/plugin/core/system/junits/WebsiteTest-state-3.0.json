@@ -7,13 +7,6 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "DnsEntry | d1.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | d1.example.com | Domain for d1.example.com"
-    } ],
-    "tags" : [ ]
-  }, {
     "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
     "links" : [ {
       "type" : "MANAGES",
@@ -29,13 +22,7 @@
     "tags" : [ ]
   }, {
     "resource" : "DnsPointer | d1.example.com | d1.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "DnsEntry | d1.example.com / A | 199.141.1.101"
-    }, {
-      "type" : "POINTS_TO",
-      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "Domain | d1.example.com | Domain for d1.example.com",
