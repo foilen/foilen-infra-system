@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.assertj.core.util.Strings;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
@@ -45,6 +44,7 @@ import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.LogbackTools;
 import com.foilen.smalltools.tuple.Tuple2;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
 public class StartResourcesApp {
