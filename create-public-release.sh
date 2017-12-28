@@ -22,9 +22,7 @@ cd $RUN_PATH
 ./step-upload-bintray.sh
 ./step-create-docker-image.sh
 ./step-upload-docker-image.sh
-
-echo ----[ Git Tag ]----
-git tag -a -m $VERSION $VERSION
+./step-git-tag.sh
 
 echo ----[ Operation completed successfully ]----
 
