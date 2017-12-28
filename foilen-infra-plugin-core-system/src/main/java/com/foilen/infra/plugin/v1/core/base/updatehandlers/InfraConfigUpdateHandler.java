@@ -158,7 +158,7 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
 
                 IPApplicationDefinition loginApplicationDefinition = loginApplication.getApplicationDefinition();
 
-                loginApplicationDefinition.setFrom("foilen-login:0.2.0");
+                loginApplicationDefinition.setFrom("foilen-login:0.2.1");
 
                 loginApplicationDefinition.getEnvironments().put("CONFIG_FILE", "/login_config.json");
 

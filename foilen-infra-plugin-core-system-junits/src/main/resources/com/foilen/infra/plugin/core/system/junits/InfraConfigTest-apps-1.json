@@ -21,7 +21,7 @@
       "CONFIG_FILE" : "/login_config.json"
     },
     "executeWhenStartedCommands" : [ ],
-    "from" : "foilen-login:0.2.0",
+    "from" : "foilen-login:0.2.1",
     "hostToIpMapping" : [ ],
     "portsEndpoint" : {
       "14010" : "HTTP_TCP"
