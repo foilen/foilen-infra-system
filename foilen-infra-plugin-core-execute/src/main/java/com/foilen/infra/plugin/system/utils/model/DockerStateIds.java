@@ -19,6 +19,8 @@ public class DockerStateIds extends AbstractBasics {
     private String containerRunUniqueId;
     private String containerStartedUniqueId;
 
+    private DockerStep lastState = DockerStep.BUILD_IMAGE;
+
     public DockerStateIds() {
     }
 
@@ -40,6 +42,10 @@ public class DockerStateIds extends AbstractBasics {
         return imageUniqueId;
     }
 
+    public DockerStep getLastState() {
+        return lastState;
+    }
+
     public void setContainerRunUniqueId(String containerRunUniqueId) {
         this.containerRunUniqueId = containerRunUniqueId;
     }
@@ -50,6 +56,10 @@ public class DockerStateIds extends AbstractBasics {
 
     public void setImageUniqueId(String imageUniqueId) {
         this.imageUniqueId = imageUniqueId;
+    }
+
+    public void setLastState(DockerStep lastState) {
+        this.lastState = lastState;
     }
 
 }

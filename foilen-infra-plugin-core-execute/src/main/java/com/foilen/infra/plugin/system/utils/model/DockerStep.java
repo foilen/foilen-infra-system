@@ -9,7 +9,7 @@
  */
 package com.foilen.infra.plugin.system.utils.model;
 
-public enum DockerStartStep {
+public enum DockerStep {
 
     BUILD_IMAGE, //
     RESTART_CONTAINER, //

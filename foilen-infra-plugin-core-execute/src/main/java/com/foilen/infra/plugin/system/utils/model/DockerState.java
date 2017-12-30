@@ -22,8 +22,8 @@ public class DockerState {
 
     // Running state
     private Map<String, DockerStateIds> runningContainersByName = new HashMap<>();
+    private Map<String, DockerStateIds> failedContainersByName = new HashMap<>();
     private Map<String, String> ipByName = new HashMap<>();
-    private List<String> failedContainerNames = new ArrayList<>();
 
     // Redirection details
     private int redirectorBridgePort = 11000;
@@ -40,8 +40,8 @@ public class DockerState {
         return executionsFutures;
     }
 
-    public List<String> getFailedContainerNames() {
-        return failedContainerNames;
+    public Map<String, DockerStateIds> getFailedContainersByName() {
+        return failedContainersByName;
     }
 
     public Map<String, String> getIpByName() {
@@ -80,8 +80,8 @@ public class DockerState {
         this.executionsFutures = executionsFutures;
     }
 
-    public void setFailedContainerNames(List<String> failedContainerNames) {
-        this.failedContainerNames = failedContainerNames;
+    public void setFailedContainersByName(Map<String, DockerStateIds> failedContainersByName) {
+        this.failedContainersByName = failedContainersByName;
     }
 
     public void setIpByName(Map<String, String> ipByName) {

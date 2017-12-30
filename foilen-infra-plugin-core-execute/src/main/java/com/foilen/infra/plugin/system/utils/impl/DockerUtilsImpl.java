@@ -30,9 +30,9 @@ import com.foilen.infra.plugin.system.utils.DockerUtils;
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
 import com.foilen.infra.plugin.system.utils.model.DockerPs;
 import com.foilen.infra.plugin.system.utils.model.DockerPsStatus;
-import com.foilen.infra.plugin.system.utils.model.DockerStartStep;
 import com.foilen.infra.plugin.system.utils.model.DockerState;
 import com.foilen.infra.plugin.system.utils.model.DockerStateIds;
+import com.foilen.infra.plugin.system.utils.model.DockerStep;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionAssetsBundle;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionPortRedirect;
@@ -287,7 +287,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         List<String> startOrder = dependenciesResolver.getExecution();
         logger.debug("[MANAGER] Starting order: {}", startOrder);
 
-        dockerState.getFailedContainerNames().clear();
+        dockerState.getFailedContainersByName().clear();
         boolean existingRedirectorEntryPortOrHostChanged = false;
         for (String applicationNameToStart : startOrder) {
             logger.info("[MANAGER] Processing application [{}]", applicationNameToStart);
@@ -314,23 +314,23 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             }
 
             // Check the steps to execute
-            DockerStartStep startStep = DockerStartStep.COMPLETED;
+            DockerStep startStep = DockerStep.COMPLETED;
             if (runningContainer == null) {
                 logger.debug("[MANAGER] [{}] is not currently running. Will build and start", applicationNameToStart);
-                startStep = DockerStartStep.BUILD_IMAGE;
+                startStep = DockerStep.BUILD_IMAGE;
             } else {
                 if ((dependsOnRedirectorEntry && existingRedirectorEntryPortOrHostChanged) || !runningContainer.getImageUniqueId().equals(applicationDefinition.toImageUniqueId())) {
                     logger.debug("[MANAGER] [{}] has a different image. Will build and start", applicationNameToStart);
-                    startStep = DockerStartStep.BUILD_IMAGE;
+                    startStep = DockerStep.BUILD_IMAGE;
                 } else if (!runningContainer.getContainerRunUniqueId().equals(applicationDefinition.toContainerRunUniqueId())) {
                     logger.debug("[MANAGER] [{}] has a different run command. Will restart", applicationNameToStart);
-                    startStep = DockerStartStep.RESTART_CONTAINER;
+                    startStep = DockerStep.RESTART_CONTAINER;
                 } else if (needStart) {
                     logger.debug("[MANAGER] [{}] is not running. Will restart", applicationNameToStart);
-                    startStep = DockerStartStep.RESTART_CONTAINER;
+                    startStep = DockerStep.RESTART_CONTAINER;
                 } else if (!runningContainer.getContainerStartedUniqueId().equals(applicationDefinition.toContainerStartUniqueId())) {
                     logger.debug("[MANAGER] [{}] has a different execute when started commands. Will execute", applicationNameToStart);
-                    startStep = DockerStartStep.COPY_AND_EXECUTE_IN_RUNNING_CONTAINER;
+                    startStep = DockerStep.COPY_AND_EXECUTE_IN_RUNNING_CONTAINER;
                 }
             }
 
@@ -339,7 +339,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             dockerState.getRunningContainersByName().remove(applicationNameToStart);
 
             // If needs any change, stop any running command
-            if (startStep != DockerStartStep.COMPLETED) {
+            if (startStep != DockerStep.COMPLETED) {
                 Future<Boolean> executionFuture = dockerState.getExecutionsFutures().get(applicationNameToStart);
                 if (executionFuture != null && !executionFuture.isDone()) {
                     logger.debug("[MANAGER] [{}] Has a running execution. Stopping it");
@@ -349,25 +349,32 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
             // Execute the steps
             IPApplicationDefinition transformedApplicationDefinition = DockerContainerOutput.addInfrastructure(applicationDefinition, ctx);
+            DockerStateIds dockerStateIds = new DockerStateIds( //
+                    transformedApplicationDefinition.toImageUniqueId(), //
+                    transformedApplicationDefinition.toContainerRunUniqueId(), //
+                    transformedApplicationDefinition.toContainerStartUniqueId());
             switch (startStep) {
             case BUILD_IMAGE:
                 logger.info("[MANAGER] [{}] Building image", applicationNameToStart);
+                dockerStateIds.setLastState(DockerStep.BUILD_IMAGE);
                 if (!imageBuild(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not build the image", applicationNameToStart);
-                    dockerState.getFailedContainerNames().add(applicationNameToStart);
+                    dockerState.getFailedContainersByName().put(applicationNameToStart, dockerStateIds);
                     continue;
                 }
                 volumeHostCreate(transformedApplicationDefinition);
             case RESTART_CONTAINER:
                 logger.info("[MANAGER] [{}] Starting/Restarting container", applicationNameToStart);
+                dockerStateIds.setLastState(DockerStep.RESTART_CONTAINER);
                 containerStopAndRemove(ctx);
                 if (!containerStartWithRestart(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not start the container", applicationNameToStart);
-                    dockerState.getFailedContainerNames().add(applicationNameToStart);
+                    dockerState.getFailedContainersByName().put(applicationNameToStart, dockerStateIds);
                     continue;
                 }
             case COPY_AND_EXECUTE_IN_RUNNING_CONTAINER:
                 logger.info("[MANAGER] [{}] Copying files in the running container", applicationNameToStart);
+                dockerStateIds.setLastState(DockerStep.COPY_AND_EXECUTE_IN_RUNNING_CONTAINER);
                 containerCopyFiles(applicationNameToStart, transformedApplicationDefinition.getCopyWhenStartedPathAndContentFiles());
                 logger.info("[MANAGER] [{}] Executing commands in the running container", applicationNameToStart);
                 if (!transformedApplicationDefinition.getExecuteWhenStartedCommands().isEmpty()) {
@@ -381,6 +388,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 }
             case COMPLETED:
                 logger.info("[MANAGER] [{}] Ready", applicationNameToStart);
+                dockerStateIds.setLastState(DockerStep.COMPLETED);
                 break;
             }
 
@@ -395,10 +403,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     DockerPs container = containerOptional.get();
                     ip = container.getIp();
                     dockerState.getIpByName().put(applicationNameToStart, ip);
-                    dockerState.getRunningContainersByName().put(applicationNameToStart, new DockerStateIds( //
-                            transformedApplicationDefinition.toImageUniqueId(), //
-                            transformedApplicationDefinition.toContainerRunUniqueId(), //
-                            transformedApplicationDefinition.toContainerStartUniqueId()));
+                    dockerState.getRunningContainersByName().put(applicationNameToStart, dockerStateIds);
                 } else {
                     logger.error("[MANAGER] [{}] Could not find it running", applicationNameToStart);
                 }

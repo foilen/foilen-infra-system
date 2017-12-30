@@ -219,7 +219,7 @@ public class StartResourcesApp {
         dockerUtils.containersManage(dockerState, outputContextAndApplicationDefinitions);
         stateSave(dockerState);
         List<String> applicationStatuses = new ArrayList<>();
-        dockerState.getFailedContainerNames().forEach(it -> {
+        dockerState.getFailedContainersByName().keySet().forEach(it -> {
             applicationStatuses.add(it + " [FAILED]");
         });
         dockerState.getRunningContainersByName().keySet().forEach(it -> {
