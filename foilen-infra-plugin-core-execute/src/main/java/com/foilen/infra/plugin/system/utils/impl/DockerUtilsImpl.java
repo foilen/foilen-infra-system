@@ -28,6 +28,8 @@ import org.slf4j.event.Level;
 
 import com.foilen.infra.plugin.system.utils.DockerUtils;
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
+import com.foilen.infra.plugin.system.utils.callback.DockerContainerManagementCallback;
+import com.foilen.infra.plugin.system.utils.callback.NoOpDockerContainerManagementCallback;
 import com.foilen.infra.plugin.system.utils.model.DockerPs;
 import com.foilen.infra.plugin.system.utils.model.DockerPsStatus;
 import com.foilen.infra.plugin.system.utils.model.DockerState;
@@ -189,6 +191,12 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
     @Override
     public void containersManage(DockerState dockerState, List<Tuple2<DockerContainerOutputContext, IPApplicationDefinition>> outputContextAndApplicationDefinitions) {
+        containersManage(dockerState, outputContextAndApplicationDefinitions, new NoOpDockerContainerManagementCallback());
+    }
+
+    @Override
+    public void containersManage(DockerState dockerState, List<Tuple2<DockerContainerOutputContext, IPApplicationDefinition>> outputContextAndApplicationDefinitions,
+            DockerContainerManagementCallback containerManagementCallback) {
 
         // Check if needs the ports redirector applications (in and out) and add them if needed
         MultiDependenciesResolverTools dependenciesResolver = new MultiDependenciesResolverTools();
@@ -353,6 +361,14 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     transformedApplicationDefinition.toImageUniqueId(), //
                     transformedApplicationDefinition.toContainerRunUniqueId(), //
                     transformedApplicationDefinition.toContainerStartUniqueId());
+
+            // Check if should proceed
+            if (!containerManagementCallback.proceedWithTransformedContainer(applicationNameToStart, dockerStateIds)) {
+                logger.error("[MANAGER] [{}] The callback requested to not proceed with this container", applicationNameToStart);
+                dockerState.getFailedContainersByName().put(applicationNameToStart, dockerStateIds);
+                continue;
+            }
+
             switch (startStep) {
             case BUILD_IMAGE:
                 logger.info("[MANAGER] [{}] Building image", applicationNameToStart);
