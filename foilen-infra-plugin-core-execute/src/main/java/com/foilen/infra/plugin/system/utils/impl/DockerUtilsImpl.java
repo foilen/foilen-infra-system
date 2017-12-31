@@ -159,6 +159,15 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
     }
 
     @Override
+    public boolean containerIsRunningByContainerNameOrId(String containerNameOrId) {
+        Optional<DockerPs> optional = containerPsFindByContainerNameOrId(containerNameOrId);
+        if (!optional.isPresent()) {
+            return false;
+        }
+        return optional.get().getStatus() == DockerPsStatus.Up;
+    }
+
+    @Override
     public List<DockerPs> containerPsFindAll() {
 
         // Get details
@@ -343,8 +352,8 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             }
 
             // Clear the state
-            dockerState.getIpByName().remove(applicationNameToStart);
-            dockerState.getRunningContainersByName().remove(applicationNameToStart);
+            String lastRunningIp = dockerState.getIpByName().remove(applicationNameToStart);
+            DockerStateIds lastRunningDockerStateIds = dockerState.getRunningContainersByName().remove(applicationNameToStart);
 
             // If needs any change, stop any running command
             if (startStep != DockerStep.COMPLETED) {
@@ -366,6 +375,12 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             if (!containerManagementCallback.proceedWithTransformedContainer(applicationNameToStart, dockerStateIds)) {
                 logger.error("[MANAGER] [{}] The callback requested to not proceed with this container", applicationNameToStart);
                 dockerState.getFailedContainersByName().put(applicationNameToStart, dockerStateIds);
+
+                // Keep previous success in running if still running
+                if (lastRunningDockerStateIds != null && containerIsRunningByContainerNameOrId(applicationNameToStart)) {
+                    dockerState.getRunningContainersByName().put(applicationNameToStart, lastRunningDockerStateIds);
+                    dockerState.getIpByName().put(applicationNameToStart, lastRunningIp);
+                }
                 continue;
             }
 
@@ -376,6 +391,12 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 if (!imageBuild(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not build the image", applicationNameToStart);
                     dockerState.getFailedContainersByName().put(applicationNameToStart, dockerStateIds);
+
+                    // Keep previous success in running if still running
+                    if (lastRunningDockerStateIds != null && containerIsRunningByContainerNameOrId(applicationNameToStart)) {
+                        dockerState.getRunningContainersByName().put(applicationNameToStart, lastRunningDockerStateIds);
+                        dockerState.getIpByName().put(applicationNameToStart, lastRunningIp);
+                    }
                     continue;
                 }
                 volumeHostCreate(transformedApplicationDefinition);

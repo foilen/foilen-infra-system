@@ -29,6 +29,8 @@ public interface DockerUtils {
 
     boolean containerExecCommands(String containerName, List<String> commands);
 
+    boolean containerIsRunningByContainerNameOrId(String applicationNameToStart);
+
     List<DockerPs> containerPsFindAll();
 
     Optional<DockerPs> containerPsFindByContainerNameOrId(String containerNameOrId);
