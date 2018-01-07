@@ -27,7 +27,10 @@ function updateResourceEditor() {
     var editorName = encodeURI(mainResource.data('editorName'));
     if (editorName) {
       if (resourceId) {
-        mainResource.load('/resource/editPageDefinition/' + editorName + '/' + resourceId, updateResourceFieldPageItems);
+        mainResource.load('/resource/editPageDefinition/' + editorName + '/' + resourceId, function() {
+          updateResourceFieldPageItems();
+          updateListInputTextFieldPageItems();
+        });
 
         jQuery('#editorName').change(function() {
           mainResource.data('editorName', jQuery(this).val());
@@ -41,7 +44,10 @@ function updateResourceEditor() {
           updateResourceEditor();
         });
       } else {
-        mainResource.load('/resource/createPageDefinition/' + editorName, updateResourceFieldPageItems);
+        mainResource.load('/resource/createPageDefinition/' + editorName, function() {
+          updateResourceFieldPageItems();
+          updateListInputTextFieldPageItems();
+        });
       }
       
       var updateFunction = function() {
@@ -72,6 +78,8 @@ function updateResourceEditor() {
             // Check if there are validation errors or a successful redirection url
             jQuery('#topError').text(result.topError);
             jQuery.each(result.fieldsErrors, function(fieldName, errorText) {
+              fieldName = fieldName.replace('[' , '\\[')
+              fieldName = fieldName.replace(']' , '\\]')
               jQuery('#' + fieldName + ' .help-inline').text(errorText);
             });
 
@@ -102,6 +110,45 @@ function updateResourceEditor() {
 }
 
 jQuery(document).ready(updateResourceEditor);
+
+
+
+//Create/Edit ListInputTextFieldPageItem
+function updateListInputTextFieldPageItems() {
+  jQuery('.ListInputTextFieldPageItem').each(function() {
+    updateListInputTextFieldPageItem(jQuery(this));
+  });
+}
+
+function updateListInputTextFieldPageItem(listBlock) {
+  var fieldName = listBlock.data('fieldName');
+  
+  jQuery('.buttonDelete', listBlock).click(function() {
+    jQuery(this).parent().remove();
+    return false;
+  });
+  
+  
+  // Controls
+  jQuery('.buttonAdd', listBlock).click(function() {
+    var newItem = jQuery('.template', listBlock).clone();
+    var newItemId = fieldName + '[' + new Date().getTime() + ']';
+    newItem.attr('id', newItemId);
+    newItem.removeClass('template');
+    jQuery('input', newItem).attr('name', newItemId);
+    newItem.insertBefore(jQuery('.controls', listBlock));
+    
+    // Hook delete
+    jQuery('.buttonDelete', newItem).click(function() {
+      jQuery(this).parent().remove();
+      return false;
+    });
+    
+    return false;
+  });
+}
+
+jQuery(document).ready(updateListInputTextFieldPageItems);
 
 // Create/Edit resources (single one)
 function updateResourceFieldPageItems() {

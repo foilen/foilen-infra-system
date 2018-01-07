@@ -47,3 +47,8 @@
 .twitter-typeahead {
 	display: block !important;
 }
+
+/* Special */
+.template {
+  display: none;
+}

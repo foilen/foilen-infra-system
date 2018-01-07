@@ -9,6 +9,7 @@
  */
 package com.foilen.infra.plugin.v1.core.visual.helper;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +24,25 @@ public class CommonValidationTest {
 
     private String fieldName = "test";
 
+    private void assertAlphaNum(List<String> values, List<Boolean> isValids) {
+        Map<String, String> map = new HashMap<>();
+        fillValues(values, map);
+        List<Tuple2<String, String>> errors = CommonValidation.validateAlphaNum(map, fieldName);
+        assertValues(errors, isValids);
+    }
+
     private void assertAlphaNum(String value, boolean isValid) {
         Map<String, String> map = new HashMap<>();
         map.put(fieldName, value);
         List<Tuple2<String, String>> errors = CommonValidation.validateAlphaNum(map, fieldName);
         Assert.assertEquals(isValid, errors.isEmpty());
+    }
+
+    private void assertCronTime(List<String> values, List<Boolean> isValids) {
+        Map<String, String> map = new HashMap<>();
+        fillValues(values, map);
+        List<Tuple2<String, String>> errors = CommonValidation.validateCronTime(map, fieldName);
+        assertValues(errors, isValids);
     }
 
     private void assertCronTime(String value, boolean isValid) {
@@ -37,11 +52,25 @@ public class CommonValidationTest {
         Assert.assertEquals(isValid, errors.isEmpty());
     }
 
+    private void assertDomainName(List<String> values, List<Boolean> isValids) {
+        Map<String, String> map = new HashMap<>();
+        fillValues(values, map);
+        List<Tuple2<String, String>> errors = CommonValidation.validateDomainName(map, fieldName);
+        assertValues(errors, isValids);
+    }
+
     private void assertDomainName(String value, boolean isValid) {
         Map<String, String> map = new HashMap<>();
         map.put(fieldName, value);
         List<Tuple2<String, String>> errors = CommonValidation.validateDomainName(map, fieldName);
         Assert.assertEquals(isValid, errors.isEmpty());
+    }
+
+    private void assertEmail(List<String> values, List<Boolean> isValids) {
+        Map<String, String> map = new HashMap<>();
+        fillValues(values, map);
+        List<Tuple2<String, String>> errors = CommonValidation.validateEmail(map, fieldName);
+        assertValues(errors, isValids);
     }
 
     private void assertEmail(String value, boolean isValid) {
@@ -51,11 +80,25 @@ public class CommonValidationTest {
         Assert.assertEquals(isValid, errors.isEmpty());
     }
 
+    private void assertInEnum(List<String> values, List<Boolean> isValids, Enum<?>... possibleValues) {
+        Map<String, String> map = new HashMap<>();
+        fillValues(values, map);
+        List<Tuple2<String, String>> errors = CommonValidation.validateInEnum(map, possibleValues, fieldName);
+        assertValues(errors, isValids);
+    }
+
     private void assertInEnum(String value, boolean isValid, Enum<?>... possibleValues) {
         Map<String, String> map = new HashMap<>();
         map.put(fieldName, value);
-        List<Tuple2<String, String>> errors = CommonValidation.validateInEnum(map, fieldName, possibleValues);
+        List<Tuple2<String, String>> errors = CommonValidation.validateInEnum(map, possibleValues, fieldName);
         Assert.assertEquals(isValid, errors.isEmpty());
+    }
+
+    private void assertIpAddress(List<String> values, List<Boolean> isValids) {
+        Map<String, String> map = new HashMap<>();
+        fillValues(values, map);
+        List<Tuple2<String, String>> errors = CommonValidation.validateIpAddress(map, fieldName);
+        assertValues(errors, isValids);
     }
 
     private void assertIpAddress(String value, boolean isValid) {
@@ -65,11 +108,32 @@ public class CommonValidationTest {
         Assert.assertEquals(isValid, errors.isEmpty());
     }
 
+    private void assertNotNullOrEmpty(List<String> values, List<Boolean> isValids) {
+        Map<String, String> map = new HashMap<>();
+        fillValues(values, map);
+        List<Tuple2<String, String>> errors = CommonValidation.validateNotNullOrEmpty(map, fieldName);
+        assertValues(errors, isValids);
+    }
+
     private void assertNotNullOrEmpty(String value, boolean isValid) {
         Map<String, String> map = new HashMap<>();
         map.put(fieldName, value);
         List<Tuple2<String, String>> errors = CommonValidation.validateNotNullOrEmpty(map, fieldName);
         Assert.assertEquals(isValid, errors.isEmpty());
+    }
+
+    private void assertValues(List<Tuple2<String, String>> errors, List<Boolean> isValids) {
+        for (int i = 0; i < isValids.size(); ++i) {
+            String positionFieldName = fieldName + "[" + i + "]";
+            boolean hasError = errors.stream().filter(it -> it.getA().equals(positionFieldName)).findAny().isPresent();
+            Assert.assertEquals("Field " + positionFieldName + " is not as expected", isValids.get(i), !hasError);
+        }
+    }
+
+    private void fillValues(List<String> values, Map<String, String> map) {
+        for (int i = 0; i < values.size(); ++i) {
+            map.put(fieldName + "[" + i + "]", values.get(i));
+        }
     }
 
     @Test
@@ -80,6 +144,8 @@ public class CommonValidationTest {
         assertAlphaNum("ab c", false);
         assertAlphaNum("ab+c", false);
         assertAlphaNum("ab*c", false);
+
+        assertAlphaNum(Arrays.asList("abc", "ab*c"), Arrays.asList(true, false));
     }
 
     @Test
@@ -120,6 +186,8 @@ public class CommonValidationTest {
         assertCronTime("1,11,21,31,41, * * * *", false);
         assertCronTime("1, * * * *", false);
         assertCronTime("1,11,21,31,41,51,61 * * * *", false);
+
+        assertCronTime(Arrays.asList("* * * * *", "1,11,21,31,41, * * * *"), Arrays.asList(true, false));
     }
 
     @Test
@@ -140,6 +208,8 @@ public class CommonValidationTest {
         assertDomainName("amazonses.test-email-send.test.example.com", true);
         assertDomainName("_amazonses.test-email-send.test.example.com", true);
         assertDomainName("sss._domainkey.test-email-send.test.example.com", true);
+
+        assertDomainName(Arrays.asList("example.com", "www.exampl/e.com"), Arrays.asList(true, false));
     }
 
     @Test
@@ -151,6 +221,8 @@ public class CommonValidationTest {
 
         assertEmail("abc", false);
         assertEmail("abc@example@com", false);
+
+        assertEmail(Arrays.asList("abc@example.com", "abc@example@com"), Arrays.asList(true, false));
     }
 
     @Test
@@ -159,6 +231,8 @@ public class CommonValidationTest {
         assertInEnum("CNAME", true, DnsEntryType.values());
         assertInEnum("a", false, DnsEntryType.values());
         assertInEnum("i", false, DnsEntryType.values());
+
+        assertInEnum(Arrays.asList("A", "i"), Arrays.asList(true, false), DnsEntryType.values());
     }
 
     @Test
@@ -173,6 +247,8 @@ public class CommonValidationTest {
         assertIpAddress("hello", false);
         assertIpAddress("192.168.0.10.1", false);
         assertIpAddress("255.255.255.256", false);
+
+        assertIpAddress(Arrays.asList("127.0.0.1", "255.255.255.256"), Arrays.asList(true, false));
     }
 
     @Test
@@ -181,6 +257,8 @@ public class CommonValidationTest {
         assertNotNullOrEmpty("10", true);
         assertNotNullOrEmpty("", false);
         assertNotNullOrEmpty(null, false);
+
+        assertNotNullOrEmpty(Arrays.asList("abc", null), Arrays.asList(true, false));
     }
 
 }

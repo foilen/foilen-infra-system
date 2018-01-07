@@ -80,7 +80,7 @@ public class CommonValidation {
 
     public static List<Tuple2<String, String>> validateAlphaNum(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue == null) {
                 continue;
@@ -99,7 +99,7 @@ public class CommonValidation {
 
     public static List<Tuple2<String, String>> validateCronTime(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue == null) {
                 continue;
@@ -136,7 +136,7 @@ public class CommonValidation {
 
     public static List<Tuple2<String, String>> validateDomainName(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue == null) {
                 continue;
@@ -155,7 +155,7 @@ public class CommonValidation {
 
     public static List<Tuple2<String, String>> validateEmail(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue == null) {
                 continue;
@@ -179,20 +179,22 @@ public class CommonValidation {
         return errors;
     }
 
-    public static List<Tuple2<String, String>> validateInEnum(Map<String, String> formValues, String fieldName, Enum<?>... values) {
+    public static List<Tuple2<String, String>> validateInEnum(Map<String, String> formValues, Enum<?>[] values, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        String value = formValues.get(fieldName);
-        boolean isValid = value != null //
-                && Arrays.asList(values).stream().anyMatch(it -> value.equals(it.name()));
-        if (!isValid) {
-            errors.add(new Tuple2<>(fieldName, "error.notValidChoice"));
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
+            String value = formValues.get(fieldName);
+            boolean isValid = value != null //
+                    && Arrays.asList(values).stream().anyMatch(it -> value.equals(it.name()));
+            if (!isValid) {
+                errors.add(new Tuple2<>(fieldName, "error.notValidChoice"));
+            }
         }
         return errors;
     }
 
     public static List<Tuple2<String, String>> validateIpAddress(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue == null) {
                 continue;
@@ -230,7 +232,7 @@ public class CommonValidation {
 
     public static List<Tuple2<String, String>> validateNoMultiline(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue == null) {
                 continue;
@@ -249,7 +251,7 @@ public class CommonValidation {
 
     public static List<Tuple2<String, String>> validateNotNullOrEmpty(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (Strings.isNullOrEmpty(fieldValue)) {
                 errors.add(new Tuple2<>(fieldName, "error.required"));
@@ -267,7 +269,7 @@ public class CommonValidation {
         // Count how many are not null
         List<Tuple2<String, String>> errors = new ArrayList<>();
         int count = 0;
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             if (formValues.get(fieldName) != null) {
                 ++count;
             }

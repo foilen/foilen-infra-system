@@ -123,11 +123,13 @@ public class CommonResourceLink {
         String value = formValues.get(fieldName);
         if (value == null) {
             // Remove previous links
-            List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
-            currentLinks.stream() //
-                    .forEach(it -> {
-                        changesContext.linkDelete(editedResource, linkType, it);
-                    });
+            if (editedResource.getInternalId() != null) {
+                List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
+                currentLinks.stream() //
+                        .forEach(it -> {
+                            changesContext.linkDelete(editedResource, linkType, it);
+                        });
+            }
         } else {
             Long linkedResourceId;
             try {

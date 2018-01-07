@@ -27,6 +27,32 @@
     <#case "LabelPageItem">
       <p>${pageItem.text}</p>
       <#break>
+
+    <#case "ListInputTextFieldPageItem">
+      
+      <div class="form-group ListInputTextFieldPageItem" id="${pageItem.fieldName}"
+          data-field-name="${pageItem.fieldName}" 
+      >
+        <label for="${pageItem.fieldName}">${pageItem.label}</label>
+        <span class="help-inline text-danger"></span>
+        <div class="template">
+          <input type="${pageItem.password?then('password','text')}" class="form-control" placeholder="${pageItem.placeholder!''}" />
+          <span class="help-inline text-danger"></span>
+          <button class="btn btn-sm btn-danger buttonDelete"><@spring.message "button.delete"/></button>
+        </div>
+        <#list pageItem.fieldValues as fieldValue>
+          <div id="${pageItem.fieldName}[${fieldValue?counter}]">
+            <input type="${pageItem.password?then('password','text')}" class="form-control" name="${pageItem.fieldName}[${fieldValue?counter}]" value="${fieldValue!''}" placeholder="${pageItem.placeholder!''}" />
+            <span class="help-inline text-danger"></span>
+            <button class="btn btn-sm btn-danger buttonDelete"><@spring.message "button.delete"/></button>
+          </div>
+        </#list>
+        <div class="controls">
+          <button class="btn btn-sm btn-info buttonAdd"><@spring.message "button.add"/></button>
+        </div>
+      </div>
+      
+      <#break>
       
     <#case "ListPageItem">
       <p>${pageItem.title}</p>

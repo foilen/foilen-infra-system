@@ -19,12 +19,15 @@ import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.service.TranslationService;
 import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
+import com.foilen.infra.plugin.v1.core.visual.helper.CommonFieldHelper;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonFormatting;
+import com.foilen.infra.plugin.v1.core.visual.helper.CommonPageItem;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonResourceLink;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonValidation;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.LabelPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.ListPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.InputTextFieldPageItem;
+import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ListInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.MultilineInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.example.resource.EmployeeResource;
 import com.foilen.smalltools.tools.DateTools;
@@ -45,6 +48,7 @@ public class EmployeeResourceSimpleForm implements ResourceEditor<EmployeeResour
         resource.setLastName(nameParts[1]);
         resource.setNotes(validFormValues.get(EmployeeResource.PROPERTY_NOTES));
         resource.setBirthday(DateTools.parseDateOnly(validFormValues.get(EmployeeResource.PROPERTY_BIRTHDAY)));
+        resource.setFoodPreferences(CommonFieldHelper.fromFormListToSet(validFormValues, EmployeeResource.PROPERTY_FOOD_PREFERENCES));
 
         CommonResourceLink.fillResourceLink(servicesCtx, resource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER_ID, validFormValues, changesContext);
     }
@@ -86,21 +90,22 @@ public class EmployeeResourceSimpleForm implements ResourceEditor<EmployeeResour
         fullNamePageItem.setFieldName(FIELD_NAME_FULL_NAME);
         pageDefinition.addPageItem(fullNamePageItem);
 
-        InputTextFieldPageItem birthdayPageItem = new InputTextFieldPageItem().setLabel(translationService.translate("EmployeeResourceSimpleForm.birthday"));
-        birthdayPageItem.setFieldName(EmployeeResource.PROPERTY_BIRTHDAY);
-        pageDefinition.addPageItem(birthdayPageItem);
+        InputTextFieldPageItem birthdayPageItem = CommonPageItem.createInputTextField(servicesCtx, pageDefinition, "EmployeeResourceSimpleForm.birthday", EmployeeResource.PROPERTY_BIRTHDAY);
 
-        MultilineInputTextFieldPageItem notesPageItem = new MultilineInputTextFieldPageItem().setLabel(translationService.translate("EmployeeResourceSimpleForm.notes"));
-        notesPageItem.setFieldName(EmployeeResource.PROPERTY_NOTES);
+        MultilineInputTextFieldPageItem notesPageItem = CommonPageItem.createMultilineInputTextField(servicesCtx, pageDefinition, "EmployeeResourceSimpleForm.notes", EmployeeResource.PROPERTY_NOTES);
         notesPageItem.setRows(10);
-        pageDefinition.addPageItem(notesPageItem);
+
+        ListInputTextFieldPageItem foodPreferencesPageItem = CommonPageItem.createListInputTextFieldPageItem(servicesCtx, pageDefinition, "EmployeeResourceSimpleForm.foodPreferences",
+                EmployeeResource.PROPERTY_FOOD_PREFERENCES);
 
         CommonResourceLink.addResourcePageItem(servicesCtx, pageDefinition, editedResource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class,
-                translationService.translate("EmployeeResourceRawForm.manager"), FIELD_NAME_MANAGER_ID);
+                translationService.translate("EmployeeResourceSimpleForm.manager"), FIELD_NAME_MANAGER_ID);
 
         if (editedResource != null) {
             fullNamePageItem.setFieldValue(editedResource.getFirstName() + " " + editedResource.getLastName());
             notesPageItem.setFieldValue(editedResource.getNotes());
+
+            foodPreferencesPageItem.setFieldValues(CommonFieldHelper.fromSetToList(editedResource.getFoodPreferences()));
 
             Date birthday = editedResource.getBirthday();
             if (birthday != null) {

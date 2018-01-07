@@ -19,10 +19,13 @@ import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.service.TranslationService;
 import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
+import com.foilen.infra.plugin.v1.core.visual.helper.CommonFieldHelper;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonFormatting;
+import com.foilen.infra.plugin.v1.core.visual.helper.CommonPageItem;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonResourceLink;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonValidation;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.InputTextFieldPageItem;
+import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ListInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.MultilineInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.example.resource.EmployeeResource;
 import com.foilen.smalltools.tools.DateTools;
@@ -38,6 +41,7 @@ public class EmployeeResourceRawForm implements ResourceEditor<EmployeeResource>
         resource.setLastName(validFormValues.get(EmployeeResource.PROPERTY_LAST_NAME));
         resource.setNotes(validFormValues.get(EmployeeResource.PROPERTY_NOTES));
         resource.setBirthday(DateTools.parseDateOnly(validFormValues.get(EmployeeResource.PROPERTY_BIRTHDAY)));
+        resource.setFoodPreferences(CommonFieldHelper.fromFormListToSet(validFormValues, EmployeeResource.PROPERTY_FOOD_PREFERENCES));
 
         CommonResourceLink.fillResourceLink(servicesCtx, resource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER_ID, validFormValues, changesContext);
     }
@@ -71,22 +75,15 @@ public class EmployeeResourceRawForm implements ResourceEditor<EmployeeResource>
 
         PageDefinition pageDefinition = new PageDefinition(translationService.translate("EmployeeResourceRawForm.title"));
 
-        InputTextFieldPageItem firstNamePageItem = new InputTextFieldPageItem().setLabel(translationService.translate("EmployeeResourceRawForm.firstName"));
-        firstNamePageItem.setFieldName(EmployeeResource.PROPERTY_FIRST_NAME);
-        pageDefinition.addPageItem(firstNamePageItem);
+        InputTextFieldPageItem firstNamePageItem = CommonPageItem.createInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.firstName", EmployeeResource.PROPERTY_FIRST_NAME);
+        InputTextFieldPageItem lastNamePageItem = CommonPageItem.createInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.lastName", EmployeeResource.PROPERTY_LAST_NAME);
+        InputTextFieldPageItem birthdayPageItem = CommonPageItem.createInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.birthday", EmployeeResource.PROPERTY_BIRTHDAY);
 
-        InputTextFieldPageItem lastNamePageItem = new InputTextFieldPageItem().setLabel(translationService.translate("EmployeeResourceRawForm.lastName"));
-        lastNamePageItem.setFieldName(EmployeeResource.PROPERTY_LAST_NAME);
-        pageDefinition.addPageItem(lastNamePageItem);
-
-        InputTextFieldPageItem birthdayPageItem = new InputTextFieldPageItem().setLabel(translationService.translate("EmployeeResourceRawForm.birthday"));
-        birthdayPageItem.setFieldName(EmployeeResource.PROPERTY_BIRTHDAY);
-        pageDefinition.addPageItem(birthdayPageItem);
-
-        MultilineInputTextFieldPageItem notesPageItem = new MultilineInputTextFieldPageItem().setLabel(translationService.translate("EmployeeResourceRawForm.notes"));
-        notesPageItem.setFieldName(EmployeeResource.PROPERTY_NOTES);
+        MultilineInputTextFieldPageItem notesPageItem = CommonPageItem.createMultilineInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.notes", EmployeeResource.PROPERTY_NOTES);
         notesPageItem.setRows(10);
-        pageDefinition.addPageItem(notesPageItem);
+
+        ListInputTextFieldPageItem foodPreferencesPageItem = CommonPageItem.createListInputTextFieldPageItem(servicesCtx, pageDefinition, "EmployeeResourceRawForm.foodPreferences",
+                EmployeeResource.PROPERTY_FOOD_PREFERENCES);
 
         CommonResourceLink.addResourcePageItem(servicesCtx, pageDefinition, editedResource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class,
                 translationService.translate("EmployeeResourceRawForm.manager"), FIELD_NAME_MANAGER_ID);
@@ -95,6 +92,8 @@ public class EmployeeResourceRawForm implements ResourceEditor<EmployeeResource>
             firstNamePageItem.setFieldValue(editedResource.getFirstName());
             lastNamePageItem.setFieldValue(editedResource.getLastName());
             notesPageItem.setFieldValue(editedResource.getNotes());
+
+            foodPreferencesPageItem.setFieldValues(CommonFieldHelper.fromSetToList(editedResource.getFoodPreferences()));
 
             Date birthday = editedResource.getBirthday();
             if (birthday != null) {

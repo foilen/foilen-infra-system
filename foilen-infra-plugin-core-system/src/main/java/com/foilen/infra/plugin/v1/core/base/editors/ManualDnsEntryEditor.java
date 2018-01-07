@@ -72,7 +72,7 @@ public class ManualDnsEntryEditor implements ResourceEditor<DnsEntry> {
     public List<Tuple2<String, String>> validateForm(CommonServicesContext servicesCtx, Map<String, String> rawFormValues) {
         List<Tuple2<String, String>> errors = CommonValidation.validateNotNullOrEmpty(rawFormValues, DnsEntry.PROPERTY_NAME, DnsEntry.PROPERTY_TYPE, DnsEntry.PROPERTY_DETAILS);
         errors.addAll(CommonValidation.validateDomainName(rawFormValues, DnsEntry.PROPERTY_NAME));
-        errors.addAll(CommonValidation.validateInEnum(rawFormValues, DnsEntry.PROPERTY_TYPE, DnsEntryType.values()));
+        errors.addAll(CommonValidation.validateInEnum(rawFormValues, DnsEntryType.values(), DnsEntry.PROPERTY_TYPE));
         try {
             if (DnsEntryType.valueOf(rawFormValues.get(DnsEntry.PROPERTY_TYPE)) == DnsEntryType.A) {
                 errors.addAll(CommonValidation.validateIpAddress(rawFormValues, DnsEntry.PROPERTY_DETAILS));

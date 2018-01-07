@@ -10,6 +10,8 @@
 package com.foilen.infra.plugin.v1.example.resource;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.foilen.infra.plugin.v1.model.resource.AbstractIPResource;
 import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
@@ -21,6 +23,7 @@ public class EmployeeResource extends AbstractIPResource {
     public static final String PROPERTY_LAST_NAME = "lastName";
     public static final String PROPERTY_BIRTHDAY = "birthday";
     public static final String PROPERTY_NOTES = "notes";
+    public static final String PROPERTY_FOOD_PREFERENCES = "foodPreferences";
 
     public static final String LINK_TYPE_MANAGER = "MANAGER";
 
@@ -28,6 +31,8 @@ public class EmployeeResource extends AbstractIPResource {
     private String lastName;
     private Date birthday;
     private String notes;
+
+    private Set<String> foodPreferences = new HashSet<>();
 
     public EmployeeResource() {
     }
@@ -44,6 +49,10 @@ public class EmployeeResource extends AbstractIPResource {
 
     public String getFirstName() {
         return firstName;
+    }
+
+    public Set<String> getFoodPreferences() {
+        return foodPreferences;
     }
 
     public String getLastName() {
@@ -78,6 +87,10 @@ public class EmployeeResource extends AbstractIPResource {
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
+    }
+
+    public void setFoodPreferences(Set<String> foodPreferences) {
+        this.foodPreferences = foodPreferences;
     }
 
     public void setLastName(String lastName) {

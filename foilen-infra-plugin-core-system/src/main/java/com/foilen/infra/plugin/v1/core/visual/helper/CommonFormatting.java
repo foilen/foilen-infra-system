@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 public class CommonFormatting {
 
     public static void emptyIfNull(Map<String, String> formValues, String... fieldNames) {
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             if (formValues.get(fieldName) == null) {
                 formValues.put(fieldName, "");
             }
@@ -30,7 +30,7 @@ public class CommonFormatting {
     }
 
     public static void firstLetterOfEachWordCapital(Map<String, String> formValues, String... fieldNames) {
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue != null) {
                 fieldValue = fieldValue.toLowerCase();
@@ -59,7 +59,7 @@ public class CommonFormatting {
     }
 
     public static void toLowerCase(Map<String, String> formValues, String... fieldNames) {
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue != null) {
                 formValues.put(fieldName, fieldValue.toLowerCase());
@@ -68,7 +68,7 @@ public class CommonFormatting {
     }
 
     public static void toUpperCase(Map<String, String> formValues, String... fieldNames) {
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue != null) {
                 formValues.put(fieldName, fieldValue.toUpperCase());
@@ -82,7 +82,7 @@ public class CommonFormatting {
     }
 
     public static void trimSpaces(Map<String, String> formValues, String... fieldNames) {
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue != null) {
                 fieldValue = fieldValue.replaceAll("[ \t\n\r]", "");
@@ -97,7 +97,7 @@ public class CommonFormatting {
     }
 
     public static void trimSpacesAround(Map<String, String> formValues, String... fieldNames) {
-        for (String fieldName : fieldNames) {
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
             if (fieldValue != null) {
                 fieldValue = StringUtils.trim(fieldValue);

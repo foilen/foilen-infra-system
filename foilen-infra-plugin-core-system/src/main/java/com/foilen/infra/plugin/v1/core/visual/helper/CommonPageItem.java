@@ -16,6 +16,7 @@ import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.InputTextFieldPageItem;
+import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ListInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.MultilineInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.SelectOptionsPageItem;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
@@ -40,6 +41,26 @@ public class CommonPageItem {
      */
     public static InputTextFieldPageItem createInputTextField(CommonServicesContext servicesCtx, PageDefinition pageDefinition, String labelCode, String fieldName) {
         InputTextFieldPageItem pageItem = new InputTextFieldPageItem().setLabel(servicesCtx.getTranslationService().translate(labelCode));
+        pageItem.setFieldName(fieldName);
+        pageDefinition.addPageItem(pageItem);
+        return pageItem;
+    }
+
+    /**
+     * Create and add a {@link ListInputTextFieldPageItem} to the page.
+     *
+     * @param servicesCtx
+     *            the services context to get the translation service
+     * @param pageDefinition
+     *            the page definition on which to add the field
+     * @param labelCode
+     *            the message code for the label (will be translated)
+     * @param fieldName
+     *            the name of the field
+     * @return the created field on which you can set the value if needed
+     */
+    public static ListInputTextFieldPageItem createListInputTextFieldPageItem(CommonServicesContext servicesCtx, PageDefinition pageDefinition, String labelCode, String fieldName) {
+        ListInputTextFieldPageItem pageItem = new ListInputTextFieldPageItem().setLabel(servicesCtx.getTranslationService().translate(labelCode));
         pageItem.setFieldName(fieldName);
         pageDefinition.addPageItem(pageItem);
         return pageItem;
