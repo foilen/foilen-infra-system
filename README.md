@@ -67,13 +67,16 @@ USER_ID=$(id -u)
 
 FOLDER_SAMPLE=$(pwd)/sample-templates
 FOLDER_IMPORT=$(pwd)/import-resources
-mkdir -p $FOLDER_SAMPLE $FOLDER_IMPORT
+FOLDER_PLUGINS_JARS=$(pwd)/plugins-jars
+mkdir -p $FOLDER_SAMPLE $FOLDER_IMPORT $FOLDER_PLUGINS_JARS
 
 # Create sample data
 docker run -ti \
   --rm \
+  --env PLUGINS_JARS=/plugins \
   --user $USER_ID \
   --volume $FOLDER_SAMPLE:/data \
+  --volume $FOLDER_PLUGINS_JARS:/plugins \
   foilen-infra-plugin-app-test-docker:master-SNAPSHOT \
   create-sample \
   /data
@@ -84,7 +87,9 @@ docker run -ti \
 docker run -ti \
   --rm \
   --env HOSTFS=/hostfs/ \
+  --env PLUGINS_JARS=/plugins \
   --volume $FOLDER_IMPORT:/data \
+  --volume $FOLDER_PLUGINS_JARS:/plugins \
   --volume /etc:/hostfs/etc \
   --volume /home:/hostfs/home \
   --volume /usr/bin/docker:/usr/bin/docker \
