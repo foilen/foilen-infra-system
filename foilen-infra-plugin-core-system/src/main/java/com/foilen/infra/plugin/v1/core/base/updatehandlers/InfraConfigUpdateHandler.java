@@ -10,7 +10,6 @@
 package com.foilen.infra.plugin.v1.core.base.updatehandlers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.foilen.infra.plugin.v1.core.base.resources.Application;
@@ -24,7 +23,8 @@ import com.foilen.infra.plugin.v1.core.base.resources.Website;
 import com.foilen.infra.plugin.v1.core.base.resources.WebsiteCertificate;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
-import com.foilen.infra.plugin.v1.core.eventhandler.AbstractUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.AbstractCommonMethodUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.CommonMethodUpdateEventHandlerContext;
 import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
@@ -33,27 +33,23 @@ import com.foilen.infra.plugin.v1.model.docker.DockerContainerEndpoints;
 import com.foilen.infra.plugin.v1.model.infra.InfraLoginConfig;
 import com.foilen.infra.plugin.v1.model.infra.InfraLoginConfigDetails;
 import com.foilen.infra.plugin.v1.model.infra.InfraUiConfig;
-import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.foilen.smalltools.tools.CollectionsTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.SecureRandomTools;
-import com.foilen.smalltools.tuple.Tuple3;
 import com.google.common.base.Strings;
 
-public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraConfig> {
+public class InfraConfigUpdateHandler extends AbstractCommonMethodUpdateEventHandler<InfraConfig> {
 
     @Override
-    public void addHandler(CommonServicesContext services, ChangesContext changes, InfraConfig resource) {
-        commonHandler(services, changes, resource);
-    }
+    protected void commonHandlerExecute(CommonServicesContext services, ChangesContext changes, CommonMethodUpdateEventHandlerContext<InfraConfig> context) {
 
-    @Override
-    public void checkAndFix(CommonServicesContext services, ChangesContext changes, InfraConfig resource) {
-        commonHandler(services, changes, resource);
-    }
+        context.setManagedResourcesUpdateContentIfExists(true);
 
-    private void commonHandler(CommonServicesContext services, ChangesContext changes, InfraConfig infraConfig) {
+        context.getManagedResourceTypes().add(Application.class);
+        context.getManagedResourceTypes().add(Website.class);
+
+        InfraConfig infraConfig = context.getResource();
 
         // Check that there is only a single instance of this resource
         IPResourceService resourceService = services.getResourceService();
@@ -110,7 +106,6 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
         validateResourcesToUse(resourceService, uiWebsiteCertificates, uiMariaDBServers, uiMariaDBDatabases, uiMariaDBUsers, uiUnixUsers, uiMachines);
 
         // Create the Applications and Websites if everything is available
-        List<IPResource> neededManagedResources = new ArrayList<>();
         if (hasAllPropertiesSet(infraConfig, //
                 loginWebsiteCertificates, loginMariaDBServers, loginMariaDBDatabases, loginMariaDBUsers, loginUnixUsers, loginMachines, //
                 uiWebsiteCertificates, uiMariaDBServers, uiMariaDBDatabases, uiMariaDBUsers, uiUnixUsers, uiMachines)) {
@@ -172,7 +167,7 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 loginApplicationDefinition.setWorkingDirectory("/app");
                 loginApplicationDefinition.setCommand("java -jar foilen-login.jar");
 
-                neededManagedResources.add(loginApplication);
+                context.getManagedResources().add(loginApplication);
 
                 for (Machine machine : loginMachines) {
                     changes.linkAdd(loginApplication, LinkTypeConstants.INSTALLED_ON, machine);
@@ -184,7 +179,7 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 loginWebsite.setApplicationEndpoint(DockerContainerEndpoints.HTTP_TCP);
                 loginWebsite.getDomainNames().add(infraConfig.getLoginDomainName());
                 loginWebsite.setHttps(loginIsHttps);
-                neededManagedResources.add(loginWebsite);
+                context.getManagedResources().add(loginWebsite);
                 changes.linkAdd(loginWebsite, LinkTypeConstants.POINTS_TO, loginApplication);
                 if (loginIsHttps) {
                     changes.linkAdd(loginWebsite, LinkTypeConstants.USES, loginWebsiteCertificates.get(0));
@@ -248,7 +243,7 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 uiApplicationDefinition.setEntrypoint(new ArrayList<>());
                 uiApplicationDefinition.setCommand("java -jar /app/foilen-infra-ui.jar");
 
-                neededManagedResources.add(uiApplication);
+                context.getManagedResources().add(uiApplication);
 
                 for (Machine machine : uiMachines) {
                     changes.linkAdd(uiApplication, LinkTypeConstants.INSTALLED_ON, machine);
@@ -260,7 +255,7 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
                 uiWebsite.setApplicationEndpoint(DockerContainerEndpoints.HTTP_TCP);
                 uiWebsite.getDomainNames().add(infraConfig.getUiDomainName());
                 uiWebsite.setHttps(uiIsHttps);
-                neededManagedResources.add(uiWebsite);
+                context.getManagedResources().add(uiWebsite);
                 changes.linkAdd(uiWebsite, LinkTypeConstants.POINTS_TO, uiApplication);
                 if (uiIsHttps) {
                     changes.linkAdd(uiWebsite, LinkTypeConstants.USES, uiWebsiteCertificates.get(0));
@@ -275,16 +270,9 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
             logger.info("Missing some parameters. Will not create the applications");
         }
 
-        manageNeededResourcesWithContentUpdates(services, changes, infraConfig, neededManagedResources, Arrays.asList(Application.class, Website.class));
-
         if (infraConfigNeedsUpdate) {
             changes.resourceUpdate(infraConfig.getInternalId(), infraConfig);
         }
-    }
-
-    @Override
-    public void deleteHandler(CommonServicesContext services, ChangesContext changes, InfraConfig resource, List<Tuple3<IPResource, String, IPResource>> previousLinks) {
-        detachManagedResources(services, changes, resource, previousLinks);
     }
 
     private boolean hasAllPropertiesSet(InfraConfig infraConfig, //
@@ -324,11 +312,6 @@ public class InfraConfigUpdateHandler extends AbstractUpdateEventHandler<InfraCo
     @Override
     public Class<InfraConfig> supportedClass() {
         return InfraConfig.class;
-    }
-
-    @Override
-    public void updateHandler(CommonServicesContext services, ChangesContext changes, InfraConfig previousResource, InfraConfig newResource) {
-        commonHandler(services, changes, newResource);
     }
 
     private void validateResourcesToUse(IPResourceService resourceService, List<WebsiteCertificate> websiteCertificates, List<MariaDBServer> mariaDBServers, List<MariaDBDatabase> mariaDBDatabases,

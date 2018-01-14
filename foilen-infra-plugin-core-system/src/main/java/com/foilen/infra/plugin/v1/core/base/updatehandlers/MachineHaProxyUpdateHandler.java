@@ -23,7 +23,8 @@ import com.foilen.infra.plugin.v1.core.base.resources.WebsiteCertificate;
 import com.foilen.infra.plugin.v1.core.base.resources.helper.UnixUserAvailableIdHelper;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
-import com.foilen.infra.plugin.v1.core.eventhandler.AbstractUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.AbstractCommonMethodUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.CommonMethodUpdateEventHandlerContext;
 import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
@@ -33,19 +34,12 @@ import com.foilen.infra.plugin.v1.model.haproxy.HaProxyConfig;
 import com.foilen.infra.plugin.v1.model.haproxy.HaProxyConfigPortHttp;
 import com.foilen.infra.plugin.v1.model.haproxy.HaProxyConfigPortHttps;
 import com.foilen.infra.plugin.v1.model.outputter.haproxy.HaProxyConfigOutput;
-import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.foilen.smalltools.tuple.Tuple2;
-import com.foilen.smalltools.tuple.Tuple3;
 
-public class MachineHaProxyUpdateHandler extends AbstractUpdateEventHandler<Machine> {
+public class MachineHaProxyUpdateHandler extends AbstractCommonMethodUpdateEventHandler<Machine> {
 
     public static final String UNIX_USER_HA_PROXY_NAME = "infra_web";
-
-    @Override
-    public void addHandler(CommonServicesContext services, ChangesContext changes, Machine resource) {
-        commonHandler(services, changes, resource);
-    }
 
     @SuppressWarnings("unchecked")
     protected void addWebsiteConfig(Machine machine, String machineName, IPApplicationDefinition applicationDefinition, AtomicInteger nextLocalPort, Website website,
@@ -85,12 +79,11 @@ public class MachineHaProxyUpdateHandler extends AbstractUpdateEventHandler<Mach
     }
 
     @Override
-    public void checkAndFix(CommonServicesContext services, ChangesContext changes, Machine resource) {
-        commonHandler(services, changes, resource);
-    }
+    protected void commonHandlerExecute(CommonServicesContext services, ChangesContext changes, CommonMethodUpdateEventHandlerContext<Machine> context) {
 
-    private void commonHandler(CommonServicesContext services, ChangesContext changes, Machine machine) {
         IPResourceService resourceService = services.getResourceService();
+
+        Machine machine = context.getResource();
 
         // Get all the websites installed on this machine
         List<Website> websites = resourceService.linkFindAllByFromResourceClassAndLinkTypeAndToResource(Website.class, LinkTypeConstants.INSTALLED_ON, machine);
@@ -239,18 +232,8 @@ public class MachineHaProxyUpdateHandler extends AbstractUpdateEventHandler<Mach
     }
 
     @Override
-    public void deleteHandler(CommonServicesContext services, ChangesContext changes, Machine resource, List<Tuple3<IPResource, String, IPResource>> previousLinks) {
-        detachManagedResources(services, changes, resource, previousLinks);
-    }
-
-    @Override
     public Class<Machine> supportedClass() {
         return Machine.class;
-    }
-
-    @Override
-    public void updateHandler(CommonServicesContext services, ChangesContext changes, Machine previousResource, Machine newResource) {
-        commonHandler(services, changes, newResource);
     }
 
 }

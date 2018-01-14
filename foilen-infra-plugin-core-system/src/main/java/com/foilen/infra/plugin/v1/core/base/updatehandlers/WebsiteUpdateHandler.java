@@ -9,7 +9,6 @@
  */
 package com.foilen.infra.plugin.v1.core.base.updatehandlers;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
@@ -23,33 +22,27 @@ import com.foilen.infra.plugin.v1.core.base.resources.WebsiteCertificate;
 import com.foilen.infra.plugin.v1.core.common.CertificateHelper;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
-import com.foilen.infra.plugin.v1.core.eventhandler.AbstractUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.AbstractCommonMethodUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.CommonMethodUpdateEventHandlerContext;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
-import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.foilen.smalltools.crypt.spongycastle.asymmetric.AsymmetricKeys;
 import com.foilen.smalltools.crypt.spongycastle.asymmetric.RSACrypt;
 import com.foilen.smalltools.crypt.spongycastle.cert.CertificateDetails;
 import com.foilen.smalltools.crypt.spongycastle.cert.RSACertificate;
 import com.foilen.smalltools.tools.DateTools;
-import com.foilen.smalltools.tuple.Tuple3;
 
-public class WebsiteUpdateHandler extends AbstractUpdateEventHandler<Website> {
-
-    @Override
-    public void addHandler(CommonServicesContext services, ChangesContext changes, Website resource) {
-        commonHandler(services, changes, resource);
-    }
+public class WebsiteUpdateHandler extends AbstractCommonMethodUpdateEventHandler<Website> {
 
     @Override
-    public void checkAndFix(CommonServicesContext services, ChangesContext changes, Website resource) {
-        commonHandler(services, changes, resource);
-    }
+    protected void commonHandlerExecute(CommonServicesContext services, ChangesContext changes, CommonMethodUpdateEventHandlerContext<Website> context) {
 
-    private void commonHandler(CommonServicesContext services, ChangesContext changes, Website resource) {
+        context.getManagedResourceTypes().add(DnsPointer.class);
+        context.getManagedResourceTypes().add(WebsiteCertificate.class);
+
         IPResourceService resourceService = services.getResourceService();
 
-        List<IPResource> neededManagedResources = new ArrayList<>();
+        Website resource = context.getResource();
 
         // Create and manage : DnsPointer (attach Machines from the Application)
         List<Machine> installOnMachines = resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(resource, LinkTypeConstants.INSTALLED_ON, Machine.class);
@@ -58,7 +51,7 @@ public class WebsiteUpdateHandler extends AbstractUpdateEventHandler<Website> {
             dnsPointer = retrieveOrCreateResource(resourceService, changes, dnsPointer, DnsPointer.class);
             updateLinksOnResource(services, changes, dnsPointer, LinkTypeConstants.POINTS_TO, Machine.class, installOnMachines.stream().collect(Collectors.toList()));
 
-            neededManagedResources.add(dnsPointer);
+            context.getManagedResources().add(dnsPointer);
         }
 
         // Create and manage : WebsiteCertificate
@@ -91,26 +84,14 @@ public class WebsiteUpdateHandler extends AbstractUpdateEventHandler<Website> {
                     }
                 }
 
-                neededManagedResources.add(websiteCertificate);
+                context.getManagedResources().add(websiteCertificate);
             }
         }
-
-        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class, WebsiteCertificate.class));
-    }
-
-    @Override
-    public void deleteHandler(CommonServicesContext services, ChangesContext changes, Website resource, List<Tuple3<IPResource, String, IPResource>> previousLinks) {
-        detachManagedResources(services, changes, resource, previousLinks);
     }
 
     @Override
     public Class<Website> supportedClass() {
         return Website.class;
-    }
-
-    @Override
-    public void updateHandler(CommonServicesContext services, ChangesContext changes, Website previousResource, Website newResource) {
-        commonHandler(services, changes, newResource);
     }
 
 }

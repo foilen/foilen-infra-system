@@ -9,8 +9,6 @@
  */
 package com.foilen.infra.plugin.v1.core.base.updatehandlers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,32 +28,27 @@ import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerC
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerConfigUser;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
-import com.foilen.infra.plugin.v1.core.eventhandler.AbstractUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.AbstractCommonMethodUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.CommonMethodUpdateEventHandlerContext;
 import com.foilen.infra.plugin.v1.core.exception.ProblemException;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionAssetsBundle;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionVolume;
 import com.foilen.infra.plugin.v1.model.docker.DockerContainerEndpoints;
-import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.SecureRandomTools;
-import com.foilen.smalltools.tuple.Tuple3;
 import com.google.common.base.Strings;
 
-public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<MariaDBServer> {
+public class MariaDBServerUpdateHandler extends AbstractCommonMethodUpdateEventHandler<MariaDBServer> {
 
     @Override
-    public void addHandler(CommonServicesContext services, ChangesContext changes, MariaDBServer resource) {
-        commonHandler(services, changes, resource);
-    }
+    protected void commonHandlerExecute(CommonServicesContext services, ChangesContext changes, CommonMethodUpdateEventHandlerContext<MariaDBServer> context) {
 
-    @Override
-    public void checkAndFix(CommonServicesContext services, ChangesContext changes, MariaDBServer resource) {
-        commonHandler(services, changes, resource);
-    }
+        context.setManagedResourcesUpdateContentIfExists(true);
+        context.getManagedResourceTypes().add(Application.class);
 
-    private void commonHandler(CommonServicesContext services, ChangesContext changes, MariaDBServer mariaDBServer) {
+        MariaDBServer mariaDBServer = context.getResource();
 
         String serverName = mariaDBServer.getName();
         logger.debug("[{}] Processing", serverName);
@@ -116,7 +109,6 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
             mysqlManagerConfig.getUsersPermissions().add(userConfig);
         });
 
-        List<IPResource> neededManagedResources = new ArrayList<>();
         if (unixUsers.size() > 1) {
             throw new ProblemException("Cannot run as more than 1 unix user");
         }
@@ -172,8 +164,7 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
             applicationDefinition.addExecuteWhenStartedCommand("/mariadb-update-manager.sh");
 
             // Manage the app
-            neededManagedResources.add(application);
-            manageNeededResourcesWithContentUpdates(services, changes, mariaDBServer, neededManagedResources, Arrays.asList(Application.class));
+            context.getManagedResources().add(application);
 
             // add Machine INSTALLED_ON to mysqlApplicationDefinition (only 0 or 1)
             if (machines.size() == 1) {
@@ -183,14 +174,7 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
 
             // add UnixUser RUN_AS to mysqlApplicationDefinition (only 1)
             changes.linkAdd(application, LinkTypeConstants.RUN_AS, unixUser);
-        } else {
-            manageNeededResourcesWithContentUpdates(services, changes, mariaDBServer, neededManagedResources, Arrays.asList(Application.class));
         }
-    }
-
-    @Override
-    public void deleteHandler(CommonServicesContext services, ChangesContext changes, MariaDBServer resource, List<Tuple3<IPResource, String, IPResource>> previousLinks) {
-        detachManagedResources(services, changes, resource, previousLinks);
     }
 
     private List<MysqlManagerConfigGrant> getGrantsByUserAndDatabase(Map<String, MysqlManagerConfigPermission> userConfigByName, MariaDBUser mariaDBUser, String databaseName) {
@@ -216,11 +200,6 @@ public class MariaDBServerUpdateHandler extends AbstractUpdateEventHandler<Maria
     @Override
     public Class<MariaDBServer> supportedClass() {
         return MariaDBServer.class;
-    }
-
-    @Override
-    public void updateHandler(CommonServicesContext services, ChangesContext changes, MariaDBServer previousResource, MariaDBServer newResource) {
-        commonHandler(services, changes, newResource);
     }
 
 }

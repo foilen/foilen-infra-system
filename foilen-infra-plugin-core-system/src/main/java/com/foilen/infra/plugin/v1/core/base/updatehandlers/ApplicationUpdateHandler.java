@@ -9,8 +9,6 @@
  */
 package com.foilen.infra.plugin.v1.core.base.updatehandlers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,30 +19,22 @@ import com.foilen.infra.plugin.v1.core.base.resources.Machine;
 import com.foilen.infra.plugin.v1.core.base.resources.UnixUser;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
-import com.foilen.infra.plugin.v1.core.eventhandler.AbstractUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.AbstractCommonMethodUpdateEventHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.CommonMethodUpdateEventHandlerContext;
 import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
-import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
-import com.foilen.smalltools.tuple.Tuple3;
 
-public class ApplicationUpdateHandler extends AbstractUpdateEventHandler<Application> {
-
-    @Override
-    public void addHandler(CommonServicesContext services, ChangesContext changes, Application resource) {
-        commonHandler(services, changes, resource);
-    }
+public class ApplicationUpdateHandler extends AbstractCommonMethodUpdateEventHandler<Application> {
 
     @Override
-    public void checkAndFix(CommonServicesContext services, ChangesContext changes, Application resource) {
-        commonHandler(services, changes, resource);
-    }
-
-    private void commonHandler(CommonServicesContext services, ChangesContext changes, Application resource) {
+    protected void commonHandlerExecute(CommonServicesContext services, ChangesContext changes, CommonMethodUpdateEventHandlerContext<Application> context) {
 
         IPResourceService resourceService = services.getResourceService();
 
-        List<IPResource> neededManagedResources = new ArrayList<>();
+        Application resource = context.getResource();
+
+        context.getManagedResourceTypes().add(DnsPointer.class);
 
         // Update "runAs" with the link RUN_AS -> UnixUser
         List<UnixUser> unixUsers = resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(resource, LinkTypeConstants.RUN_AS, UnixUser.class);
@@ -68,7 +58,7 @@ public class ApplicationUpdateHandler extends AbstractUpdateEventHandler<Applica
             dnsPointer = retrieveOrCreateResource(resourceService, changes, dnsPointer, DnsPointer.class);
             updateLinksOnResource(services, changes, dnsPointer, LinkTypeConstants.POINTS_TO, Machine.class, installOnMachines);
 
-            neededManagedResources.add(dnsPointer);
+            context.getManagedResources().add(dnsPointer);
         }
 
         // Check that all Applications on each Machine that it is installed on has unique ports exposed per machine
@@ -83,23 +73,11 @@ public class ApplicationUpdateHandler extends AbstractUpdateEventHandler<Applica
                 }
             }
         }
-
-        manageNeededResourcesNoUpdates(services, changes, resource, neededManagedResources, Arrays.asList(DnsPointer.class));
-    }
-
-    @Override
-    public void deleteHandler(CommonServicesContext services, ChangesContext changes, Application resource, List<Tuple3<IPResource, String, IPResource>> previousLinks) {
-        detachManagedResources(services, changes, resource, previousLinks);
     }
 
     @Override
     public Class<Application> supportedClass() {
         return Application.class;
-    }
-
-    @Override
-    public void updateHandler(CommonServicesContext services, ChangesContext changes, Application previousResource, Application newResource) {
-        commonHandler(services, changes, newResource);
     }
 
 }
