@@ -46,7 +46,9 @@ public class ApplicationUpdateHandler extends AbstractCommonMethodUpdateEventHan
             neededRunAs = unixUsers.get(0).getId();
         }
         Integer currentRunAs = resource.getApplicationDefinition().getRunAs();
+        logger.debug("neededRunAs: {} ; currentRunAs: {}", neededRunAs, currentRunAs);
         if ((neededRunAs == null && currentRunAs != null) || (neededRunAs != null && !neededRunAs.equals(currentRunAs))) {
+            logger.debug("Updating runAs to: {}", neededRunAs);
             resource.getApplicationDefinition().setRunAs(neededRunAs);
             changes.resourceUpdate(resource.getInternalId(), resource);
         }

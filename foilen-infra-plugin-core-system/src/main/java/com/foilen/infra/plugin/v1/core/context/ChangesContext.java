@@ -31,6 +31,7 @@ public class ChangesContext {
     private List<IPResource> resourcesToAdd = new ArrayList<>();
     private List<Tuple2<Long, IPResource>> resourcesToUpdate = new ArrayList<>();
     private List<Long> resourcesToDelete = new ArrayList<>();
+    private List<Long> resourcesToRefresh = new ArrayList<>();
 
     private List<Tuple2<IPResource, String>> tagsToAdd = new ArrayList<>();
     private List<Tuple2<IPResource, String>> tagsToDelete = new ArrayList<>();
@@ -46,6 +47,7 @@ public class ChangesContext {
         resourcesToAdd.clear();
         resourcesToUpdate.clear();
         resourcesToDelete.clear();
+        resourcesToRefresh.clear();
         tagsToAdd.clear();
         tagsToDelete.clear();
         linksToAdd.clear();
@@ -78,6 +80,10 @@ public class ChangesContext {
         return Collections.unmodifiableList(resourcesToDelete);
     }
 
+    public List<Long> getResourcesToRefresh() {
+        return Collections.unmodifiableList(resourcesToRefresh);
+    }
+
     /**
      * Get the resources to update in the format: currentResourceInternalId -> updatedResource
      *
@@ -96,7 +102,7 @@ public class ChangesContext {
     }
 
     public boolean hasChanges() {
-        return !resourcesToAdd.isEmpty() || !resourcesToDelete.isEmpty() || !resourcesToUpdate.isEmpty() || //
+        return !resourcesToAdd.isEmpty() || !resourcesToDelete.isEmpty() || !resourcesToUpdate.isEmpty() || !resourcesToRefresh.isEmpty() || //
                 !tagsToAdd.isEmpty() || !tagsToDelete.isEmpty() || //
                 !linksToAdd.isEmpty() || !linksToDelete.isEmpty();
     }
@@ -172,6 +178,26 @@ public class ChangesContext {
 
     }
 
+    public void resourceRefresh(IPResource resource) {
+        Long internalId = resource.getInternalId();
+        if (internalId == null) {
+            Optional<IPResource> found = resourceService.resourceFindByPk(resource);
+            if (found.isPresent()) {
+                internalId = found.get().getInternalId();
+            }
+        }
+        resourceRefresh(internalId);
+    }
+
+    public void resourceRefresh(Long resourceId) {
+        if (resourceId == null) {
+            throw new IllegalUpdateException("Cannot delete a resource without id");
+        }
+        if (!resourcesToRefresh.contains(resourceId)) {
+            resourcesToRefresh.add(resourceId);
+        }
+    }
+
     public void resourceUpdate(IPResource resource) {
         resourceUpdate(resource.getInternalId(), resource);
     }
@@ -188,6 +214,7 @@ public class ChangesContext {
         // Remove previous update
         resourcesToUpdate.removeIf(it -> it.getA() == resourceId);
         resourcesToDelete.removeIf(it -> it == resourceId);
+        resourcesToRefresh.removeIf(it -> it == resourceId);
 
         resourcesToUpdate.add(new Tuple2<>(resourceId, updatedResource));
 

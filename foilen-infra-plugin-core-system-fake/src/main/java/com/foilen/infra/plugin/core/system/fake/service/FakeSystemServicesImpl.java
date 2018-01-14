@@ -92,23 +92,24 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     }
 
     private void applyChanges(ChangesContext changes, Queue<IPResource> addedResources, Queue<IPResource> updatedResourcesPrevious, Queue<IPResource> deletedResources,
-            Map<Long, List<Tuple3<IPResource, String, IPResource>>> deletedResourcePreviousLinksByResourceId, Set<Long> removedResourcesInThisTransaction) {
+            Map<Long, List<Tuple3<IPResource, String, IPResource>>> deletedResourcePreviousLinksByResourceId, Set<Long> removedResourcesInThisTransaction, Queue<Long> resourcesNeedRefresh) {
 
-        logger.debug("State before applying changes. Has {} updates, {} deletions, {} addition", updatedResourcesPrevious.size(), deletedResources.size(), addedResources.size());
-        logger.debug("[APPLY] Resources: has {} updates, {} deletions, {} addition ; Links: has {} deletions, {} addition ; Tags: has {} deletions, {} addition", //
-                changes.getResourcesToUpdate().size(), changes.getResourcesToDelete().size(), changes.getResourcesToAdd().size(), //
+        logger.debug("State before applying changes. Has {} updates, {} deletions, {} addition, {} refreshes", updatedResourcesPrevious.size(), deletedResources.size(), addedResources.size(),
+                resourcesNeedRefresh.size());
+        logger.debug("[APPLY] Resources: has {} updates, {} deletions, {} addition, {} refreshes ; Links: has {} deletions, {} addition ; Tags: has {} deletions, {} addition", //
+                changes.getResourcesToUpdate().size(), changes.getResourcesToDelete().size(), changes.getResourcesToAdd().size(), changes.getResourcesToRefresh().size(), //
                 changes.getLinksToDelete().size(), changes.getLinksToAdd().size(), //
                 changes.getTagsToDelete().size(), changes.getTagsToAdd().size() //
         );
 
         // Delete
-        Set<Long> updatedIds = new HashSet<>();
+        Set<Long> toRefreshIds = new HashSet<>();
         for (Long id : changes.getResourcesToDelete()) {
 
             if (removedResourcesInThisTransaction.add(id)) {
                 logger.debug("[APPLY] Delete resource {}", id);
             } else {
-                logger.debug("[APPLY] Delete resource {}. Already deleted in this transaction. Skipping", id);
+                logger.debug("[APPLY-SKIP] Delete resource {}. Already deleted in this transaction. Skipping", id);
 
                 continue;
             }
@@ -118,11 +119,12 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
             IPResource resource = resourceFind(id).get();
             deletedResources.add(resource);
+            resourcesNeedRefresh.remove(id);
             deletedResourcePreviousLinks.addAll(linkFindAllRelatedByResource(id));
             Set<Long> idsToUpdate = new HashSet<>();
             idsToUpdate.addAll(linkFindAllByFromResource(resource).stream().map(it -> it.getB().getInternalId()).collect(Collectors.toList()));
             idsToUpdate.addAll(linkFindAllByToResource(resource).stream().map(it -> it.getA().getInternalId()).collect(Collectors.toList()));
-            markAllTransientLinkedResourcesToUpdate(updatedIds, idsToUpdate);
+            markAllTransientLinkedResourcesToUpdate(toRefreshIds, idsToUpdate);
             resources.removeIf(it -> id.equals(it.getInternalId()));
             links.removeIf(it -> id.equals(it.getA()) || id.equals(it.getC()));
             tags.removeIf(it -> id.equals(it.getA()));
@@ -139,7 +141,9 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                                 link.getB().equals(it.getB()) && //
                                 toId.equals(it.getC()) //
                 )) {
-                    markAllTransientLinkedResourcesToUpdate(updatedIds, Arrays.asList(fromId, toId));
+                    markAllTransientLinkedResourcesToUpdate(toRefreshIds, Arrays.asList(fromId, toId));
+                } else {
+                    logger.debug("[APPLY-SKIP] Delete link {}. Skipped since does not exists", link);
                 }
             }
         }
@@ -149,7 +153,9 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
             if (resource.isPresent()) {
                 Long id = resource.get().getInternalId();
                 if (tags.removeIf(it -> id.equals(it.getA()) && tag.getB().equals(it.getB()))) {
-                    updatedIds.add(id);
+                    toRefreshIds.add(id);
+                } else {
+                    logger.debug("[APPLY-SKIP] Delete tag {}. Skipped since does not exists", tag);
                 }
             }
         }
@@ -166,12 +172,13 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
             resource.setInternalId(nextId.getAndIncrement());
             resources.add(resource);
             addedResources.add(resource);
+            resourcesNeedRefresh.remove(resource.getInternalId());
 
             // Add the direct links for update notification
             Set<Long> idsToUpdate = new HashSet<>();
             idsToUpdate.addAll(linkFindAllByFromResource(resource).stream().map(it -> it.getB().getInternalId()).collect(Collectors.toList()));
             idsToUpdate.addAll(linkFindAllByToResource(resource).stream().map(it -> it.getA().getInternalId()).collect(Collectors.toList()));
-            markAllTransientLinkedResourcesToUpdate(updatedIds, idsToUpdate);
+            markAllTransientLinkedResourcesToUpdate(toRefreshIds, idsToUpdate);
 
         }
         for (Tuple3<IPResource, String, IPResource> link : changes.getLinksToAdd()) {
@@ -188,14 +195,16 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
             Long fromId = fromResource.get().getInternalId();
             Long toId = toResource.get().getInternalId();
             // Add if not present
-            if (!links.stream().filter( //
+            if (links.stream().filter( //
                     it -> fromId.equals(it.getA()) && //
                             link.getB().equals(it.getB()) && //
                             toId.equals(it.getC()) //
             ).findAny().isPresent()) {
+                logger.debug("[APPLY-SKIP] Add link {}. Skipped since does not exists", link);
+            } else {
                 // Add
                 links.add(new Tuple3<>(fromId, link.getB(), toId));
-                markAllTransientLinkedResourcesToUpdate(updatedIds, Arrays.asList(fromId, toId));
+                markAllTransientLinkedResourcesToUpdate(toRefreshIds, Arrays.asList(fromId, toId));
             }
 
         }
@@ -208,16 +217,22 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
             Long id = resource.get().getInternalId();
             // Add if not present
-            if (!tags.stream().filter(it -> id.equals(it.getA()) && tag.getB().equals(it.getB())).findAny().isPresent()) {
+            if (tags.stream().filter(it -> id.equals(it.getA()) && tag.getB().equals(it.getB())).findAny().isPresent()) {
+                logger.debug("[APPLY-SKIP] Add tag {}. Skipped since does not exists", tag);
+            } else {
                 // Add
                 tags.add(new Tuple2<>(id, tag.getB()));
-                updatedIds.add(id);
+                toRefreshIds.add(id);
             }
         }
-        updatedIds.removeAll(removedResourcesInThisTransaction);
-        updatedResourcesPrevious.addAll(updatedIds.stream().map(it -> resourceFind(it).get()).collect(Collectors.toList()));
+        toRefreshIds.removeAll(removedResourcesInThisTransaction);
+        toRefreshIds.forEach(toRefreshId -> {
+            if (idNotInAnyQueues(toRefreshId, addedResources, updatedResourcesPrevious, deletedResources, resourcesNeedRefresh)) {
+                resourcesNeedRefresh.add(toRefreshId);
+            }
+        });
 
-        Set<Long> updatedIdSeconds = new HashSet<>();
+        Set<Long> toRefreshIdsSeconds = new HashSet<>();
         // Update
         for (Tuple2<Long, IPResource> update : changes.getResourcesToUpdate()) {
 
@@ -229,8 +244,10 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                 throw new ResourceNotFoundException(update.getA());
             }
             IPResource previousResource = previousResourceOptional.get();
-            if (updatedIds.add(previousResource.getInternalId())) {
+            // Add if not already in the list
+            if (!updatedResourcesPrevious.stream().filter(it -> previousResource.getInternalId().equals(it.getInternalId())).findAny().isPresent()) {
                 updatedResourcesPrevious.add(previousResource);
+                resourcesNeedRefresh.remove(previousResource.getInternalId());
             }
 
             // Get the next resource (might not exists)
@@ -246,25 +263,48 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
             // Update the resource
             updatedResource.setInternalId(update.getA());
-            resources.removeIf(it -> update.getA().equals(it.getInternalId()));
-            resources.add(clone(updatedResource));
 
-            // Add the direct links for update notification
-            updatedResourcesPrevious.addAll(linkFindAllByFromResource(updatedResource).stream().map(it -> it.getB()).collect(Collectors.toList()));
-            updatedResourcesPrevious.addAll(linkFindAllByToResource(updatedResource).stream().map(it -> it.getA()).collect(Collectors.toList()));
-            // Add all the transient managed resources links for update notification
-            markAllTransientLinkedResourcesToUpdate(updatedIdSeconds, Arrays.asList(updatedResource.getInternalId()));
+            // Check if really different
+            String jsonPrevious = JsonTools.compactPrint(previousResource);
+            String jsonNew = JsonTools.compactPrint(updatedResource);
+            if (jsonPrevious.equals(jsonNew)) {
+                logger.debug("[APPLY-SKIP] Update resource {}. Skipped since no change", update);
+            } else {
+                resources.removeIf(it -> update.getA().equals(it.getInternalId()));
+                resources.add(clone(updatedResource));
+
+                // Add the direct links for update notification
+                updatedResourcesPrevious.addAll(linkFindAllByFromResource(updatedResource).stream().map(it -> it.getB()).collect(Collectors.toList()));
+                updatedResourcesPrevious.addAll(linkFindAllByToResource(updatedResource).stream().map(it -> it.getA()).collect(Collectors.toList()));
+                // Add all the transient managed resources links for update notification
+                markAllTransientLinkedResourcesToUpdate(toRefreshIdsSeconds, Arrays.asList(updatedResource.getInternalId()));
+            }
         }
 
-        updatedIdSeconds.removeAll(updatedIds);
-        updatedResourcesPrevious.addAll(updatedIdSeconds.stream().map(it -> resourceFind(it).get()).collect(Collectors.toList()));
+        // Refreshes
+        for (Long id : changes.getResourcesToRefresh()) {
+            logger.debug("[APPLY] Refresh resource {}", id);
+            if (idNotInAnyQueues(id, addedResources, updatedResourcesPrevious, deletedResources, resourcesNeedRefresh)) {
+                resourcesNeedRefresh.add(id);
+            } else {
+                logger.debug("[APPLY-SKIP] Refresh resource {}. Already waiting for a refresh in any category", id);
+            }
+        }
+
+        toRefreshIdsSeconds.removeAll(toRefreshIds);
+        toRefreshIdsSeconds.forEach(toRefreshId -> {
+            if (idNotInAnyQueues(toRefreshId, addedResources, updatedResourcesPrevious, deletedResources, resourcesNeedRefresh)) {
+                resourcesNeedRefresh.add(toRefreshId);
+            }
+        });
 
         // Cleanup lists
         removedResourcesInThisTransaction.addAll(deletedResources.stream().map(IPResource::getInternalId).collect(Collectors.toSet()));
         updatedResourcesPrevious.removeIf(it -> removedResourcesInThisTransaction.contains(it.getInternalId()));
 
         changes.clear();
-        logger.debug("State after applying changes. Has {} updates, {} deletions, {} addition", updatedResourcesPrevious.size(), deletedResources.size(), addedResources.size());
+        logger.debug("State after applying changes. Has {} updates, {} deletions, {} addition, {} refreshes", updatedResourcesPrevious.size(), deletedResources.size(), addedResources.size(),
+                resourcesNeedRefresh.size());
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -279,6 +319,8 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
         List<Tuple3<Long, String, Long>> beforeTxLinks = links.stream().map(it -> new Tuple3<>(it.getA(), it.getB(), it.getC())).collect(Collectors.toList());
         List<Tuple2<Long, String>> beforeTxTags = tags.stream().map(it -> new Tuple2<>(it.getA(), it.getB())).collect(Collectors.toList());
 
+        long maxTime = System.currentTimeMillis() + 15000;
+
         try {
 
             Queue<IPResource> addedResources = new LinkedBlockingQueue<>();
@@ -286,22 +328,22 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
             Map<Long, List<Tuple3<IPResource, String, IPResource>>> deletedResourcePreviousLinksByResourceId = new HashMap<>();
             Queue<IPResource> updatedResourcesPrevious = new LinkedBlockingQueue<>();
             Set<Long> removedResourcesInThisTransaction = new HashSet<>();
+            Queue<Long> resourcesNeedRefresh = new LinkedBlockingQueue<>();
 
-            long globalLoopCount = 0;
             Map<Class<?>, List<UpdateEventContext>> updateEventContextsByResourceType = commonServicesContext.getPluginService().getUpdateEvents().stream() //
                     .collect(Collectors.groupingBy(it -> it.getUpdateEventHandler().supportedClass()));
 
             // Apply the changes
-            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction);
+            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction, resourcesNeedRefresh);
 
-            while ((!addedResources.isEmpty() || !updatedResourcesPrevious.isEmpty() || !deletedResources.isEmpty()) && globalLoopCount < 100) {
-                ++globalLoopCount;
+            while (System.currentTimeMillis() < maxTime && (!addedResources.isEmpty() || !updatedResourcesPrevious.isEmpty() || !deletedResources.isEmpty() || !resourcesNeedRefresh.isEmpty())) {
 
-                logger.debug("Update events loop {}. Has {} updates, {} deletions, {} addition", globalLoopCount, updatedResourcesPrevious.size(), deletedResources.size(), addedResources.size());
+                logger.debug("Update events loop. Has {} updates, {} deletions, {} addition, {} refreshes", updatedResourcesPrevious.size(), deletedResources.size(), addedResources.size(),
+                        resourcesNeedRefresh.size());
 
                 // Process all updates
                 IPResource itemPrevious;
-                while ((itemPrevious = updatedResourcesPrevious.poll()) != null) {
+                while (System.currentTimeMillis() < maxTime && (itemPrevious = updatedResourcesPrevious.poll()) != null) {
                     Optional<IPResource> currentResourceOptional = resourceFind(itemPrevious.getInternalId());
                     if (!currentResourceOptional.isPresent()) {
                         throw new ResourceNotFoundException(itemPrevious);
@@ -314,14 +356,15 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                             logger.debug("[UPDATE EVENT] Processing {} updated handler", eventContext.getUpdateHandlerName());
                             UpdateEventHandler updateEventHandler = eventContext.getUpdateEventHandler();
                             updateEventHandler.updateHandler(commonServicesContext, changes, itemPrevious, currentResource);
-                            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction);
+                            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction,
+                                    resourcesNeedRefresh);
                         }
                     }
                 }
 
                 // Process all deletes
                 IPResource item;
-                while ((item = deletedResources.poll()) != null) {
+                while (System.currentTimeMillis() < maxTime && (item = deletedResources.poll()) != null) {
                     List<UpdateEventContext> eventContexts = updateEventContextsByResourceType.get(item.getClass());
                     if (eventContexts != null) {
                         logger.debug("[UPDATE EVENT] Processing {} deleted handlers", eventContexts.size());
@@ -329,13 +372,14 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                             logger.debug("[UPDATE EVENT] Processing {} deleted handler", eventContext.getUpdateHandlerName());
                             UpdateEventHandler updateEventHandler = eventContext.getUpdateEventHandler();
                             updateEventHandler.deleteHandler(commonServicesContext, changes, item, deletedResourcePreviousLinksByResourceId.get(item.getInternalId()));
-                            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction);
+                            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction,
+                                    resourcesNeedRefresh);
                         }
                     }
                 }
 
                 // Process all adds
-                while ((item = addedResources.poll()) != null) {
+                while (System.currentTimeMillis() < maxTime && (item = addedResources.poll()) != null) {
                     List<UpdateEventContext> eventContexts = updateEventContextsByResourceType.get(item.getClass());
                     if (eventContexts != null) {
                         logger.debug("[UPDATE EVENT] Processing {} added handlers", eventContexts.size());
@@ -343,18 +387,41 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                             logger.debug("[UPDATE EVENT] Processing {} added handler", eventContext.getUpdateHandlerName());
                             UpdateEventHandler updateEventHandler = eventContext.getUpdateEventHandler();
                             updateEventHandler.addHandler(commonServicesContext, changes, item);
-                            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction);
+                            applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction,
+                                    resourcesNeedRefresh);
+                        }
+                    }
+                }
+
+                // Process all refreshes
+                Long id;
+                while (System.currentTimeMillis() < maxTime && (id = resourcesNeedRefresh.poll()) != null) {
+                    Optional<IPResource> optionalResource = resourceFind(id);
+                    if (optionalResource.isPresent()) {
+                        item = optionalResource.get();
+                        List<UpdateEventContext> eventContexts = updateEventContextsByResourceType.get(item.getClass());
+                        if (eventContexts != null) {
+                            logger.debug("[UPDATE EVENT] Processing {} refresh handlers", eventContexts.size());
+                            for (UpdateEventContext eventContext : eventContexts) {
+                                logger.debug("[UPDATE EVENT] Processing {} refresh handler", eventContext.getUpdateHandlerName());
+                                UpdateEventHandler updateEventHandler = eventContext.getUpdateEventHandler();
+                                updateEventHandler.checkAndFix(commonServicesContext, changes, item);
+                                applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction,
+                                        resourcesNeedRefresh);
+                            }
                         }
                     }
                 }
 
                 // Apply any pending changes
-                applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction);
-
+                if (System.currentTimeMillis() < maxTime) {
+                    applyChanges(changes, addedResources, updatedResourcesPrevious, deletedResources, deletedResourcePreviousLinksByResourceId, removedResourcesInThisTransaction,
+                            resourcesNeedRefresh);
+                }
             }
 
-            if (!addedResources.isEmpty() || !updatedResourcesPrevious.isEmpty() || !deletedResources.isEmpty()) {
-                throw new InfiniteUpdateLoop("Iterated " + globalLoopCount + " times and there are always changes");
+            if (!addedResources.isEmpty() || !updatedResourcesPrevious.isEmpty() || !deletedResources.isEmpty() || !resourcesNeedRefresh.isEmpty()) {
+                throw new InfiniteUpdateLoop("Iterated for too long and there are always changes");
             }
 
             // Complete the transaction
@@ -444,6 +511,13 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     public List<Tuple2<Long, String>> getTags() {
         return tags;
+    }
+
+    private boolean idNotInAnyQueues(Long id, Queue<IPResource> addedResources, Queue<IPResource> updatedResourcesPrevious, Queue<IPResource> deletedResources, Queue<Long> resourcesNeedRefresh) {
+        return !resourcesNeedRefresh.contains(id) //
+                && !addedResources.stream().filter(it -> id.equals(it.getInternalId())).findAny().isPresent() //
+                && !updatedResourcesPrevious.stream().filter(it -> id.equals(it.getInternalId())).findAny().isPresent() //
+                && !deletedResources.stream().filter(it -> id.equals(it.getInternalId())).findAny().isPresent();
     }
 
     @Override
@@ -596,9 +670,9 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                 .collect(Collectors.toList());
     }
 
-    private void markAllTransientLinkedResourcesToUpdate(Set<Long> updatedIds, Collection<Long> ids) {
+    private void markAllTransientLinkedResourcesToUpdate(Set<Long> toRefreshIds, Collection<Long> ids) {
         Set<Long> transientProcessedIds = new HashSet<>();
-        markAllTransientLinkedResourcesToUpdate(updatedIds, transientProcessedIds, ids);
+        markAllTransientLinkedResourcesToUpdate(toRefreshIds, transientProcessedIds, ids);
     }
 
     private void markAllTransientLinkedResourcesToUpdate(Set<Long> updatedIds, Set<Long> transientProcessedIds, Collection<Long> ids) {

@@ -47,6 +47,7 @@ import com.foilen.infra.plugin.v1.core.context.TimerEventContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.eventhandler.TimerEventHandler;
 import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
+import com.foilen.infra.plugin.v1.core.exception.InfiniteUpdateLoop;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
@@ -58,6 +59,8 @@ import com.foilen.infra.plugin.v1.model.junit.JunitResource;
 import com.foilen.infra.plugin.v1.model.junit.JunitResourceEnum;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
+import com.foilen.infra.plugin.v1.testingcontroller.TestingControllerMockUpdateHander;
+import com.foilen.infra.plugin.v1.testingcontroller.TestingControllerPluginDefinitionProvider;
 import com.foilen.smalltools.crypt.spongycastle.asymmetric.AsymmetricKeys;
 import com.foilen.smalltools.crypt.spongycastle.asymmetric.RSACrypt;
 import com.foilen.smalltools.crypt.spongycastle.cert.CertificateDetails;
@@ -149,7 +152,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Before
-    public void createFakeData() {
+    public void beforeEach() {
+        TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerInfiniteLoopUpdateHander().setAlwaysUpdate(false);
+
         JunitsHelper.addResourcesDefinition(getInternalServicesContext());
         JunitsHelper.createFakeData(getCommonServicesContext(), getInternalServicesContext());
     }
@@ -408,6 +413,27 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
+    public void testChanges_refresh() {
+        // Create resource
+        JunitResource junitResource = new JunitResource("testChanges_refresh");
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        changes.resourceAdd(junitResource);
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+
+        // Reset
+        TestingControllerMockUpdateHander testingControllerMockUpdateHander = TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerMockUpdateHander();
+        testingControllerMockUpdateHander.clear();
+        Assert.assertEquals(0, testingControllerMockUpdateHander.getChecked().size());
+
+        // Refresh resource
+        changes.resourceRefresh(junitResource);
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+
+        // Assert
+        Assert.assertEquals(1, testingControllerMockUpdateHander.getChecked().size());
+    }
+
+    @Test
     public void testChanges_rollback() {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
@@ -656,6 +682,20 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(resourceService.resourceFindByPk(new JunitResource("t2", JunitResourceEnum.A, 2)).get().getInternalId(), resource);
         internalChangeService.changesExecute(changes);
 
+    }
+
+    @Test(timeout = 30000)
+    public void testInfiniteLoop() {
+
+        thrown.expect(InfiniteUpdateLoop.class);
+
+        TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerInfiniteLoopUpdateHander().setAlwaysUpdate(true);
+
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        JunitResource resource = new JunitResource("OneToGetStarted");
+        changes.resourceAdd(resource);
+
+        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
     }
 
     @Test
