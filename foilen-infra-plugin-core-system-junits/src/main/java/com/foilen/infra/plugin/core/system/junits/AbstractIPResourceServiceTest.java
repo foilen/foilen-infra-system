@@ -148,32 +148,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertTrue(actualTags.containsAll(Arrays.asList(expectedTags)));
     }
 
-    protected void assertState(String resourceName) {
-        ResourcesState resourcesState = new ResourcesState();
-
-        resourcesState.setResources(getInternalServicesContext().getInternalIPResourceService().resourceFindAll().stream() //
-                .map(resource -> {
-                    ResourceState resourceState = new ResourceState(getResourceDetails(resource));
-
-                    // Links
-                    List<ResourcesStateLink> links = getCommonServicesContext().getResourceService().linkFindAllByFromResource(resource).stream() //
-                            .map(link -> new ResourcesStateLink(link.getA(), getResourceDetails(link.getB()))) //
-                            .collect(Collectors.toList());
-                    resourceState.setLinks(links);
-
-                    // Tags
-                    resourceState.setTags(getCommonServicesContext().getResourceService().tagFindAllByResource(resource).stream().sorted().collect(Collectors.toList()));
-
-                    return resourceState;
-                }) //
-                .collect(Collectors.toList()));
-
-        resourcesState.sort();
-
-        AssertTools.assertJsonComparison(resourceName, AbstractIPResourceServiceTest.class, resourcesState);
-
-    }
-
     @Before
     public void createFakeData() {
         JunitsHelper.addResourcesDefinition(getInternalServicesContext());
@@ -207,10 +181,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     protected abstract CommonServicesContext getCommonServicesContext();
 
     protected abstract InternalServicesContext getInternalServicesContext();
-
-    protected String getResourceDetails(IPResource resource) {
-        return resource.getClass().getSimpleName() + " | " + resource.getResourceName() + " | " + resource.getResourceDescription();
-    }
 
     @Test
     public void testBrokenPlugin() {
@@ -2303,7 +2273,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceAdd(uu2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("ApplicationTest-state-0.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-0.json", AbstractIPResourceServiceTest.class);
 
         // Create an application without links and one with links
         Application a1 = new Application();
@@ -2322,7 +2292,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.linkAdd(a2, LinkTypeConstants.INSTALLED_ON, m3);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("ApplicationTest-state-1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-1.json", AbstractIPResourceServiceTest.class);
         a1 = resourceService.resourceFindByPk(a1).get();
         a2 = resourceService.resourceFindByPk(a2).get();
         Assert.assertEquals(null, a1.getApplicationDefinition().getRunAs());
@@ -2333,7 +2303,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.linkAdd(a1, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("ApplicationTest-state-2.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-2.json", AbstractIPResourceServiceTest.class);
         a1 = resourceService.resourceFindByPk(a1).get();
         a2 = resourceService.resourceFindByPk(a2).get();
         Assert.assertEquals((Integer) 2000, a1.getApplicationDefinition().getRunAs());
@@ -2347,7 +2317,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.linkDelete(a2, LinkTypeConstants.INSTALLED_ON, m3);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("ApplicationTest-state-3.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-3.json", AbstractIPResourceServiceTest.class);
         a1 = resourceService.resourceFindByPk(a1).get();
         a2 = resourceService.resourceFindByPk(a2).get();
         Assert.assertEquals((Integer) 2000, a1.getApplicationDefinition().getRunAs());
@@ -2378,14 +2348,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceDelete(a2.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("ApplicationTest-state-4.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-4.json", AbstractIPResourceServiceTest.class);
 
         // Remove all links on application
         changes.linkDelete(a1, LinkTypeConstants.RUN_AS, uu1);
         changes.linkDelete(a1, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("ApplicationTest-state-5.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-5.json", AbstractIPResourceServiceTest.class);
         a1 = resourceService.resourceFindByPk(a1).get();
         Assert.assertEquals(null, a1.getApplicationDefinition().getRunAs());
 
@@ -2393,7 +2363,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceDelete(a1.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("ApplicationTest-state-0.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-0.json", AbstractIPResourceServiceTest.class);
     }
 
     @Test
@@ -2411,26 +2381,26 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceAdd(m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-0.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-0.json", AbstractIPResourceServiceTest.class);
 
         // Points to no machine
         DnsPointer dp = new DnsPointer("pointer.example.com");
         changes.resourceAdd(dp);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-1.json", AbstractIPResourceServiceTest.class);
 
         // Points to 1 machine
         changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-2.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-2.json", AbstractIPResourceServiceTest.class);
 
         // Points to 2 machines
         changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-3.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-3.json", AbstractIPResourceServiceTest.class);
 
         // Remove ip from m2
         m2 = resourceService.resourceFindByPk(m2).get();
@@ -2438,14 +2408,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(m2.getInternalId(), m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-4.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-4.json", AbstractIPResourceServiceTest.class);
 
         // Put back ip to m2
         m2.setPublicIp("199.141.1.201");
         changes.resourceUpdate(m2.getInternalId(), m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-3.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-3.json", AbstractIPResourceServiceTest.class);
 
         // Rename
         dp = resourceService.resourceFindByPk(dp).get();
@@ -2453,32 +2423,32 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
         dp = resourceService.resourceFindByPk(new DnsPointer("pointer2.example.com")).get();
 
-        assertState("DnsPointerTest-state-5.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-5.json", AbstractIPResourceServiceTest.class);
 
         // Points to 1 machine
         changes.linkDelete(dp, LinkTypeConstants.POINTS_TO, m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-6.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-6.json", AbstractIPResourceServiceTest.class);
 
         // Point to 2 machines
         changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-5.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-5.json", AbstractIPResourceServiceTest.class);
 
         // Delete the second machine
         m2 = resourceService.resourceFindByPk(m2).get();
         changes.resourceDelete(m2.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-7.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-7.json", AbstractIPResourceServiceTest.class);
 
         // Delete
         changes.resourceDelete(dp.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("DnsPointerTest-state-8.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-8.json", AbstractIPResourceServiceTest.class);
     }
 
     @Test
@@ -2526,7 +2496,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("InfraConfigTest-state-0.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-0.json", AbstractIPResourceServiceTest.class);
 
         // Create the HTTP InfraConfig
         InfraConfig infraConfig = new InfraConfig();
@@ -2559,7 +2529,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
         infraConfig = resourceService.resourceFindByPk(infraConfig).get();
 
-        assertState("InfraConfigTest-state-1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-1.json", AbstractIPResourceServiceTest.class);
         assertInfraConfigApps("InfraConfigTest-apps-1.json");
 
         // Change for HTTPS
@@ -2578,7 +2548,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("InfraConfigTest-state-2.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-2.json", AbstractIPResourceServiceTest.class);
         assertInfraConfigApps("InfraConfigTest-apps-2.json");
 
         // Change for HTTP
@@ -2586,14 +2556,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceDelete(uiWebsiteCertificate);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("InfraConfigTest-state-1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-1.json", AbstractIPResourceServiceTest.class);
         assertInfraConfigApps("InfraConfigTest-apps-1.json");
 
         // Delete InfraConfig (back to initial state)
         changes.resourceDelete(infraConfig);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("InfraConfigTest-state-0.1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-0.1.json", AbstractIPResourceServiceTest.class);
 
     }
 
@@ -2610,7 +2580,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceAdd(machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("MachineTest-state-1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-1.json", AbstractIPResourceServiceTest.class);
 
         // Change IP
         machine = resourceService.resourceFindByPk(machine).get();
@@ -2618,21 +2588,21 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(machine.getInternalId(), machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("MachineTest-state-2.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-2.json", AbstractIPResourceServiceTest.class);
 
         // Remove IP
         machine.setPublicIp(null);
         changes.resourceUpdate(machine.getInternalId(), machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("MachineTest-state-3.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-3.json", AbstractIPResourceServiceTest.class);
 
         // Put back IP
         machine.setPublicIp("199.141.1.102");
         changes.resourceUpdate(machine.getInternalId(), machine);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("MachineTest-state-2.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-2.json", AbstractIPResourceServiceTest.class);
 
         // Change name (fail)
         machine.setName("m2.node.example.com");
@@ -2647,7 +2617,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceDelete(machine.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("MachineTest-state-4.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-4.json", AbstractIPResourceServiceTest.class);
 
     }
 
@@ -2672,7 +2642,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceAdd(wc2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-0.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-0.json", AbstractIPResourceServiceTest.class);
 
         // Create one, non-https
         Website website = new Website("d1.example.com");
@@ -2681,7 +2651,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
         website = resourceService.resourceFindByPk(website).get();
 
-        assertState("WebsiteTest-state-1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-1.json", AbstractIPResourceServiceTest.class);
 
         // Add one application
         Application application = new Application();
@@ -2690,19 +2660,19 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.linkAdd(website, LinkTypeConstants.POINTS_TO, application);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-2.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-2.json", AbstractIPResourceServiceTest.class);
 
         // Change the list of machines on the application
         changes.linkAdd(application, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-3.0.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-3.0.json", AbstractIPResourceServiceTest.class);
 
         // Change the list of machines on the website
         changes.linkAdd(website, LinkTypeConstants.INSTALLED_ON, m1);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-3.1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-3.1.json", AbstractIPResourceServiceTest.class);
 
         // Change domain names
         website = resourceService.resourceFindByPk(website).get();
@@ -2712,7 +2682,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-4.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-4.json", AbstractIPResourceServiceTest.class);
 
         // Change to https
         website = resourceService.resourceFindByPk(website).get();
@@ -2720,7 +2690,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-5.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-5.json", AbstractIPResourceServiceTest.class);
 
         // Change to http
         website = resourceService.resourceFindByPk(website).get();
@@ -2728,7 +2698,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-4.json"); // Same as previous
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-4.json", AbstractIPResourceServiceTest.class); // Same as previous
 
         // Change to https
         website = resourceService.resourceFindByPk(website).get();
@@ -2736,7 +2706,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-5.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-5.json", AbstractIPResourceServiceTest.class);
 
         // Change to another domain with another cert
         website = resourceService.resourceFindByPk(website).get();
@@ -2746,7 +2716,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-6.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-6.json", AbstractIPResourceServiceTest.class);
 
         // Change to another domain with a cert that does not exists yet
         website = resourceService.resourceFindByPk(website).get();
@@ -2766,13 +2736,13 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(websiteCertificate.getInternalId(), websiteCertificate);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-7.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-7.json", AbstractIPResourceServiceTest.class);
 
         // Delete
         changes.resourceDelete(website.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteTest-state-8.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-8.json", AbstractIPResourceServiceTest.class);
 
     }
 
@@ -2799,7 +2769,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
         c1 = resourceService.resourceFindByPk(c1).get();
 
-        assertState("WebsiteCertificateTest-state-1.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteCertificateTest-state-1.json", AbstractIPResourceServiceTest.class);
 
         // Change the list of domains
         rsaCert = new RSACertificate(rootKeys);
@@ -2814,13 +2784,13 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceUpdate(c1.getInternalId(), c2);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteCertificateTest-state-2.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteCertificateTest-state-2.json", AbstractIPResourceServiceTest.class);
 
         // Delete
         changes.resourceDelete(c1.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        assertState("WebsiteCertificateTest-state-3.json");
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteCertificateTest-state-3.json", AbstractIPResourceServiceTest.class);
 
     }
 

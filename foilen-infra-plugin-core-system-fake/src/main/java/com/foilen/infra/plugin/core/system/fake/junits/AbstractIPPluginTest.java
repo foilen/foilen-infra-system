@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,9 +22,6 @@ import org.junit.rules.ExpectedException;
 
 import com.foilen.infra.plugin.core.system.fake.controller.ResourcesController;
 import com.foilen.infra.plugin.core.system.fake.service.FakeSystemServicesImpl;
-import com.foilen.infra.plugin.core.system.junits.ResourceState;
-import com.foilen.infra.plugin.core.system.junits.ResourcesState;
-import com.foilen.infra.plugin.core.system.junits.ResourcesStateLink;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
@@ -151,35 +147,9 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
         }
     }
 
-    protected void assertSet(Set<String> actualTags, String... expectedTags) {
-        Assert.assertEquals(expectedTags.length, actualTags.size());
-        Assert.assertTrue(actualTags.containsAll(Arrays.asList(expectedTags)));
-    }
-
-    protected void assertState(String resourceName, Class<?> resourceContext) {
-        ResourcesState resourcesState = new ResourcesState();
-
-        resourcesState.setResources(fakeSystemServicesImpl.getResources().stream() //
-                .map(resource -> {
-                    ResourceState resourceState = new ResourceState(getResourceDetails(resource));
-
-                    // Links
-                    List<ResourcesStateLink> links = fakeSystemServicesImpl.linkFindAllByFromResource(resource).stream() //
-                            .map(link -> new ResourcesStateLink(link.getA(), getResourceDetails(link.getB()))) //
-                            .collect(Collectors.toList());
-                    resourceState.setLinks(links);
-
-                    // Tags
-                    resourceState.setTags(fakeSystemServicesImpl.tagFindAllByResource(resource).stream().sorted().collect(Collectors.toList()));
-
-                    return resourceState;
-                }) //
-                .collect(Collectors.toList()));
-
-        resourcesState.sort();
-
-        AssertTools.assertJsonComparison(resourceName, resourceContext, resourcesState);
-
+    protected void assertSet(Set<String> actualItems, String... expectedItems) {
+        Assert.assertEquals(expectedItems.length, actualItems.size());
+        Assert.assertTrue(actualItems.containsAll(Arrays.asList(expectedItems)));
     }
 
     protected CommonServicesContext getCommonServicesContext() {
@@ -188,10 +158,6 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
 
     protected InternalServicesContext getInternalServicesContext() {
         return fakeSystemServicesImpl.getInternalServicesContext();
-    }
-
-    protected String getResourceDetails(IPResource resource) {
-        return resource.getClass().getSimpleName() + " | " + resource.getResourceName() + " | " + resource.getResourceDescription();
     }
 
     @Before

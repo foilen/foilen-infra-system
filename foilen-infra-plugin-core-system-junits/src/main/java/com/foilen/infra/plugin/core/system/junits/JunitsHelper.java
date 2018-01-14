@@ -11,7 +11,9 @@ package com.foilen.infra.plugin.core.system.junits;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
@@ -20,7 +22,9 @@ import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.model.junit.JunitResource;
 import com.foilen.infra.plugin.v1.model.junit.JunitResourceEnum;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
+import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.DateTools;
+import com.foilen.smalltools.tools.JsonTools;
 import com.google.common.collect.Sets;
 
 public class JunitsHelper {
@@ -46,6 +50,42 @@ public class JunitsHelper {
                         JunitResource.PROPERTY_SET_FLOATS //
                 ));
         ctx.getInternalIPResourceService().resourceAdd(resourceDefinition);
+    }
+
+    public static void assertState(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext, String resourceName, Class<?> resourceContext) {
+        assertState(commonServicesContext, internalServicesContext, resourceName, resourceContext, false);
+    }
+
+    public static void assertState(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext, String resourceName, Class<?> resourceContext, boolean withContent) {
+        ResourcesState resourcesState = new ResourcesState();
+        resourcesState.setResources(internalServicesContext.getInternalIPResourceService().resourceFindAll().stream() //
+                .map(resource -> {
+                    ResourceState resourceState = new ResourceState(getResourceDetails(resource));
+
+                    // With content
+                    if (withContent) {
+                        // Remove some values
+                        IPResource cloned = JsonTools.clone(resource);
+                        cloned.setInternalId(null);
+                        resourceState.setContentInJson(JsonTools.prettyPrint(resource));
+                    }
+
+                    // Links
+                    List<ResourcesStateLink> links = commonServicesContext.getResourceService().linkFindAllByFromResource(resource).stream() //
+                            .map(link -> new ResourcesStateLink(link.getA(), getResourceDetails(link.getB()))) //
+                            .collect(Collectors.toList());
+                    resourceState.setLinks(links);
+
+                    // Tags
+                    resourceState.setTags(commonServicesContext.getResourceService().tagFindAllByResource(resource).stream().sorted().collect(Collectors.toList()));
+
+                    return resourceState;
+                }) //
+                .collect(Collectors.toList()));
+
+        resourcesState.sort();
+
+        AssertTools.assertJsonComparisonWithoutNulls(resourceName, resourceContext, resourcesState);
     }
 
     public static void createFakeData(CommonServicesContext commonCtx, InternalServicesContext internalCtx) {
@@ -140,6 +180,10 @@ public class JunitsHelper {
         junitResource.setSetIntegers(setIntegers);
         junitResource.setSetTexts(setTexts);
         return junitResource;
+    }
+
+    protected static String getResourceDetails(IPResource resource) {
+        return resource.getClass().getSimpleName() + " | " + resource.getResourceName() + " | " + resource.getResourceDescription();
     }
 
 }
