@@ -80,7 +80,7 @@
           data-button-choose='<@spring.message "button.choose"/>'
           data-button-change='<@spring.message "button.change"/>'
           data-button-clear='<@spring.message "button.clear"/>'
-          data-label='${pageItem.label}'
+          data-label="${pageItem.label}"
           data-field-name="${pageItem.fieldName}" 
           data-resource-type="${pageItem.resourceType.name}" 
           data-resource-id="${pageItem.value.internalId}" 
@@ -93,7 +93,7 @@
           data-button-choose='<@spring.message "button.choose"/>'
           data-button-change='<@spring.message "button.change"/>'
           data-button-clear='<@spring.message "button.clear"/>'
-          data-label='${pageItem.label}'
+          data-label="${pageItem.label}"
           data-field-name="${pageItem.fieldName}" 
           data-resource-type="${pageItem.resourceType.name}" 
           data-resource-id="" 
@@ -106,7 +106,7 @@
       <div class="form-group ResourcesFieldPageItem" id="${pageItem.fieldName}" 
         data-button-add='<@spring.message "button.add"/>'
         data-button-clear='<@spring.message "button.clearAll"/>'
-        data-label='${pageItem.label}'
+        data-label="${pageItem.label}"
         data-field-name="${pageItem.fieldName}" 
         data-resource-type="${pageItem.resourceType.name}" 
         >

@@ -9,6 +9,7 @@
  */
 package com.foilen.infra.plugin.v1.core.visual.helper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourceFieldPageIt
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourcesFieldPageItem;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
+import com.google.common.base.Strings;
 
 public class CommonResourceLink {
 
@@ -46,7 +48,7 @@ public class CommonResourceLink {
             String labelCode, String fieldName) {
         ResourceFieldPageItem<L> pageItem = new ResourceFieldPageItem<>();
         pageItem.setFieldName(fieldName);
-        pageItem.setLabel(labelCode);
+        pageItem.setLabel(servicesCtx.getTranslationService().translate(labelCode));
         pageItem.setResourceType(resourceType);
 
         if (editedResource != null) {
@@ -86,7 +88,7 @@ public class CommonResourceLink {
 
         ResourcesFieldPageItem<L> pageItem = new ResourcesFieldPageItem<>();
         pageItem.setFieldName(fieldName);
-        pageItem.setLabel(labelCode);
+        pageItem.setLabel(servicesCtx.getTranslationService().translate(labelCode));
         pageItem.setResourceType(resourceType);
 
         if (editedResource != null) {
@@ -200,7 +202,9 @@ public class CommonResourceLink {
             try {
                 int idx = 0;
                 for (String valuePart : valuesParts) {
-                    linkedResourceIds[idx++] = Long.parseLong(valuePart);
+                    if (!Strings.isNullOrEmpty(valuePart)) {
+                        linkedResourceIds[idx++] = Long.parseLong(valuePart);
+                    }
                 }
             } catch (Exception e) {
                 throw new ProblemException("The link id is not numerical", e);
@@ -212,12 +216,17 @@ public class CommonResourceLink {
             );
 
             // Remove previous links if not the right one
-            List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
-            currentLinks.stream() //
-                    .filter(it -> !finalLinks.contains(it)) //
-                    .forEach(it -> {
-                        changesContext.linkDelete(editedResource, linkType, it);
-                    });
+            List<L> currentLinks;
+            if (editedResource.getInternalId() == null) {
+                currentLinks = new ArrayList<>();
+            } else {
+                currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
+                currentLinks.stream() //
+                        .filter(it -> !finalLinks.contains(it)) //
+                        .forEach(it -> {
+                            changesContext.linkDelete(editedResource, linkType, it);
+                        });
+            }
 
             // Add the new links if not the right ones or there were none
             finalLinks.stream() //
