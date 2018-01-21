@@ -49,6 +49,7 @@ import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalIPResourceService;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.exception.SmallToolsException;
+import com.foilen.smalltools.reflection.ReflectionTools;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.AssertTools;
 import com.foilen.smalltools.tools.JsonTools;
@@ -69,6 +70,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     private List<Tuple3<Long, String, Long>> links = new ArrayList<>();
     private List<Tuple2<Long, String>> tags = new ArrayList<>();
 
+    private Map<Class<? extends IPResource>, List<Class<?>>> allClassesByResourceClass = new HashMap<>();
     private Map<Class<? extends IPResource>, IPResourceDefinition> resourceDefinitionByResourceClass = new HashMap<>();
     private Map<String, IPResourceDefinition> resourceDefinitionByResourceType = new HashMap<>();
 
@@ -447,20 +449,27 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     @Override
     public <T extends IPResource> IPResourceQuery<T> createResourceQuery(Class<T> resourceClass) {
-        IPResourceDefinition resourceDefinition = resourceDefinitionByResourceClass.get(resourceClass);
-        if (resourceDefinition == null) {
+        List<IPResourceDefinition> resourceDefinitions = allClassesByResourceClass.entrySet().stream() //
+                .filter(it -> it.getValue().contains(resourceClass)) //
+                .map(it -> resourceDefinitionByResourceClass.get(it.getKey())) //
+                .filter(it -> it != null) //
+                .collect(Collectors.toList());
+
+        if (resourceDefinitions.isEmpty()) {
             throw new SmallToolsException("Resource class " + resourceClass.getName() + " is unknown");
         }
-        return new IPResourceQuery<>(resourceDefinition);
+
+        return new IPResourceQuery<>(resourceDefinitions);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends IPResource> IPResourceQuery<T> createResourceQuery(String resourceType) {
         IPResourceDefinition resourceDefinition = resourceDefinitionByResourceType.get(resourceType);
         if (resourceDefinition == null) {
             throw new SmallToolsException("Resource type " + resourceType + " is unknown");
         }
-        return new IPResourceQuery<>(resourceDefinition);
+        return (IPResourceQuery<T>) createResourceQuery(resourceDefinition.getResourceClass());
     }
 
     public CommonServicesContext getCommonServicesContext() {
@@ -700,6 +709,8 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     public void resourceAdd(IPResourceDefinition resourceDefinition) {
         resourceDefinitionByResourceClass.put(resourceDefinition.getResourceClass(), resourceDefinition);
         resourceDefinitionByResourceType.put(resourceDefinition.getResourceType(), resourceDefinition);
+
+        allClassesByResourceClass.put(resourceDefinition.getResourceClass(), ReflectionTools.allTypes(resourceDefinition.getResourceClass()));
     }
 
     @Override
@@ -789,10 +800,11 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
         List<R> results = resources.stream() //
                 .filter(resource -> {
 
-                    IPResourceDefinition resourceDefinition = query.getResourceDefinition();
+                    List<IPResourceDefinition> resourceDefinitions = query.getResourceDefinitions();
 
                     // Right type
-                    if (!resource.getClass().equals(resourceDefinition.getResourceClass())) {
+                    List<Class<? extends IPResource>> resourceClasses = resourceDefinitions.stream().map(IPResourceDefinition::getResourceClass).collect(Collectors.toList());
+                    if (!resourceClasses.contains(resource.getClass())) {
                         return false;
                     }
 
@@ -807,12 +819,13 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                     }
 
                     // Equals
+                    IPResourceDefinition currentResourceDefinition = resourceDefinitionByResourceClass.get(resource.getClass());
                     for (Entry<String, Object> entry : query.getPropertyEquals().entrySet()) {
                         String propertyName = entry.getKey();
                         Object propertyValue = entry.getValue();
 
                         try {
-                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
                             if (propertyValue == null) {
                                 if (currentValue == null) {
                                     // Good value
@@ -861,7 +874,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                         Object propertyValue = entry.getValue();
 
                         try {
-                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
                             if (propertyValue == null) {
                                 if (currentValue == null) {
                                     // Good value
@@ -900,7 +913,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                         String propertyValue = entry.getValue();
 
                         try {
-                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
                             if (currentValue == null) {
                                 // Wrong value
                                 return false;
@@ -935,7 +948,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                         Object propertyValue = entry.getValue();
 
                         try {
-                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
                             if (currentValue == null) {
                                 // Wrong value
                                 return false;
@@ -971,7 +984,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                         Object propertyValue = entry.getValue();
 
                         try {
-                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
                             if (currentValue == null) {
                                 // Wrong value
                                 return false;
@@ -1007,7 +1020,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                         Object propertyValue = entry.getValue();
 
                         try {
-                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
                             if (currentValue == null) {
                                 // Wrong value
                                 return false;
@@ -1043,7 +1056,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                         Object propertyValue = entry.getValue();
 
                         try {
-                            Object currentValue = resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
+                            Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
                             if (currentValue == null) {
                                 // Wrong value
                                 return false;

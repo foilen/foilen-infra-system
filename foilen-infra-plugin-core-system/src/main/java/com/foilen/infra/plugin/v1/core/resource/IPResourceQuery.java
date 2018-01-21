@@ -82,7 +82,7 @@ public class IPResourceQuery<T extends IPResource> {
     // On ID
     private List<Long> idsIn;
 
-    private IPResourceDefinition resourceDefinition;
+    private List<IPResourceDefinition> resourceDefinitions;
 
     // On properties
     private Map<String, Object> propertyEquals = new HashMap<>();
@@ -101,8 +101,14 @@ public class IPResourceQuery<T extends IPResource> {
 
     private Set<String> tagsOr = new HashSet<>();
 
-    public IPResourceQuery(IPResourceDefinition resourceDefinition) {
-        this.resourceDefinition = resourceDefinition;
+    /**
+     * Create the resource query with the list of resource definitions. The first one is of the exact type and all the others are the children.
+     *
+     * @param resourceDefinitions
+     *            the resource definitions
+     */
+    public IPResourceQuery(List<IPResourceDefinition> resourceDefinitions) {
+        this.resourceDefinitions = resourceDefinitions;
     }
 
     public IPResourceQuery<T> addEditorEquals(String... values) {
@@ -126,6 +132,7 @@ public class IPResourceQuery<T extends IPResource> {
     }
 
     private void assertProperty(String propertyName, Object value, Set<Class<?>> validTypes, String invalidTypeReason) {
+        IPResourceDefinition resourceDefinition = resourceDefinitions.get(0);
         if (!resourceDefinition.hasProperty(propertyName)) {
             throw new SmallToolsException("Property [" + propertyName + "] does not exists");
         }
@@ -208,8 +215,8 @@ public class IPResourceQuery<T extends IPResource> {
         return Collections.unmodifiableMap(propertyLike);
     }
 
-    public IPResourceDefinition getResourceDefinition() {
-        return resourceDefinition;
+    public List<IPResourceDefinition> getResourceDefinitions() {
+        return resourceDefinitions;
     }
 
     public Set<String> getTagsAnd() {
@@ -228,6 +235,7 @@ public class IPResourceQuery<T extends IPResource> {
      * @return this
      */
     public IPResourceQuery<T> primaryKeyEquals(T resource) {
+        IPResourceDefinition resourceDefinition = resourceDefinitions.get(0);
         for (String propertyName : resourceDefinition.getPrimaryKeyProperties()) {
             try {
                 propertyEquals(propertyName, resourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource));

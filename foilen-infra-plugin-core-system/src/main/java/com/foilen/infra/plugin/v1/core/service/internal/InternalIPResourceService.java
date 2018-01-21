@@ -19,6 +19,12 @@ import com.foilen.infra.plugin.v1.model.resource.IPResource;
  */
 public interface InternalIPResourceService {
 
+    /**
+     * Add a new type of resource.
+     *
+     * @param resourceDefinition
+     *            the resource definition
+     */
     void resourceAdd(IPResourceDefinition resourceDefinition);
 
     /**

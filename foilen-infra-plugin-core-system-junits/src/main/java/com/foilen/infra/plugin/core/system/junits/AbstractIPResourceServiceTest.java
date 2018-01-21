@@ -51,6 +51,7 @@ import com.foilen.infra.plugin.v1.core.exception.InfiniteUpdateLoop;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
+import com.foilen.infra.plugin.v1.core.resource.IPResourceQuery;
 import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
@@ -61,6 +62,9 @@ import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.foilen.infra.plugin.v1.testingcontroller.TestingControllerMockUpdateHander;
 import com.foilen.infra.plugin.v1.testingcontroller.TestingControllerPluginDefinitionProvider;
+import com.foilen.infra.plugin.v1.withparent.AbstractParent;
+import com.foilen.infra.plugin.v1.withparent.ConcreteLevel1;
+import com.foilen.infra.plugin.v1.withparent.ConcreteLevel2;
 import com.foilen.smalltools.crypt.spongycastle.asymmetric.AsymmetricKeys;
 import com.foilen.smalltools.crypt.spongycastle.asymmetric.RSACrypt;
 import com.foilen.smalltools.crypt.spongycastle.cert.CertificateDetails;
@@ -79,6 +83,10 @@ import com.google.common.collect.Sets;
  * This is to test that the implementation of the real system is working as expected.
  */
 public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
+
+    static private interface ApplyQuery<R extends IPResource> {
+        void apply(IPResourceQuery<R> resourceQuery);
+    }
 
     private static class CounterTimerEventHandler implements TimerEventHandler {
 
@@ -117,6 +125,34 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
     }
 
+    private <R extends IPResource> void assertLinkFromAllNames(Class<R> resourceClass, String linkType, IPResource resourceTo, String... expectedNames) {
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        List<String> actualNames = resourceService.linkFindAllByFromResourceClassAndLinkTypeAndToResource(resourceClass, linkType, resourceTo).stream() //
+                .map(it -> it.getResourceName()) //
+                .sorted() //
+                .collect(Collectors.toList());
+        List<String> eNames = Arrays.asList(expectedNames).stream() //
+                .sorted() //
+                .collect(Collectors.toList());
+
+        Assert.assertEquals(eNames, actualNames);
+    }
+
+    private <R extends IPResource> void assertLinkToAllNames(Class<R> resourceClass, String linkType, IPResource resourceFrom, String... expectedNames) {
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        List<String> actualNames = resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(resourceFrom, linkType, resourceClass).stream() //
+                .map(it -> it.getResourceName()) //
+                .sorted() //
+                .collect(Collectors.toList());
+        List<String> eNames = Arrays.asList(expectedNames).stream() //
+                .sorted() //
+                .collect(Collectors.toList());
+
+        Assert.assertEquals(eNames, actualNames);
+    }
+
     public void assertResourceCount(int expectedCount, Class<? extends IPResource> resourceType) {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
@@ -144,6 +180,22 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         } else {
             return null;
         }
+    }
+
+    private <R extends IPResource> void assertResourceFindAllNames(Class<R> resourceClass, ApplyQuery<R> applyQuery, String... expectedNames) {
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+        IPResourceQuery<R> resourceQuery = resourceService.createResourceQuery(resourceClass);
+        applyQuery.apply(resourceQuery);
+
+        List<String> actualNames = resourceService.resourceFindAll(resourceQuery).stream() //
+                .map(it -> it.getResourceName()) //
+                .sorted() //
+                .collect(Collectors.toList());
+        List<String> eNames = Arrays.asList(expectedNames).stream() //
+                .sorted() //
+                .collect(Collectors.toList());
+
+        Assert.assertEquals(eNames, actualNames);
     }
 
     private void assertSet(Set<String> actualTags, String... expectedTags) {
@@ -800,6 +852,65 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
         assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
         assertResourceExists(true, new Domain("example.com", null), Domain.class);
+
+    }
+
+    @Test
+    public void testMultiLevelResources() {
+
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // Create some resources of level 1 and 2
+        ConcreteLevel1 cl11 = new ConcreteLevel1("L1-1", "PA", "AA");
+        ConcreteLevel1 cl12 = new ConcreteLevel1("L1-2", "PB", "AB");
+        ConcreteLevel2 cl21 = new ConcreteLevel2("L2-1", "PA", "AA", "AAA");
+        ConcreteLevel2 cl22 = new ConcreteLevel2("L2-2", "PB", "AB", "BBB");
+        JunitResource j = new JunitResource("one");
+        changes.resourceAdd(cl11);
+        changes.resourceAdd(cl12);
+        changes.resourceAdd(cl21);
+        changes.resourceAdd(cl22);
+        changes.resourceAdd(j);
+
+        changes.linkAdd(j, LinkTypeConstants.USES, cl11);
+        changes.linkAdd(j, LinkTypeConstants.USES, cl22);
+        changes.linkAdd(cl12, LinkTypeConstants.USES, j);
+        changes.linkAdd(cl21, LinkTypeConstants.USES, j);
+
+        internalChangeService.changesExecute(changes);
+
+        // Search resource for parent
+        assertResourceFindAllNames(AbstractParent.class, resourceQuery -> resourceQuery.propertyEquals(AbstractParent.PROPERTY_ON_PARENT, "PA"), "L1-1", "L2-1");
+
+        // Search resource for level 1
+        assertResourceFindAllNames(ConcreteLevel1.class, resourceQuery -> resourceQuery.propertyEquals(AbstractParent.PROPERTY_ON_PARENT, "PA"), "L1-1", "L2-1");
+        assertResourceFindAllNames(ConcreteLevel1.class, resourceQuery -> resourceQuery.propertyEquals(ConcreteLevel1.PROPERTY_ON_LEVEL_1, "AB"), "L1-2", "L2-2");
+
+        // Search resource for level 2
+        assertResourceFindAllNames(ConcreteLevel2.class, resourceQuery -> resourceQuery.propertyEquals(AbstractParent.PROPERTY_ON_PARENT, "PA"), "L2-1");
+        assertResourceFindAllNames(ConcreteLevel2.class, resourceQuery -> resourceQuery.propertyEquals(ConcreteLevel1.PROPERTY_ON_LEVEL_1, "AB"), "L2-2");
+        assertResourceFindAllNames(ConcreteLevel2.class, resourceQuery -> resourceQuery.propertyEquals(ConcreteLevel2.PROPERTY_ON_LEVEL_2, "AAA"), "L2-1");
+
+        // Search link from parent
+        j = resourceService.resourceFindByPk(j).get();
+        assertLinkFromAllNames(AbstractParent.class, LinkTypeConstants.USES, j, "L1-2", "L2-1");
+
+        // Search link from level 1
+        assertLinkFromAllNames(ConcreteLevel1.class, LinkTypeConstants.USES, j, "L1-2", "L2-1");
+
+        // Search link from level 2
+        assertLinkFromAllNames(ConcreteLevel2.class, LinkTypeConstants.USES, j, "L2-1");
+
+        // Search link to parent
+        assertLinkToAllNames(AbstractParent.class, LinkTypeConstants.USES, j, "L1-1", "L2-2");
+
+        // Search link to level 1
+        assertLinkToAllNames(ConcreteLevel1.class, LinkTypeConstants.USES, j, "L1-1", "L2-2");
+
+        // Search link to level 2
+        assertLinkToAllNames(ConcreteLevel2.class, LinkTypeConstants.USES, j, "L2-2");
 
     }
 

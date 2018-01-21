@@ -22,6 +22,9 @@ import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.model.junit.JunitResource;
 import com.foilen.infra.plugin.v1.model.junit.JunitResourceEnum;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
+import com.foilen.infra.plugin.v1.withparent.AbstractParent;
+import com.foilen.infra.plugin.v1.withparent.ConcreteLevel1;
+import com.foilen.infra.plugin.v1.withparent.ConcreteLevel2;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.DateTools;
 import com.foilen.smalltools.tools.JsonTools;
@@ -48,6 +51,25 @@ public class JunitsHelper {
                         JunitResource.PROPERTY_SET_LONGS, //
                         JunitResource.PROPERTY_SET_INTEGERS, //
                         JunitResource.PROPERTY_SET_FLOATS //
+                ));
+        ctx.getInternalIPResourceService().resourceAdd(resourceDefinition);
+
+        resourceDefinition = new IPResourceDefinition(ConcreteLevel1.class, "Concrete Level 1", //
+                Arrays.asList(AbstractParent.PROPERTY_NAME), //
+                Arrays.asList( //
+                        AbstractParent.PROPERTY_NAME, //
+                        AbstractParent.PROPERTY_ON_PARENT, //
+                        ConcreteLevel1.PROPERTY_ON_LEVEL_1 //
+                ));
+        ctx.getInternalIPResourceService().resourceAdd(resourceDefinition);
+
+        resourceDefinition = new IPResourceDefinition(ConcreteLevel2.class, "Concrete Level 2", //
+                Arrays.asList(AbstractParent.PROPERTY_NAME), //
+                Arrays.asList( //
+                        AbstractParent.PROPERTY_NAME, //
+                        AbstractParent.PROPERTY_ON_PARENT, //
+                        ConcreteLevel1.PROPERTY_ON_LEVEL_1, //
+                        ConcreteLevel2.PROPERTY_ON_LEVEL_2 //
                 ));
         ctx.getInternalIPResourceService().resourceAdd(resourceDefinition);
     }
