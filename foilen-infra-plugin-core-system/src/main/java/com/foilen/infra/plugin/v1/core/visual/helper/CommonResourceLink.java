@@ -151,16 +151,21 @@ public class CommonResourceLink {
             IPResource finalLink = linkedResourceOptional.get();
 
             // Remove previous links if not the right one
-            List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
-            currentLinks.stream() //
-                    .filter(it -> !finalLink.equals(it)) //
-                    .forEach(it -> {
-                        changesContext.linkDelete(editedResource, linkType, it);
-                    });
+            List<L> currentLinks;
+            if (editedResource.getInternalId() == null) {
+                currentLinks = new ArrayList<>();
+            } else {
+                currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
+                currentLinks.stream() //
+                        .filter(it -> !finalLink.equals(it)) //
+                        .forEach(it -> {
+                            changesContext.linkDelete(editedResource, linkType, it);
+                        });
 
-            // Add the new links if not the right ones or there were none
-            if (!currentLinks.contains(finalLink)) {
-                changesContext.linkAdd(editedResource, linkType, finalLink);
+                // Add the new links if not the right ones or there were none
+                if (!currentLinks.contains(finalLink)) {
+                    changesContext.linkAdd(editedResource, linkType, finalLink);
+                }
             }
 
         }
