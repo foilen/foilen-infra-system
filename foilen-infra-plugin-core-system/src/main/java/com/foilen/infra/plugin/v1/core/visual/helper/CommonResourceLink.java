@@ -161,11 +161,11 @@ public class CommonResourceLink {
                         .forEach(it -> {
                             changesContext.linkDelete(editedResource, linkType, it);
                         });
+            }
 
-                // Add the new links if not the right ones or there were none
-                if (!currentLinks.contains(finalLink)) {
-                    changesContext.linkAdd(editedResource, linkType, finalLink);
-                }
+            // Add the new links if not the right ones or there were none
+            if (!currentLinks.contains(finalLink)) {
+                changesContext.linkAdd(editedResource, linkType, finalLink);
             }
 
         }
@@ -196,11 +196,13 @@ public class CommonResourceLink {
         String values = formValues.get(fieldName);
         if (values == null) {
             // Remove previous links
-            List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
-            currentLinks.stream() //
-                    .forEach(it -> {
-                        changesContext.linkDelete(editedResource, linkType, it);
-                    });
+            if (editedResource.getInternalId() != null) {
+                List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, toResourceType);
+                currentLinks.stream() //
+                        .forEach(it -> {
+                            changesContext.linkDelete(editedResource, linkType, it);
+                        });
+            }
         } else {
             String[] valuesParts = values.split(",");
             long[] linkedResourceIds = new long[valuesParts.length];
