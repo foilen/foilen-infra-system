@@ -29,6 +29,7 @@ public class IPResourceDefinition {
 
     private Class<? extends IPResource> resourceClass;
     private String resourceType;
+    private boolean embedded;
     private Set<String> primaryKeyProperties = new HashSet<>();
     private Set<String> searchableProperties = new HashSet<>();
 
@@ -36,12 +37,21 @@ public class IPResourceDefinition {
     private Map<String, Method> getterMethodByPropertyName = new HashMap<>();
     private Map<String, Class<?>> returnTypeByPropertyName = new HashMap<>();
 
+    public IPResourceDefinition(Class<? extends IPResource> resourceClass, String resourceType, boolean isEmbedded, Collection<String> primaryKeyProperties, Collection<String> searchableProperties) {
+        commonConst(resourceClass, resourceType, isEmbedded, primaryKeyProperties, searchableProperties);
+    }
+
     public IPResourceDefinition(Class<? extends IPResource> resourceClass, String resourceType, Collection<String> primaryKeyProperties, Collection<String> searchableProperties) {
+        commonConst(resourceClass, resourceType, false, primaryKeyProperties, searchableProperties);
+    }
+
+    private void commonConst(Class<? extends IPResource> resourceClass, String resourceType, boolean isEmbedded, Collection<String> primaryKeyProperties, Collection<String> searchableProperties) {
         AssertTools.assertNotNull(resourceClass, "ResourceClass cannot be null");
         AssertTools.assertNotNull(resourceType, "ResourceType cannot be null");
         AssertTools.assertFalse(resourceType.isEmpty(), "ResourceType cannot be empty");
         this.resourceClass = resourceClass;
         this.resourceType = resourceType;
+        this.embedded = isEmbedded;
         this.primaryKeyProperties.addAll(primaryKeyProperties);
         this.searchableProperties.addAll(primaryKeyProperties);
         this.searchableProperties.addAll(searchableProperties);
@@ -93,6 +103,7 @@ public class IPResourceDefinition {
         for (String propertyName : searchableProperties) {
             AssertTools.assertTrue(getterMethodByPropertyName.containsKey(propertyName), "The property " + propertyName + " does not exists");
         }
+
     }
 
     public Set<String> getPrimaryKeyProperties() {
@@ -121,6 +132,10 @@ public class IPResourceDefinition {
 
     public boolean hasProperty(String propertyName) {
         return getterMethodByPropertyName.containsKey(propertyName);
+    }
+
+    public boolean isEmbedded() {
+        return embedded;
     }
 
     @Override

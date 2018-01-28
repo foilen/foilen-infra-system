@@ -52,6 +52,25 @@ public class IPPluginDefinitionV1 {
      *            the class that can load that resource type
      * @param resourceType
      *            the type of the resource
+     * @param isEmbedded
+     *            true if this is a resource used inside another resource (meaning that it is useless when not attached)
+     * @param primaryKeyProperties
+     *            all the combined properties that can retrieve a unique resource
+     * @param searchableProperties
+     *            which properties should be searchable (and be indexed)
+     */
+    public void addCustomResource(Class<? extends IPResource> resourceClass, String resourceType, boolean isEmbedded, Collection<String> primaryKeyProperties,
+            Collection<String> searchableProperties) {
+        customResources.add(new IPResourceDefinition(resourceClass, resourceType, isEmbedded, primaryKeyProperties, searchableProperties));
+    }
+
+    /**
+     * Add a resource type.
+     *
+     * @param resourceClass
+     *            the class that can load that resource type
+     * @param resourceType
+     *            the type of the resource
      * @param primaryKeyProperties
      *            all the combined properties that can retrieve a unique resource
      * @param searchableProperties
