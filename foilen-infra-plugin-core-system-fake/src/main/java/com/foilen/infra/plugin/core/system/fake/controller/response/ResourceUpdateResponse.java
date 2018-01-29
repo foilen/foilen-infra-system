@@ -12,8 +12,11 @@ package com.foilen.infra.plugin.core.system.fake.controller.response;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.foilen.infra.plugin.v1.model.resource.IPResource;
+
 public class ResourceUpdateResponse {
 
+    private IPResource successResource;
     private Long successResourceId;
     private String topError = "";
     private Map<String, String> fieldsValues = new HashMap<>();
@@ -25,6 +28,10 @@ public class ResourceUpdateResponse {
 
     public Map<String, String> getFieldsValues() {
         return fieldsValues;
+    }
+
+    public IPResource getSuccessResource() {
+        return successResource;
     }
 
     public Long getSuccessResourceId() {
@@ -41,6 +48,10 @@ public class ResourceUpdateResponse {
 
     public void setFieldsValues(Map<String, String> fieldsValues) {
         this.fieldsValues = fieldsValues;
+    }
+
+    public void setSuccessResource(IPResource successResource) {
+        this.successResource = successResource;
     }
 
     public void setSuccessResourceId(Long successResourceId) {

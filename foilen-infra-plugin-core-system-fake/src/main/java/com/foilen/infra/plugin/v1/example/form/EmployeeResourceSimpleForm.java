@@ -35,6 +35,7 @@ import com.foilen.smalltools.tuple.Tuple2;
 
 public class EmployeeResourceSimpleForm implements ResourceEditor<EmployeeResource> {
 
+    private static final String FIELD_NAME_COWORKER_ID = "coworkerId";
     private static final String FIELD_NAME_FULL_NAME = "fullName";
     private static final String FIELD_NAME_MANAGER_ID = "managerId";
 
@@ -51,6 +52,7 @@ public class EmployeeResourceSimpleForm implements ResourceEditor<EmployeeResour
         resource.setFoodPreferences(CommonFieldHelper.fromFormListToSet(validFormValues, EmployeeResource.PROPERTY_FOOD_PREFERENCES));
 
         CommonResourceLink.fillResourceLink(servicesCtx, resource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER_ID, validFormValues, changesContext);
+        CommonResourceLink.fillResourcesLink(servicesCtx, resource, EmployeeResource.LINK_TYPE_COWORKER, EmployeeResource.class, FIELD_NAME_COWORKER_ID, validFormValues, changesContext);
     }
 
     @Override
@@ -100,6 +102,8 @@ public class EmployeeResourceSimpleForm implements ResourceEditor<EmployeeResour
 
         CommonResourceLink.addResourcePageItem(servicesCtx, pageDefinition, editedResource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class,
                 translationService.translate("EmployeeResourceSimpleForm.manager"), FIELD_NAME_MANAGER_ID);
+        CommonResourceLink.addResourcesPageItem(servicesCtx, pageDefinition, editedResource, EmployeeResource.LINK_TYPE_COWORKER, EmployeeResource.class,
+                translationService.translate("EmployeeResourceSimpleForm.coworkers"), FIELD_NAME_COWORKER_ID);
 
         if (editedResource != null) {
             fullNamePageItem.setFieldValue(editedResource.getFirstName() + " " + editedResource.getLastName());

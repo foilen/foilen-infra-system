@@ -19,103 +19,162 @@ jQuery(document).ready(function() {
   });
 });
 
-// Load the resource editor
-function updateResourceEditor() {
-  var mainResource = jQuery('#mainResource');
-  if (mainResource.size() > 0) {
-    var resourceId = mainResource.data('resourceId');
-    var editorName = encodeURI(mainResource.data('editorName'));
-    if (editorName) {
-      if (resourceId) {
-        mainResource.load('/resource/editPageDefinition/' + editorName + '/' + resourceId, function() {
-          updateResourceFieldPageItems();
-          updateListInputTextFieldPageItems();
-        });
+function updateAction(form, successfulUpdateHook) {
+  // Mask + loading images
+  jQuery('.fullMask').fadeIn();
 
-        jQuery('#editorName').change(function() {
-          mainResource.data('editorName', jQuery(this).val());
+  // Remove top error and fields errors
+  jQuery('.topError', form).text('');
+  jQuery('.help-inline', form).text('');
 
-          // Remove all events
-          jQuery('#editorName').unbind();
-          jQuery('#mainResource').unbind();
-          jQuery('button.resourceUpdate').unbind();
+  // Get all the values
+  var data = form.serializeArray();
 
-          // Update
-          updateResourceEditor();
-        });
-      } else {
-        mainResource.load('/resource/createPageDefinition/' + editorName, function() {
-          updateResourceFieldPageItems();
-          updateListInputTextFieldPageItems();
-        });
-      }
+  // Send them
+  jQuery.ajax({
+    type : "POST",
+    url : '/resource/update',
+    data : data,
+    success : function(result) {
+      // Remove mask
+      jQuery('.fullMask').fadeOut();
+
+      // Check if there are values to update
+      jQuery.each(result.fieldsValues, function(fieldName, valueText) {
+        jQuery('#' + fieldName + ' input', form).val(valueText);
+      });
       
-      var updateFunction = function() {
-        // Mask + loading images
-        jQuery('.fullMask').fadeIn();
+      // Check if there are validation errors or a successful redirection url
+      addTopErrorIfMissing(form);
+      jQuery('.topError', form).text(result.topError);
+      jQuery.each(result.fieldsErrors, function(fieldName, errorText) {
+        fieldName = fieldName.replace('[' , '\\[')
+        fieldName = fieldName.replace(']' , '\\]')
+        jQuery('#' + fieldName + ' .help-inline', form).text(errorText);
+      });
 
-        // Remove top error and fields errors
-        jQuery('#topError').text('');
-        jQuery('.help-inline').text('');
-
-        // Get all the values
-        var data = jQuery('#mainResource').serializeArray();
-
-        // Send them
-        jQuery.ajax({
-          type : "POST",
-          url : '/resource/update',
-          data : data,
-          success : function(result) {
-            // Remove mask
-            jQuery('.fullMask').fadeOut();
-
-            // Check if there are values to update
-            jQuery.each(result.fieldsValues, function(fieldName, valueText) {
-              jQuery('#' + fieldName + ' input').val(valueText);
-            });
-
-            // Check if there are validation errors or a successful redirection url
-            jQuery('#topError').text(result.topError);
-            jQuery.each(result.fieldsErrors, function(fieldName, errorText) {
-              fieldName = fieldName.replace('[' , '\\[')
-              fieldName = fieldName.replace(']' , '\\]')
-              jQuery('#' + fieldName + ' .help-inline').text(errorText);
-            });
-
-            // Check if there is an id
-            var successResourceId = result.successResourceId;
-            if (successResourceId) {
-              window.location.href = '/resource/edit/' + successResourceId;
-            }
-
-          },
-          error : function(jqXHR, textStatus) {
-            // Remove mask and show error at the top
-            jQuery('.fullMask').fadeOut();
-            jQuery('#topError').text('Problem communicating with the site. Error: ' + textStatus);
-          }
-        });
-        
-        return false;
+      // Check if there is an id
+      var successResource = result.successResource;
+      if (successResource) {
+        successfulUpdateHook(successResource, result.successResourceId)
       }
 
-      jQuery('button.resourceUpdate').click(updateFunction);
-      mainResource.submit(updateFunction);
-
-    } else {
-      mainResource.text('BAD REQUEST');
+    },
+    error : function(jqXHR, textStatus) {
+      // Remove mask and show error at the top
+      jQuery('.fullMask').fadeOut();
+      addTopErrorIfMissing(form);
+      jQuery('.topError', form).text('Problem communicating with the site. Error: ' + textStatus);
     }
+  });
+}
+
+function addTopErrorIfMissing(form) {
+  if (jQuery('.topError', form).size() == 0) {
+    form.prepend('<p class="topError text-danger"></p>');
   }
 }
 
-jQuery(document).ready(updateResourceEditor);
+// Load the resource editor
+function updateResourceEditor(form, config) {
 
+  if (form.size() > 0) {
+    addTopErrorIfMissing(form);
+    var resourceId = form.data('resourceId');
+    var resourceType = form.data('resourceType')
+    if (resourceType) {
+      resourceType = encodeURI(resourceType);
+    }
+    var editorName = form.data('editorName')
+    if (editorName) {
+      editorName = encodeURI(editorName);
+    }
+    
+    var addButton = function() {
+      
+      // Editor field
+      var editorSelect = jQuery('<select class="form-control editorName" />');
+      form.prepend(editorSelect);
 
+      jQuery.ajax({
+        url : '/resource/suggestEditor/' + resourceType,
+        success : function(data) {
+          // Set the options
+          editorSelect.empty();
+          data.forEach(function(option){
+            editorSelect.append(jQuery('<option></option>').val(option).html(option))
+          })
+          
+          // set the seleted one
+          editorSelect.val(editorName)
+          
+          // When value change (selected)
+          editorSelect.change(function() {
+            form.data('editorName', editorSelect.val());
+            updateResourceEditor(form, config);
+          });
+          
+        }
+      });
+
+      // Update button
+      var buttonUpdate = form.data('buttonUpdate');
+      form.append('<hr /><div class="pull-right btn btn-success resourceUpdate">' + buttonUpdate + '</div>');
+      jQuery('.resourceUpdate', form).click(function(){updateAction(form, config.successHook)});
+      
+      // Cancel button
+      if (config.cancelButton) {
+        var buttonCancel = jQuery('<div class="pull-right btn btn-primary cancel">' + config.cancelButton + '</div>');
+        form.append(buttonCancel);
+        buttonCancel.click(config.cancelHook);
+      }
+    }
+    
+    if (editorName) {
+      // When there is a selected editor
+      if (resourceId) { 
+        // When it is an existing resource
+        form.load('/resource/editPageDefinition/' + editorName + '/' + resourceId, function() {
+          updateResourceFieldPageItems(form);
+          updateListInputTextFieldPageItems(form);
+          addButton();
+        });
+      } else {
+        // When it is a new resource
+        form.load('/resource/createPageDefinition/' + editorName, function() {
+          updateResourceFieldPageItems(form);
+          updateListInputTextFieldPageItems(form);
+          addButton();
+        });
+      }
+      
+    } else {
+      // When there is no selected editor
+      form.load('/resource/createPageDefinitionByType/' + resourceType, function() {
+        updateResourceFieldPageItems(form);
+        updateListInputTextFieldPageItems(form);
+        addButton();
+      });
+    }
+    
+    form.submit(function(){
+      return false;
+    });
+    
+  }
+}
+
+jQuery(document).ready(function(){
+  updateResourceEditor(jQuery('#mainResource'), {
+    successHook: function(successResource, successResourceId) {
+      window.location.href = '/resource/edit/' + successResourceId;
+    }
+  });
+});
 
 //Create/Edit ListInputTextFieldPageItem
-function updateListInputTextFieldPageItems() {
-  jQuery('.ListInputTextFieldPageItem').each(function() {
+function updateListInputTextFieldPageItems(context) {
+  jQuery('.ListInputTextFieldPageItem', context).each(function() {
     updateListInputTextFieldPageItem(jQuery(this));
   });
 }
@@ -148,28 +207,30 @@ function updateListInputTextFieldPageItem(listBlock) {
   });
 }
 
-jQuery(document).ready(updateListInputTextFieldPageItems);
-
 // Create/Edit resources (single one)
-function updateResourceFieldPageItems() {
-  jQuery('.ResourceFieldPageItem').each(function() {
+function updateResourceFieldPageItems(context) {
+  jQuery('.ResourceFieldPageItem', context).each(function() {
     updateResourceFieldPageItem(jQuery(this));
   });
-  jQuery('.ResourcesFieldPageItem').each(function() {
+  jQuery('.ResourcesFieldPageItem', context).each(function() {
     updateResourcesFieldPageItem(jQuery(this));
   });
 }
 
+var dialogDepth = 0;
+
 function updateResourceFieldPageItem(resource) {
+  var buttonCreate = resource.data('buttonCreate');
   var buttonChoose = resource.data('buttonChoose');
   var buttonChange = resource.data('buttonChange');
+  var buttonClose = resource.data('buttonClose');
   var buttonClear = resource.data('buttonClear');
   var label = resource.data('label');
   var fieldName = resource.data('fieldName');
-  var resourceType = resource.data('resourceType');
   var resourceId = resource.data('resourceId');
   var resourceName = resource.data('resourceName');
   var resourceDescription = resource.data('resourceDescription');
+  var resourceType = resource.data('resourceType');
 
   resource.empty();
 
@@ -185,6 +246,7 @@ function updateResourceFieldPageItem(resource) {
   } else {
     // Not there
     resource.append('<br/>');
+    resource.append('<button class="btn btn-sm btn-success buttonCreate">' + buttonCreate + '</button>');
     resource.append('<button class="btn btn-sm btn-info buttonChoose">' + buttonChoose + '</button>');
   }
 
@@ -201,7 +263,38 @@ function updateResourceFieldPageItem(resource) {
     return false;
   });
 
-  // Choose and change button
+  // Create button
+  jQuery('.buttonCreate', resource).click(function() {
+    
+    // Create dialog
+    var dialog = jQuery('<form class="dialog"></form>');
+    jQuery('body').append(dialog);
+    ++dialogDepth;
+    dialog.css({top: dialogDepth + '0px', left: dialogDepth + '0px'});
+    
+    dialog.data('buttonUpdate', buttonCreate);
+    dialog.data('resourceType', resourceType);
+    
+    updateResourceEditor(dialog, {
+      cancelButton: buttonClose,
+      cancelHook: function() {
+        dialog.remove();
+        --dialogDepth;
+      },
+      successHook: function(successResource, successResourceId) {
+        resource.data('resourceId', successResourceId);
+        resource.data('resourceName', successResource.resourceName);
+        resource.data('resourceDescription', successResource.resourceDescription);
+        updateResourceFieldPageItem(resource);
+        dialog.remove();
+        --dialogDepth;
+      },
+    })
+    
+    return false;
+  })
+  
+    // Choose and change button
   jQuery('.buttonChoose, .buttonChange', resource).click(function() {
 
     this.disabled = true;
@@ -256,7 +349,9 @@ function updateResourceFieldPageItem(resource) {
 // Create/Edit resources (multiple)
 function updateResourcesFieldPageItem(resource) {
   var buttonAdd = resource.data('buttonAdd');
+  var buttonCreate = resource.data('buttonCreate');
   var buttonClear = resource.data('buttonClear');
+  var buttonClose = resource.data('buttonClose');
   var label = resource.data('label');
   var fieldName = resource.data('fieldName');
   var resourceType = resource.data('resourceType');
@@ -299,6 +394,7 @@ function updateResourcesFieldPageItem(resource) {
     itemsList.append('<li><button class="btn btn-sm btn-danger buttonRemove glyphicons glyphicons-remove" data-resource-id="'
         + item.resourceId + '"></button> ' + item.resourceName + ': ' + item.resourceDescription + '</li>');
   });
+  resource.append('<button class="btn btn-sm btn-success buttonCreate">' + buttonCreate + '</button>');
   resource.append('<button class="btn btn-sm btn-info buttonAdd">' + buttonAdd + '</button>');
   resource.append('<button class="btn btn-sm btn-danger buttonClear">' + buttonClear + '</button>');
 
@@ -316,12 +412,42 @@ function updateResourcesFieldPageItem(resource) {
   jQuery('.buttonRemove', resource).click(function() {
 
     var resourceId = jQuery(this).data('resourceId');
-    console.log(resourceId)
     jQuery('.ResourcesFieldPageItem_resource[data-resource-id="' + resourceId + '"]', resource).remove();
 
     updateResourcesFieldPageItem(resource);
     return false;
   });
+  
+  // Create button
+  jQuery('.buttonCreate', resource).click(function() {
+    
+    // Create dialog
+    var dialog = jQuery('<form class="dialog"></form>');
+    jQuery('body').append(dialog);
+    ++dialogDepth;
+    dialog.css({top: dialogDepth + '0px', left: dialogDepth + '0px'});
+    
+    dialog.data('buttonUpdate', buttonCreate);
+    dialog.data('resourceType', resourceType);
+    
+    updateResourceEditor(dialog, {
+      cancelButton: buttonClose,
+      cancelHook: function() {
+        dialog.remove();
+        --dialogDepth;
+      },
+      successHook: function(successResource, successResourceId) {
+        resource.append('<div class="ResourcesFieldPageItem_resource" data-resource-id="' + successResourceId //
+            + '" data-resource-name="' + successResource.resourceName //
+            + '" data-resource-description="' + successResource.resourceDescription + '"></div>');
+        updateResourcesFieldPageItem(resource);
+        dialog.remove();
+        --dialogDepth;
+      },
+    })
+    
+    return false;
+  })
 
   // Add button
   jQuery('.buttonAdd', resource).click(function() {

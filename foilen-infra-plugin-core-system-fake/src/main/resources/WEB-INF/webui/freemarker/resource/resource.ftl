@@ -77,8 +77,10 @@
     
       <#if pageItem.value??>
         <div class="form-group ResourceFieldPageItem" id="${pageItem.fieldName}" 
+          data-button-create='<@spring.message "button.create"/>'
           data-button-choose='<@spring.message "button.choose"/>'
           data-button-change='<@spring.message "button.change"/>'
+          data-button-close='<@spring.message "button.close"/>'
           data-button-clear='<@spring.message "button.clear"/>'
           data-label="${pageItem.label}"
           data-field-name="${pageItem.fieldName}" 
@@ -90,8 +92,10 @@
         </div>
       <#else>
         <div class="form-group ResourceFieldPageItem" id="${pageItem.fieldName}" 
+          data-button-create='<@spring.message "button.create"/>'
           data-button-choose='<@spring.message "button.choose"/>'
           data-button-change='<@spring.message "button.change"/>'
+          data-button-close='<@spring.message "button.close"/>'
           data-button-clear='<@spring.message "button.clear"/>'
           data-label="${pageItem.label}"
           data-field-name="${pageItem.fieldName}" 
@@ -106,6 +110,8 @@
       <div class="form-group ResourcesFieldPageItem" id="${pageItem.fieldName}" 
         data-button-add='<@spring.message "button.add"/>'
         data-button-clear='<@spring.message "button.clearAll"/>'
+        data-button-create='<@spring.message "button.create"/>'
+        data-button-close='<@spring.message "button.close"/>'
         data-label="${pageItem.label}"
         data-field-name="${pageItem.fieldName}" 
         data-resource-type="${pageItem.resourceType.name}" 

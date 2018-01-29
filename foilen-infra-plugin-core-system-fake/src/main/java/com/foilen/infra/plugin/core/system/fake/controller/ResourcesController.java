@@ -43,6 +43,7 @@ import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.HiddenFieldPageItem;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
+import com.foilen.smalltools.reflection.ReflectionTools;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tuple.Tuple2;
@@ -72,7 +73,14 @@ public class ResourcesController extends AbstractBasics {
     @RequestMapping("create/{editorName}")
     public ModelAndView create(@PathVariable("editorName") String editorName) {
         ModelAndView modelAndView = new ModelAndView("resource/create");
-        modelAndView.addObject("editorName", editorName);
+
+        Optional<ResourceEditor<?>> editor = ipPluginService.getResourceEditorByName(editorName);
+
+        if (editor.isPresent()) {
+            modelAndView.addObject("editorName", editorName);
+            modelAndView.addObject("resourceType", editor.get().getForResourceType().getName());
+        }
+
         return modelAndView;
     }
 
@@ -106,6 +114,28 @@ public class ResourcesController extends AbstractBasics {
         return modelAndView;
     }
 
+    @RequestMapping("createPageDefinitionByType/{resourceType}")
+    public ModelAndView createPageDefinitionByType(@PathVariable("resourceType") String resourceType, HttpServletRequest httpServletRequest) {
+        ModelAndView modelAndView = new ModelAndView("resource/resource");
+
+        Class<?> resourceClass = ReflectionTools.safelyGetClass(resourceType);
+        if (resourceClass == null) {
+            modelAndView.setViewName("error/single-partial");
+            modelAndView.addObject("error", "error.editorNotFound");
+        }
+        @SuppressWarnings("unchecked")
+        List<String> editors = ipPluginService.getResourceEditorNamesByResourceType((Class<? extends IPResource>) resourceClass);
+
+        if (editors.isEmpty()) {
+            modelAndView.setViewName("error/single-partial");
+            modelAndView.addObject("error", "error.editorNotFound");
+        } else {
+            return createPageDefinition(editors.get(0), httpServletRequest);
+        }
+
+        return modelAndView;
+    }
+
     @RequestMapping("edit/{resourceId}")
     public ModelAndView edit(@PathVariable("resourceId") long resourceId) {
 
@@ -126,6 +156,7 @@ public class ResourcesController extends AbstractBasics {
 
             modelAndView.addObject("editorName", editorName);
             modelAndView.addObject("resourceId", resourceId);
+            modelAndView.addObject("resourceType", resource.getClass().getName());
 
             modelAndView.addObject("editorNames", editorNames);
         }
@@ -204,6 +235,12 @@ public class ResourcesController extends AbstractBasics {
                 .collect(Collectors.toList());
     }
 
+    @ResponseBody
+    @RequestMapping("suggestEditor/{resourceType}")
+    public List<String> suggestEditor(@PathVariable("resourceType") Class<? extends IPResource> resourceType) {
+        return ipPluginService.getResourceEditorNamesByResourceType(resourceType);
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @ResponseBody
     @RequestMapping(value = "update", method = RequestMethod.POST)
@@ -270,7 +307,6 @@ public class ResourcesController extends AbstractBasics {
             }
 
             // No errors: save and give the redirection link if no issues
-            Long internalId;
             if (isUpdate) {
 
                 // Update existing resource
@@ -293,7 +329,7 @@ public class ResourcesController extends AbstractBasics {
                     return resourceUpdateResponse;
                 }
 
-                internalId = newResource.getInternalId();
+                resource = newResource;
 
             } else {
 
@@ -316,12 +352,11 @@ public class ResourcesController extends AbstractBasics {
                     return resourceUpdateResponse;
                 }
 
-                internalId = resource.getInternalId();
-
             }
 
             // Redirect url
-            resourceUpdateResponse.setSuccessResourceId(internalId);
+            resourceUpdateResponse.setSuccessResource(resource);
+            resourceUpdateResponse.setSuccessResourceId(resource.getInternalId());
 
         } else {
             resourceUpdateResponse.setTopError(messageSource.getMessage("error.editorNotFound", null, locale));

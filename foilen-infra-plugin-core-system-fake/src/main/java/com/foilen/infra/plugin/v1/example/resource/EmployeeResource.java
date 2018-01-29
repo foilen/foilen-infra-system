@@ -25,6 +25,7 @@ public class EmployeeResource extends AbstractIPResource {
     public static final String PROPERTY_NOTES = "notes";
     public static final String PROPERTY_FOOD_PREFERENCES = "foodPreferences";
 
+    public static final String LINK_TYPE_COWORKER = "COWORKER";
     public static final String LINK_TYPE_MANAGER = "MANAGER";
 
     private String firstName;
