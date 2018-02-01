@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.validator.routines.EmailValidator;
 
 import com.foilen.infra.plugin.v1.core.common.DomainHelper;
+import com.foilen.smalltools.tools.DateTools;
 import com.foilen.smalltools.tools.StringTools;
 import com.foilen.smalltools.tuple.Tuple2;
 import com.google.common.base.Strings;
@@ -82,9 +83,14 @@ public class CommonValidation {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
-            if (fieldValue == null) {
-                continue;
-            }
+            errors.addAll(validateAlphaNum(fieldName, fieldValue));
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateAlphaNum(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(fieldValue)) {
             if (!nameValidationRegex.matcher(fieldValue).matches()) {
                 errors.add(new Tuple2<>(fieldName, "error.notAlphaNum"));
             }
@@ -101,10 +107,14 @@ public class CommonValidation {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
-            if (fieldValue == null) {
-                continue;
-            }
+            errors.addAll(validateCronTime(fieldName, fieldValue));
+        }
+        return errors;
+    }
 
+    public static List<Tuple2<String, String>> validateCronTime(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(fieldValue)) {
             String[] parts = fieldValue.split(" ");
             boolean valid = parts.length == 5;
 
@@ -129,6 +139,18 @@ public class CommonValidation {
         return errors;
     }
 
+    public static List<Tuple2<String, String>> validateDayFormat(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(fieldValue)) {
+            try {
+                DateTools.parseDateOnly(fieldValue);
+            } catch (Exception e) {
+                errors.add(new Tuple2<>(fieldName, "error.dayFormat"));
+            }
+        }
+        return errors;
+    }
+
     public static List<Tuple2<String, String>> validateDomainName(Map<String, String> formValues) {
         Set<String> fieldNames = formValues.keySet();
         return validateDomainName(formValues, fieldNames.toArray(new String[fieldNames.size()]));
@@ -138,9 +160,14 @@ public class CommonValidation {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
-            if (fieldValue == null) {
-                continue;
-            }
+            errors.addAll(validateDomainName(fieldName, fieldValue));
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateDomainName(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (fieldValue != null) {
             if (!DomainHelper.isValidDomainName(fieldValue)) {
                 errors.add(new Tuple2<>(fieldName, "error.notDomain"));
             }
@@ -157,9 +184,14 @@ public class CommonValidation {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
-            if (fieldValue == null) {
-                continue;
-            }
+            errors.addAll(validateEmail(fieldName, fieldValue));
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateEmail(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(fieldValue)) {
             if (!EmailValidator.getInstance().isValid(fieldValue)) {
                 errors.add(new Tuple2<>(fieldName, "error.notEmail"));
             }
@@ -196,10 +228,14 @@ public class CommonValidation {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
-            if (fieldValue == null) {
-                continue;
-            }
+            errors.addAll(validateIpAddress(fieldName, fieldValue));
+        }
+        return errors;
+    }
 
+    public static List<Tuple2<String, String>> validateIpAddress(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(fieldValue)) {
             boolean isIp = true;
 
             String[] parts = fieldValue.split("\\.");
@@ -221,6 +257,7 @@ public class CommonValidation {
             if (!isIp) {
                 errors.add(new Tuple2<>(fieldName, "error.notIp"));
             }
+
         }
         return errors;
     }
@@ -234,9 +271,14 @@ public class CommonValidation {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
-            if (fieldValue == null) {
-                continue;
-            }
+            errors.addAll(validateNoMultiline(fieldName, fieldValue));
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateNoMultiline(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(fieldValue)) {
             if (fieldValue.contains("\n") || fieldValue.contains("\r")) {
                 errors.add(new Tuple2<>(fieldName, "error.noMultiline"));
             }
@@ -256,6 +298,14 @@ public class CommonValidation {
             if (Strings.isNullOrEmpty(fieldValue)) {
                 errors.add(new Tuple2<>(fieldName, "error.required"));
             }
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateNotNullOrEmpty(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (Strings.isNullOrEmpty(fieldValue)) {
+            errors.add(new Tuple2<>(fieldName, "error.required"));
         }
         return errors;
     }

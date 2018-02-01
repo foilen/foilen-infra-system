@@ -36,6 +36,10 @@ public class CommonFieldHelper {
         return results;
     }
 
+    public static List<String> getAllFieldNames(Map<String, String> formValues, String fieldName) {
+        return getAllFieldNames(formValues, new String[] { fieldName });
+    }
+
     public static List<String> getAllFieldNames(Map<String, String> formValues, String[] fieldNames) {
         List<String> allFieldNames = new ArrayList<>();
         for (String fieldName : fieldNames) {

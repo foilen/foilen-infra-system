@@ -9,127 +9,64 @@
  */
 package com.foilen.infra.plugin.v1.example.form;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import com.foilen.infra.plugin.v1.core.context.ChangesContext;
-import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
-import com.foilen.infra.plugin.v1.core.service.TranslationService;
-import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
-import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
-import com.foilen.infra.plugin.v1.core.visual.helper.CommonFieldHelper;
+import com.foilen.infra.plugin.v1.core.visual.editor.simpleresourceditor.SimpleResourceEditor;
+import com.foilen.infra.plugin.v1.core.visual.editor.simpleresourceditor.SimpleResourceEditorDefinition;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonFormatting;
-import com.foilen.infra.plugin.v1.core.visual.helper.CommonPageItem;
-import com.foilen.infra.plugin.v1.core.visual.helper.CommonResourceLink;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonValidation;
-import com.foilen.infra.plugin.v1.core.visual.pageItem.field.InputTextFieldPageItem;
-import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ListInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.MultilineInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.example.resource.EmployeeResource;
 import com.foilen.smalltools.tools.DateTools;
-import com.foilen.smalltools.tuple.Tuple2;
 
-public class EmployeeResourceRawForm implements ResourceEditor<EmployeeResource> {
+public class EmployeeResourceRawForm extends SimpleResourceEditor<EmployeeResource> {
 
-    private static final String FIELD_NAME_COWORKER_ID = "coworkerId";
-    private static final String FIELD_NAME_MANAGER_ID = "managerId";
-
-    @Override
-    public void fillResource(CommonServicesContext servicesCtx, ChangesContext changesContext, Map<String, String> validFormValues, EmployeeResource resource) {
-        resource.setFirstName(validFormValues.get(EmployeeResource.PROPERTY_FIRST_NAME));
-        resource.setLastName(validFormValues.get(EmployeeResource.PROPERTY_LAST_NAME));
-        resource.setNotes(validFormValues.get(EmployeeResource.PROPERTY_NOTES));
-        resource.setBirthday(DateTools.parseDateOnly(validFormValues.get(EmployeeResource.PROPERTY_BIRTHDAY)));
-        resource.setFoodPreferences(CommonFieldHelper.fromFormListToSet(validFormValues, EmployeeResource.PROPERTY_FOOD_PREFERENCES));
-
-        CommonResourceLink.fillResourceLink(servicesCtx, resource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, FIELD_NAME_MANAGER_ID, validFormValues, changesContext);
-        CommonResourceLink.fillResourcesLink(servicesCtx, resource, EmployeeResource.LINK_TYPE_COWORKER, EmployeeResource.class, FIELD_NAME_COWORKER_ID, validFormValues, changesContext);
-    }
+    private static final String FIELD_NAME_COWORKERS = "coworkers";
+    private static final String FIELD_NAME_MANAGER = "manager";
 
     @Override
-    public void formatForm(CommonServicesContext servicesCtx, Map<String, String> rawFormValues) {
+    protected void getDefinition(SimpleResourceEditorDefinition simpleResourceEditorDefinition) {
+        simpleResourceEditorDefinition.addInputText(EmployeeResource.PROPERTY_FIRST_NAME, fieldConfig -> {
+            fieldConfig.addFormator(CommonFormatting::trimSpacesAround);
+            fieldConfig.addFormator(CommonFormatting::firstLetterOfEachWordCapital);
+            fieldConfig.addValidator(CommonValidation::validateNotNullOrEmpty);
+        });
 
-        CommonFormatting.trimSpacesAround(rawFormValues);
+        simpleResourceEditorDefinition.addInputText(EmployeeResource.PROPERTY_LAST_NAME, fieldConfig -> {
+            fieldConfig.addFormator(CommonFormatting::trimSpacesAround);
+            fieldConfig.addFormator(CommonFormatting::firstLetterOfEachWordCapital);
+            fieldConfig.addValidator(CommonValidation::validateNotNullOrEmpty);
+        });
 
-        String birthday = rawFormValues.get(EmployeeResource.PROPERTY_BIRTHDAY);
-        if (birthday != null) {
-            birthday = birthday.replaceAll("/", "-");
-            rawFormValues.put(EmployeeResource.PROPERTY_BIRTHDAY, birthday);
-        }
+        simpleResourceEditorDefinition.addInputText(EmployeeResource.PROPERTY_BIRTHDAY, (fieldConfig) -> {
+            fieldConfig.setConvertFromString(DateTools::parseDateOnly);
+            fieldConfig.setConvertToString(DateTools::formatDateOnly);
+            fieldConfig.addFormator(CommonFormatting::trimSpacesAround);
+            fieldConfig.addFormator(fieldValue -> {
+                if (fieldValue == null) {
+                    return null;
+                }
+                return fieldValue.replaceAll("/", "-");
+            });
+            fieldConfig.addValidator(CommonValidation::validateNotNullOrEmpty);
+            fieldConfig.addValidator(CommonValidation::validateDayFormat);
+        });
 
-        CommonFormatting.firstLetterOfEachWordCapital(rawFormValues, //
-                EmployeeResource.PROPERTY_FIRST_NAME, //
-                EmployeeResource.PROPERTY_LAST_NAME //
-        );
+        simpleResourceEditorDefinition.addMultilineInputText(EmployeeResource.PROPERTY_NOTES, (fieldConfig) -> {
+            fieldConfig.setAugmentPageItem((pi) -> ((MultilineInputTextFieldPageItem) pi).setRows(10));
+            fieldConfig.addFormator(CommonFormatting::trimSpacesAround);
+        });
+
+        simpleResourceEditorDefinition.addListInputText(EmployeeResource.PROPERTY_FOOD_PREFERENCES, (fieldConfig) -> {
+            fieldConfig.addFormator(CommonFormatting::trimSpacesAround);
+        });
+
+        simpleResourceEditorDefinition.addResource(FIELD_NAME_MANAGER, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class);
+        simpleResourceEditorDefinition.addResources(FIELD_NAME_COWORKERS, EmployeeResource.LINK_TYPE_COWORKER, EmployeeResource.class);
+
     }
 
     @Override
     public Class<EmployeeResource> getForResourceType() {
         return EmployeeResource.class;
-    }
-
-    @Override
-    public PageDefinition providePageDefinition(CommonServicesContext servicesCtx, EmployeeResource editedResource) {
-
-        TranslationService translationService = servicesCtx.getTranslationService();
-
-        PageDefinition pageDefinition = new PageDefinition(translationService.translate("EmployeeResourceRawForm.title"));
-
-        InputTextFieldPageItem firstNamePageItem = CommonPageItem.createInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.firstName", EmployeeResource.PROPERTY_FIRST_NAME);
-        InputTextFieldPageItem lastNamePageItem = CommonPageItem.createInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.lastName", EmployeeResource.PROPERTY_LAST_NAME);
-        InputTextFieldPageItem birthdayPageItem = CommonPageItem.createInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.birthday", EmployeeResource.PROPERTY_BIRTHDAY);
-
-        MultilineInputTextFieldPageItem notesPageItem = CommonPageItem.createMultilineInputTextField(servicesCtx, pageDefinition, "EmployeeResourceRawForm.notes", EmployeeResource.PROPERTY_NOTES);
-        notesPageItem.setRows(10);
-
-        ListInputTextFieldPageItem foodPreferencesPageItem = CommonPageItem.createListInputTextFieldPageItem(servicesCtx, pageDefinition, "EmployeeResourceRawForm.foodPreferences",
-                EmployeeResource.PROPERTY_FOOD_PREFERENCES);
-
-        CommonResourceLink.addResourcePageItem(servicesCtx, pageDefinition, editedResource, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class,
-                translationService.translate("EmployeeResourceRawForm.manager"), FIELD_NAME_MANAGER_ID);
-        CommonResourceLink.addResourcesPageItem(servicesCtx, pageDefinition, editedResource, EmployeeResource.LINK_TYPE_COWORKER, EmployeeResource.class,
-                translationService.translate("EmployeeResourceRawForm.coworkers"), FIELD_NAME_COWORKER_ID);
-
-        if (editedResource != null) {
-            firstNamePageItem.setFieldValue(editedResource.getFirstName());
-            lastNamePageItem.setFieldValue(editedResource.getLastName());
-            notesPageItem.setFieldValue(editedResource.getNotes());
-
-            foodPreferencesPageItem.setFieldValues(CommonFieldHelper.fromSetToList(editedResource.getFoodPreferences()));
-
-            Date birthday = editedResource.getBirthday();
-            if (birthday != null) {
-                birthdayPageItem.setFieldValue(DateTools.formatDateOnly(birthday));
-            }
-        }
-
-        return pageDefinition;
-    }
-
-    @Override
-    public List<Tuple2<String, String>> validateForm(CommonServicesContext servicesCtx, Map<String, String> rawFormValues) {
-
-        TranslationService translationService = servicesCtx.getTranslationService();
-
-        List<Tuple2<String, String>> errors = new ArrayList<>();
-        errors.addAll(CommonValidation.validateNotNullOrEmpty(rawFormValues, //
-                EmployeeResource.PROPERTY_FIRST_NAME, //
-                EmployeeResource.PROPERTY_LAST_NAME, //
-                EmployeeResource.PROPERTY_BIRTHDAY //
-        ));
-
-        String birthday = rawFormValues.get(EmployeeResource.PROPERTY_BIRTHDAY);
-        if (birthday != null) {
-            try {
-                DateTools.parseDateOnly(birthday);
-            } catch (Exception e) {
-                errors.add(new Tuple2<>(EmployeeResource.PROPERTY_BIRTHDAY, translationService.translate("error.dayFormat")));
-            }
-        }
-
-        return errors;
     }
 
 }
