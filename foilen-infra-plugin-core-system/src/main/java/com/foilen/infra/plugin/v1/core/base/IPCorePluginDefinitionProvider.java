@@ -18,6 +18,7 @@ import com.foilen.infra.plugin.v1.core.base.editors.ManualDnsEntryEditor;
 import com.foilen.infra.plugin.v1.core.base.editors.ManualWebsiteCertificateEditor;
 import com.foilen.infra.plugin.v1.core.base.editors.SelfSignedWebsiteCertificateEditor;
 import com.foilen.infra.plugin.v1.core.base.editors.UnixUserEditor;
+import com.foilen.infra.plugin.v1.core.base.editors.WebsiteEditor;
 import com.foilen.infra.plugin.v1.core.base.resources.Application;
 import com.foilen.infra.plugin.v1.core.base.resources.DnsEntry;
 import com.foilen.infra.plugin.v1.core.base.resources.DnsPointer;
@@ -167,6 +168,7 @@ public class IPCorePluginDefinitionProvider implements IPPluginDefinitionProvide
         pluginDefinitionV1.addResourceEditor(new ManualWebsiteCertificateEditor(), ManualWebsiteCertificateEditor.EDITOR_NAME);
         pluginDefinitionV1.addResourceEditor(new SelfSignedWebsiteCertificateEditor(), SelfSignedWebsiteCertificateEditor.EDITOR_NAME);
         pluginDefinitionV1.addResourceEditor(new UnixUserEditor(), UnixUserEditor.EDITOR_NAME);
+        pluginDefinitionV1.addResourceEditor(new WebsiteEditor(), WebsiteEditor.EDITOR_NAME);
 
         // Update events
         pluginDefinitionV1.addUpdateHandler(new ApplicationUpdateHandler());

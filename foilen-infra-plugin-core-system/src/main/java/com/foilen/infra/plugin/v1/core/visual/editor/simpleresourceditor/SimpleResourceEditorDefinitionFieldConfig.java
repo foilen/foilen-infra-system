@@ -42,14 +42,6 @@ public class SimpleResourceEditorDefinitionFieldConfig {
         }
     }
 
-    public Consumer<PopulateResourceCtx> getPopulateResource() {
-        return populateResource;
-    }
-
-    public void setPopulateResource(Consumer<PopulateResourceCtx> populateResource) {
-        this.populateResource = populateResource;
-    }
-
     @SafeVarargs
     public final void addValidator(BiFunction<String, String, List<Tuple2<String, String>>>... validators) {
         for (BiFunction<String, String, List<Tuple2<String, String>>> validator : validators) {
@@ -80,6 +72,10 @@ public class SimpleResourceEditorDefinitionFieldConfig {
 
     public Consumer<PopulatePageItemCtx> getPopulatePageItem() {
         return populatePageItem;
+    }
+
+    public Consumer<PopulateResourceCtx> getPopulateResource() {
+        return populateResource;
     }
 
     public String getPropertyName() {
@@ -113,6 +109,10 @@ public class SimpleResourceEditorDefinitionFieldConfig {
     public SimpleResourceEditorDefinitionFieldConfig setPopulatePageItem(Consumer<PopulatePageItemCtx> populatePageItem) {
         this.populatePageItem = populatePageItem;
         return this;
+    }
+
+    public void setPopulateResource(Consumer<PopulateResourceCtx> populateResource) {
+        this.populateResource = populateResource;
     }
 
     public SimpleResourceEditorDefinitionFieldConfig setPropertyName(String propertyName) {

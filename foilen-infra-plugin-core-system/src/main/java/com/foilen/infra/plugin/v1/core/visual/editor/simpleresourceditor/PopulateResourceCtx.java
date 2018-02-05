@@ -27,22 +27,6 @@ public class PopulateResourceCtx {
     private String textValue;
     private Set<String> textValues;
 
-    public String getTextValue() {
-        return textValue;
-    }
-
-    public void setTextValue(String textValue) {
-        this.textValue = textValue;
-    }
-
-    public Set<String> getTextValues() {
-        return textValues;
-    }
-
-    public void setTextValues(Set<String> textValues) {
-        this.textValues = textValues;
-    }
-
     public PopulateResourceCtx(ChangesContext changesContext, BeanWrapper editedResourceBeanWrapper, IPResource editedResource, String propertyName, String textValue, Set<String> textValues) {
         this.changesContext = changesContext;
         this.editedResourceBeanWrapper = editedResourceBeanWrapper;
@@ -56,32 +40,48 @@ public class PopulateResourceCtx {
         return changesContext;
     }
 
-    public void setChangesContext(ChangesContext changesContext) {
-        this.changesContext = changesContext;
-    }
-
     public IPResource getEditedResource() {
         return editedResource;
-    }
-
-    public void setEditedResource(IPResource editedResource) {
-        this.editedResource = editedResource;
     }
 
     public BeanWrapper getEditedResourceBeanWrapper() {
         return editedResourceBeanWrapper;
     }
 
-    public void setEditedResourceBeanWrapper(BeanWrapper editedResourceBeanWrapper) {
-        this.editedResourceBeanWrapper = editedResourceBeanWrapper;
-    }
-
     public String getPropertyName() {
         return propertyName;
     }
 
+    public String getTextValue() {
+        return textValue;
+    }
+
+    public Set<String> getTextValues() {
+        return textValues;
+    }
+
+    public void setChangesContext(ChangesContext changesContext) {
+        this.changesContext = changesContext;
+    }
+
+    public void setEditedResource(IPResource editedResource) {
+        this.editedResource = editedResource;
+    }
+
+    public void setEditedResourceBeanWrapper(BeanWrapper editedResourceBeanWrapper) {
+        this.editedResourceBeanWrapper = editedResourceBeanWrapper;
+    }
+
     public void setPropertyName(String propertyName) {
         this.propertyName = propertyName;
+    }
+
+    public void setTextValue(String textValue) {
+        this.textValue = textValue;
+    }
+
+    public void setTextValues(Set<String> textValues) {
+        this.textValues = textValues;
     }
 
 }

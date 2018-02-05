@@ -29,6 +29,7 @@ import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonFieldHelper;
 import com.foilen.infra.plugin.v1.core.visual.helper.CommonPageItem;
+import com.foilen.infra.plugin.v1.core.visual.helper.CommonValidation;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.AbstractFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ListInputTextFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourceFieldPageItem;
@@ -261,6 +262,21 @@ public class SimpleResourceEditorDefinition {
             }
 
         });
+        fieldConfigConsumer.accept(fieldConfig);
+        fieldConfigs.add(fieldConfig);
+    }
+
+    public void addSelectOptionsField(String propertyName, List<String> validValues) {
+        addSelectOptionsField(propertyName, validValues, (fc) -> {
+        });
+    }
+
+    public void addSelectOptionsField(String propertyName, List<String> validValues, Consumer<SimpleResourceEditorDefinitionFieldConfig> fieldConfigConsumer) {
+
+        SimpleResourceEditorDefinitionFieldConfig fieldConfig = new SimpleResourceEditorDefinitionFieldConfig();
+        fieldConfig.setPropertyName(propertyName);
+        fieldConfig.setGenAndAddPageItem((pageDefinition) -> CommonPageItem.createSelectOptionsField(servicesCtx, pageDefinition, prefix + "." + propertyName, propertyName, validValues));
+        fieldConfig.addValidator((fieldName, fieldValue) -> CommonValidation.validateInList(fieldName, fieldValue, validValues));
         fieldConfigConsumer.accept(fieldConfig);
         fieldConfigs.add(fieldConfig);
     }

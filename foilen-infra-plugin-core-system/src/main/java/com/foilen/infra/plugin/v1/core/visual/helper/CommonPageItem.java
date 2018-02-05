@@ -10,6 +10,7 @@
 package com.foilen.infra.plugin.v1.core.visual.helper;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
@@ -105,6 +106,29 @@ public class CommonPageItem {
         SelectOptionsPageItem pageItem = new SelectOptionsPageItem().setLabel(servicesCtx.getTranslationService().translate(labelCode));
         pageItem.setFieldName(fieldName);
         pageItem.setOptions(Arrays.asList(options).stream().map(it -> it.name()).collect(Collectors.toList()));
+        pageDefinition.addPageItem(pageItem);
+        return pageItem;
+    }
+
+    /**
+     * Create and add a {@link SelectOptionsPageItem} to the page.
+     *
+     * @param servicesCtx
+     *            the services context to get the translation service
+     * @param pageDefinition
+     *            the page definition on which to add the field
+     * @param labelCode
+     *            the message code for the label (will be translated)
+     * @param fieldName
+     *            the name of the field
+     * @param options
+     *            the list of options
+     * @return the created field on which you can set the value if needed
+     */
+    public static SelectOptionsPageItem createSelectOptionsField(CommonServicesContext servicesCtx, PageDefinition pageDefinition, String labelCode, String fieldName, List<String> options) {
+        SelectOptionsPageItem pageItem = new SelectOptionsPageItem().setLabel(servicesCtx.getTranslationService().translate(labelCode));
+        pageItem.setFieldName(fieldName);
+        pageItem.setOptions(options);
         pageDefinition.addPageItem(pageItem);
         return pageItem;
     }

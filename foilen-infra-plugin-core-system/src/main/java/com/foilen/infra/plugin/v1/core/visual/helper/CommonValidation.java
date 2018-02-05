@@ -224,6 +224,25 @@ public class CommonValidation {
         return errors;
     }
 
+    public static List<Tuple2<String, String>> validateInList(Map<String, String> formValues, List<String> validValues, String... fieldNames) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
+            String fieldValue = formValues.get(fieldName);
+            errors.addAll(validateInList(fieldName, fieldValue, validValues));
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateInList(String fieldName, String fieldValue, List<String> validValues) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        boolean isValid = fieldValue != null //
+                && validValues.contains(fieldValue);
+        if (!isValid) {
+            errors.add(new Tuple2<>(fieldName, "error.notValidChoice"));
+        }
+        return errors;
+    }
+
     public static List<Tuple2<String, String>> validateIpAddress(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {

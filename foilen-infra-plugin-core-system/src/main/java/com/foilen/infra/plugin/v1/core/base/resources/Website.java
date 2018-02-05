@@ -39,7 +39,7 @@ public class Website extends AbstractIPResource implements Comparable<Website> {
 
     public static final String PROPERTY_NAME = "name";
     public static final String PROPERTY_DOMAIN_NAMES = "domainNames";
-    public static final String PROPERTY_IS_HTTPS = "isHttps";
+    public static final String PROPERTY_IS_HTTPS = "https";
     public static final String PROPERTY_APPLICATION_ENDPOINT = "applicationEndpoint";
 
     // Network
