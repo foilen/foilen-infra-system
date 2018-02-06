@@ -1,0 +1,17 @@
+FROM ubuntu:16.04
+
+RUN export TERM=dumb ; apt-get update && apt-get install -y haproxy && apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY asset/a.zip /tmp/a.zip
+RUN unzip /tmp/a.zip
+COPY asset/adir /asserts/adir
+
+RUN FIX_CONTAINER_USER_ID=$(id -u containerUser1) ;FIX_CONTAINER_GROUP_ID=$(id -g containerUser1) ;usermod -u 1000 containerUser1 -o ;groupmod -g 1000 containerUser1 -o ;find /etc /home /opt /root /run /srv /tmp /usr /var -uid $FIX_CONTAINER_USER_ID -exec chown containerUser1 {} \; ;find /etc /home /opt /root /run /srv /tmp /usr /var -gid $FIX_CONTAINER_GROUP_ID -exec chgrp containerUser1 {} \; ;
+RUN FIX_CONTAINER_USER_ID=$(id -u containerUser2) ;FIX_CONTAINER_GROUP_ID=$(id -g containerUser2) ;usermod -u 1000 containerUser2 -o ;groupmod -g 1000 containerUser2 -o ;find /etc /home /opt /root /run /srv /tmp /usr /var -uid $FIX_CONTAINER_USER_ID -exec chown containerUser2 {} \; ;find /etc /home /opt /root /run /srv /tmp /usr /var -gid $FIX_CONTAINER_GROUP_ID -exec chgrp containerUser2 {} \; ;
+
+EXPOSE 8080 8443
+
+VOLUME ["/volumes/config","/volumes/etc","/volumes/internal"]
+
+USER 10001
+
+CMD /usr/sbin/haproxy -f /volumes/config/haproxy

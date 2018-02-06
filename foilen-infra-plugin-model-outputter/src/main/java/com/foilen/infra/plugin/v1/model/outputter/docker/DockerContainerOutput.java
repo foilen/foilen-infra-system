@@ -377,6 +377,9 @@ public class DockerContainerOutput {
 
         // Volumes
         for (IPApplicationDefinitionVolume volume : applicationDefinition.getVolumes()) {
+            if (Strings.isNullOrEmpty(volume.getHostFolder())) {
+                continue;
+            }
             arguments.add("--volume");
             arguments.add(sanitize(volume.getHostFolder() + ":" + sanitize(volume.getContainerFsFolder())));
         }
@@ -436,6 +439,9 @@ public class DockerContainerOutput {
 
         // Volumes
         for (IPApplicationDefinitionVolume volume : applicationDefinition.getVolumes()) {
+            if (Strings.isNullOrEmpty(volume.getHostFolder())) {
+                continue;
+            }
             arguments.add("--volume");
             arguments.add(sanitize(volume.getHostFolder() + ":" + sanitize(volume.getContainerFsFolder())));
         }
@@ -494,6 +500,9 @@ public class DockerContainerOutput {
 
         // Volumes
         for (IPApplicationDefinitionVolume volume : applicationDefinition.getVolumes()) {
+            if (Strings.isNullOrEmpty(volume.getHostFolder())) {
+                continue;
+            }
             arguments.add("--volume");
             arguments.add(sanitize(volume.getHostFolder() + ":" + sanitize(volume.getContainerFsFolder())));
         }

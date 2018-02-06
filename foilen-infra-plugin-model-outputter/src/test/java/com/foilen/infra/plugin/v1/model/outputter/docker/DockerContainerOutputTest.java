@@ -75,7 +75,27 @@ public class DockerContainerOutputTest {
     }
 
     @Test
+    public void testToDockerfile_WithInternalVolume() {
+
+        applicationDefinition.addVolume(new IPApplicationDefinitionVolume(null, "/volumes/internal", null, null, null));
+
+        String actual = DockerContainerOutput.toDockerfile(applicationDefinition, ctx);
+        String expected = ResourceTools.getResourceAsString("DockerContainerOutputTest-testToDockerfile_WithInternalVolume-expected.txt", this.getClass());
+        AssertTools.assertIgnoreLineFeed(expected, actual);
+    }
+
+    @Test
     public void testToRunArgumentsSinglePassAttached() {
+        String expected = "run -i --rm --volume /tmp/docker/config:/volumes/config --volume /tmp/docker/etc:/volumes/etc --publish 80:8080 --publish 443:8443 -u 10001 --name Uroot_Stest --hostname Uroot_Stest Uroot_Stest";
+        String actual = joiner.join(DockerContainerOutput.toRunArgumentsSinglePassAttached(applicationDefinition, ctx));
+        Assert.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testToRunArgumentsSinglePassAttached_WithInternalVolume() {
+
+        applicationDefinition.addVolume(new IPApplicationDefinitionVolume(null, "/volumes/internal", null, null, null));
+
         String expected = "run -i --rm --volume /tmp/docker/config:/volumes/config --volume /tmp/docker/etc:/volumes/etc --publish 80:8080 --publish 443:8443 -u 10001 --name Uroot_Stest --hostname Uroot_Stest Uroot_Stest";
         String actual = joiner.join(DockerContainerOutput.toRunArgumentsSinglePassAttached(applicationDefinition, ctx));
         Assert.assertEquals(expected, actual);
@@ -92,6 +112,16 @@ public class DockerContainerOutputTest {
     public void testToRunCommandWithRestart_NoInfra() {
 
         applicationDefinition.getPortsRedirect().clear();
+
+        String expected = "run --detach --restart always --volume /tmp/docker/config:/volumes/config --volume /tmp/docker/etc:/volumes/etc --publish 80:8080 --publish 443:8443 -u 10001 --name Uroot_Stest --hostname Uroot_Stest Uroot_Stest";
+        String actual = joiner.join(DockerContainerOutput.toRunArgumentsWithRestart(applicationDefinition, ctx));
+        Assert.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testToRunCommandWithRestart_WithInternalVolume() {
+
+        applicationDefinition.addVolume(new IPApplicationDefinitionVolume(null, "/volumes/internal", null, null, null));
 
         String expected = "run --detach --restart always --volume /tmp/docker/config:/volumes/config --volume /tmp/docker/etc:/volumes/etc --publish 80:8080 --publish 443:8443 -u 10001 --name Uroot_Stest --hostname Uroot_Stest Uroot_Stest";
         String actual = joiner.join(DockerContainerOutput.toRunArgumentsWithRestart(applicationDefinition, ctx));
