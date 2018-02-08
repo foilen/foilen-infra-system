@@ -28,6 +28,44 @@ public class IPApplicationDefinitionVolume extends AbstractBasics {
     public IPApplicationDefinitionVolume() {
     }
 
+    /**
+     * Will just create a volume without mounting a folder. Good for discardable volumes.
+     *
+     * @param containerFsFolder
+     *            the path inside the container
+     *
+     */
+    public IPApplicationDefinitionVolume(String containerFsFolder) {
+        this.containerFsFolder = containerFsFolder;
+    }
+
+    /**
+     * Mount a file or folder without changing its permissions.
+     *
+     * @param hostFolder
+     *            the path on the host
+     * @param containerFsFolder
+     *            the path inside the container
+     */
+    public IPApplicationDefinitionVolume(String hostFolder, String containerFsFolder) {
+        this.hostFolder = hostFolder;
+        this.containerFsFolder = containerFsFolder;
+    }
+
+    /**
+     * A volume where the host's file or folder will have its owner/group/permissions changed.
+     *
+     * @param hostFolder
+     *            the path on the host
+     * @param containerFsFolder
+     *            the path inside the container
+     * @param ownerId
+     *            the owner
+     * @param groupId
+     *            the group
+     * @param permissions
+     *            the permissions
+     */
     public IPApplicationDefinitionVolume(String hostFolder, String containerFsFolder, Integer ownerId, Integer groupId, String permissions) {
         this.hostFolder = hostFolder;
         this.containerFsFolder = containerFsFolder;
