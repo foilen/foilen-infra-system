@@ -10,13 +10,18 @@
 package com.foilen.infra.plugin.v1.core.visual.helper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.exception.ProblemException;
+import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourceFieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourcesFieldPageItem;
@@ -25,6 +30,8 @@ import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
 import com.google.common.base.Strings;
 
 public class CommonResourceLink {
+
+    private static final Logger logger = LoggerFactory.getLogger(CommonResourceLink.class);
 
     /**
      * Create a {@link ResourceFieldPageItem} for the specified link.
@@ -241,6 +248,92 @@ public class CommonResourceLink {
                     .forEach(it -> {
                         changesContext.linkAdd(editedResource, linkType, it);
                     });
+        }
+
+    }
+
+    /**
+     * Add missing links and remove extra ones.
+     *
+     * @param servicesCtx
+     *            the services
+     * @param changesContext
+     *            the change context where to add the modifications
+     * @param resourceFromType
+     *            the type of the "from" resource of the links
+     * @param linkType
+     *            the type of link. Can be one from {@link LinkTypeConstants} or any other String.
+     * @param toResource
+     *            the "to" resource
+     * @param finalFromResources
+     *            all the "from" resources that you want at the end
+     */
+    public static <L extends IPResource> void syncFromLinks(CommonServicesContext servicesCtx, ChangesContext changesContext, //
+            Class<L> resourceFromType, String linkType, IPResource toResource, List<L> finalFromResources) {
+
+        IPResourceService resourceService = servicesCtx.getResourceService();
+        List<L> currentFromResources;
+        if (toResource.getInternalId() == null) {
+            currentFromResources = Collections.emptyList();
+        } else {
+            currentFromResources = resourceService.linkFindAllByFromResourceClassAndLinkTypeAndToResource(resourceFromType, linkType, toResource);
+        }
+        for (L fromResource : finalFromResources) {
+            Optional<L> existingLink = currentFromResources.stream().filter(it -> resourceService.resourceEqualsPk(fromResource, it)).findAny();
+            if (existingLink.isPresent()) {
+                currentFromResources.remove(existingLink.get());
+                logger.debug("Resource {} is already linked", fromResource);
+            } else {
+                logger.debug("Adding link from Resource {}", fromResource);
+                changesContext.linkAdd(fromResource, linkType, toResource);
+            }
+        }
+        for (L resourceFromToRemove : currentFromResources) {
+            logger.debug("Removing link from Resource {}", resourceFromToRemove);
+            changesContext.linkDelete(resourceFromToRemove, linkType, toResource);
+        }
+
+    }
+
+    /**
+     * Add missing links and remove extra ones.
+     *
+     * @param servicesCtx
+     *            the services
+     * @param changesContext
+     *            the change context where to add the modifications
+     * @param fromResource
+     *            the "from" resource
+     * @param linkType
+     *            the type of link. Can be one from {@link LinkTypeConstants} or any other String.
+     * @param resourceToType
+     *            the type of the "to" resource of the links
+     * @param finalToResources
+     *            all the "to" resources that you want at the end
+     */
+    public static <L extends IPResource> void syncToLinks(CommonServicesContext servicesCtx, ChangesContext changesContext, //
+            IPResource fromResource, String linkType, Class<L> resourceToType, List<L> finalToResources) {
+
+        IPResourceService resourceService = servicesCtx.getResourceService();
+        List<L> currentToResources;
+        if (fromResource.getInternalId() == null) {
+            currentToResources = Collections.emptyList();
+        } else {
+            currentToResources = resourceService.linkFindAllByFromResourceAndLinkTypeAndToResourceClass(fromResource, linkType, resourceToType);
+        }
+        for (L toResource : finalToResources) {
+            Optional<L> existingLink = currentToResources.stream().filter(it -> resourceService.resourceEqualsPk(toResource, it)).findAny();
+            if (existingLink.isPresent()) {
+                currentToResources.remove(existingLink.get());
+                logger.debug("Resource {} is already linked", toResource);
+            } else {
+                logger.debug("Adding link to Resource {}", toResource);
+                changesContext.linkAdd(fromResource, linkType, toResource);
+            }
+        }
+        for (L resourceToToRemove : currentToResources) {
+            logger.debug("Removing link to Resource {}", resourceToToRemove);
+            changesContext.linkDelete(fromResource, linkType, resourceToToRemove);
         }
 
     }
