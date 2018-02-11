@@ -38,7 +38,7 @@ import com.foilen.smalltools.tuple.Tuple2;
  */
 public abstract class AbstractIPPluginTest extends AbstractBasics {
 
-    private FakeSystemServicesImpl fakeSystemServicesImpl;
+    protected FakeSystemServicesImpl fakeSystemServicesImpl;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
