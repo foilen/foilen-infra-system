@@ -293,10 +293,10 @@ public class SimpleResourceEditorDefinition {
             if (value == null) {
                 // Remove previous links
                 if (editedResource.getInternalId() != null) {
-                    List<R> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                    List<R> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, fromResourceType);
                     currentLinks.stream() //
                             .forEach(it -> {
-                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                                ctx.getChangesContext().linkDelete(it, linkType, editedResource);
                             });
                 }
             } else {
@@ -322,11 +322,11 @@ public class SimpleResourceEditorDefinition {
                 if (editedResource.getInternalId() == null) {
                     currentLinks = new ArrayList<>();
                 } else {
-                    currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                    currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(editedResource, linkType, fromResourceType);
                     currentLinks.stream() //
                             .filter(it -> !finalLink.equals(it)) //
                             .forEach(it -> {
-                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                                ctx.getChangesContext().linkDelete(it, linkType, editedResource);
                             });
                 }
 
@@ -373,7 +373,7 @@ public class SimpleResourceEditorDefinition {
                     List<R> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
                     currentLinks.stream() //
                             .forEach(it -> {
-                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                                ctx.getChangesContext().linkDelete(it, linkType, editedResource);
                             });
                 }
             } else {
@@ -404,7 +404,7 @@ public class SimpleResourceEditorDefinition {
                     currentLinks.stream() //
                             .filter(it -> !finalLinks.contains(it)) //
                             .forEach(it -> {
-                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                                ctx.getChangesContext().linkDelete(it, linkType, editedResource);
                             });
                 }
 
@@ -412,7 +412,7 @@ public class SimpleResourceEditorDefinition {
                 finalLinks.stream() //
                         .filter(it -> !currentLinks.contains(it)) //
                         .forEach(it -> {
-                            ctx.getChangesContext().linkAdd(editedResource, linkType, it);
+                            ctx.getChangesContext().linkAdd(it, linkType, editedResource);
                         });
             }
 
