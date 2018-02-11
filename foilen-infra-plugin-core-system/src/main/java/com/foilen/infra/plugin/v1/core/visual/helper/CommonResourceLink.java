@@ -109,6 +109,81 @@ public class CommonResourceLink {
     }
 
     /**
+     * Create a {@link ResourceFieldPageItem} for the specified link.
+     *
+     * @param servicesCtx
+     *            the services
+     * @param pageDefinition
+     *            the page definition on which to add the item
+     * @param resourceType
+     *            the type of resource for the link
+     * @param linkType
+     *            the type of link. Can be one from {@link LinkTypeConstants} or any other String.
+     * @param editedResource
+     *            the currently edited resource
+     * @param labelCode
+     *            the code for the label to display
+     * @param fieldName
+     *            the name of the field that contains the id of the resource to link
+     */
+    public static <L extends IPResource> void addReverseResourcePageItem(CommonServicesContext servicesCtx, PageDefinition pageDefinition, Class<L> resourceType, String linkType,
+            IPResource editedResource, String labelCode, String fieldName) {
+        ResourceFieldPageItem<L> pageItem = new ResourceFieldPageItem<>();
+        pageItem.setFieldName(fieldName);
+        pageItem.setLabel(servicesCtx.getTranslationService().translate(labelCode));
+        pageItem.setResourceType(resourceType);
+
+        if (editedResource != null) {
+            List<L> resources = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(resourceType, linkType, editedResource);
+            if (!resources.isEmpty()) {
+                if (resources.size() > 1) {
+                    throw new ProblemException("Too many links of type [" + linkType + "]");
+                }
+                L resource = resources.get(0);
+                pageItem.setValue(resource);
+            }
+        }
+
+        pageDefinition.addPageItem(pageItem);
+    }
+
+    /**
+     * Create a {@link ResourcesFieldPageItem} for the specified link.
+     *
+     * @param servicesCtx
+     *            the services
+     * @param pageDefinition
+     *            the page definition on which to add the item
+     * @param resourceType
+     *            the type of resource for the link
+     * @param linkType
+     *            the type of link. Can be one from {@link LinkTypeConstants} or any other String.
+     * @param editedResource
+     *            the currently edited resource
+     * @param labelCode
+     *            the code for the label to display
+     * @param fieldName
+     *            the name of the field that contains the ids of the resources to link
+     */
+    public static <L extends IPResource> void addReverseResourcesPageItem(CommonServicesContext servicesCtx, PageDefinition pageDefinition, Class<L> resourceType, String linkType,
+            IPResource editedResource, String labelCode, String fieldName) {
+
+        ResourcesFieldPageItem<L> pageItem = new ResourcesFieldPageItem<>();
+        pageItem.setFieldName(fieldName);
+        pageItem.setLabel(servicesCtx.getTranslationService().translate(labelCode));
+        pageItem.setResourceType(resourceType);
+
+        if (editedResource != null) {
+            List<L> resources = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(resourceType, linkType, editedResource);
+            if (!resources.isEmpty()) {
+                pageItem.setValues(resources);
+            }
+        }
+
+        pageDefinition.addPageItem(pageItem);
+    }
+
+    /**
      * Set the link on "editedResource" that goes to the resource with id set by "fieldName". (will remove previous unneeded links)
      *
      * @param servicesCtx
@@ -247,6 +322,150 @@ public class CommonResourceLink {
                     .filter(it -> !currentLinks.contains(it)) //
                     .forEach(it -> {
                         changesContext.linkAdd(editedResource, linkType, it);
+                    });
+        }
+
+    }
+
+    /**
+     * Set the link on "editedResource" that goes from the resource with id set by "fieldName". (will remove previous unneeded links)
+     *
+     * @param servicesCtx
+     *            the services
+     * @param fromResourceType
+     *            the type of the resource that gets linked.
+     * @param linkType
+     *            the link type. Can be one from {@link LinkTypeConstants} or any other String
+     * @param editedResource
+     *            the currently edited resource
+     * @param fieldName
+     *            the name of the field that contains the id of the resource to link
+     * @param formValues
+     *            the form
+     * @param changesContext
+     *            the change context where to add the modifications
+     */
+    public static <L extends IPResource> void fillReverseResourceLink(CommonServicesContext servicesCtx, Class<L> fromResourceType, String linkType, IPResource editedResource, String fieldName,
+            Map<String, String> formValues, ChangesContext changesContext) {
+
+        String value = formValues.get(fieldName);
+        if (value == null) {
+            // Remove previous links
+            if (editedResource.getInternalId() != null) {
+                List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                currentLinks.stream() //
+                        .forEach(it -> {
+                            changesContext.linkDelete(it, linkType, editedResource);
+                        });
+            }
+        } else {
+            Long linkedResourceId;
+            try {
+                linkedResourceId = Long.parseLong(value);
+            } catch (Exception e) {
+                throw new ProblemException("The link id is not numerical", e);
+            }
+
+            Optional<? extends IPResource> linkedResourceOptional = servicesCtx.getResourceService().resourceFind( //
+                    servicesCtx.getResourceService().createResourceQuery(fromResourceType) //
+                            .addIdEquals(linkedResourceId) //
+            );
+            if (!linkedResourceOptional.isPresent()) {
+                throw new ProblemException("The linked resource does not exist");
+            }
+
+            IPResource finalLink = linkedResourceOptional.get();
+
+            // Remove previous links if not the right one
+            List<L> currentLinks;
+            if (editedResource.getInternalId() == null) {
+                currentLinks = new ArrayList<>();
+            } else {
+                currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                currentLinks.stream() //
+                        .filter(it -> !finalLink.equals(it)) //
+                        .forEach(it -> {
+                            changesContext.linkDelete(it, linkType, editedResource);
+                        });
+            }
+
+            // Add the new links if not the right ones or there were none
+            if (!currentLinks.contains(finalLink)) {
+                changesContext.linkAdd(finalLink, linkType, editedResource);
+            }
+
+        }
+
+    }
+
+    /**
+     * Set the links on "editedResource" that goes from the resources with ids set by "fieldName". (will remove previous unneeded links)
+     *
+     * @param servicesCtx
+     *            the services
+     * @param fromResourceType
+     *            the type of the resource that gets linked the link type. Can be one from {@link LinkTypeConstants} or any other String.
+     * @param fieldName
+     *            the name of the field that contains the ids of the resources to link
+     * @param editedResource
+     *            the currently edited resource
+     * @param linkType
+     *            the name of the field that contains the ids of the resources to link
+     * @param formValues
+     *            the form
+     * @param changesContext
+     *            the change context where to add the modifications
+     */
+    public static <L extends IPResource> void fillReverseResourcesLink(CommonServicesContext servicesCtx, Class<L> fromResourceType, String linkType, IPResource editedResource, String fieldName,
+            Map<String, String> formValues, ChangesContext changesContext) {
+
+        String values = formValues.get(fieldName);
+        if (values == null) {
+            // Remove previous links
+            if (editedResource.getInternalId() != null) {
+                List<L> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                currentLinks.stream() //
+                        .forEach(it -> {
+                            changesContext.linkDelete(it, linkType, editedResource);
+                        });
+            }
+        } else {
+            String[] valuesParts = values.split(",");
+            long[] linkedResourceIds = new long[valuesParts.length];
+            try {
+                int idx = 0;
+                for (String valuePart : valuesParts) {
+                    if (!Strings.isNullOrEmpty(valuePart)) {
+                        linkedResourceIds[idx++] = Long.parseLong(valuePart);
+                    }
+                }
+            } catch (Exception e) {
+                throw new ProblemException("The link id is not numerical", e);
+            }
+
+            List<? extends IPResource> finalLinks = servicesCtx.getResourceService().resourceFindAll( //
+                    servicesCtx.getResourceService().createResourceQuery(fromResourceType) //
+                            .addIdEquals(linkedResourceIds) //
+            );
+
+            // Remove previous links if not the right one
+            List<L> currentLinks;
+            if (editedResource.getInternalId() == null) {
+                currentLinks = new ArrayList<>();
+            } else {
+                currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                currentLinks.stream() //
+                        .filter(it -> !finalLinks.contains(it)) //
+                        .forEach(it -> {
+                            changesContext.linkDelete(it, linkType, editedResource);
+                        });
+            }
+
+            // Add the new links if not the right ones or there were none
+            finalLinks.stream() //
+                    .filter(it -> !currentLinks.contains(it)) //
+                    .forEach(it -> {
+                        changesContext.linkAdd(it, linkType, editedResource);
                     });
         }
 

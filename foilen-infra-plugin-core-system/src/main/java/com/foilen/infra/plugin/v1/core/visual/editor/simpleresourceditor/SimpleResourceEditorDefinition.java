@@ -266,6 +266,166 @@ public class SimpleResourceEditorDefinition {
         fieldConfigs.add(fieldConfig);
     }
 
+    @SuppressWarnings("unchecked")
+    public <R extends IPResource> void addReverseResource(String propertyName, Class<R> fromResourceType, String linkType, Consumer<SimpleResourceEditorDefinitionFieldConfig> fieldConfigConsumer) {
+        SimpleResourceEditorDefinitionFieldConfig fieldConfig = new SimpleResourceEditorDefinitionFieldConfig();
+        fieldConfig.setPropertyName(propertyName);
+        fieldConfig.setGenAndAddPageItem((pageDefinition) -> {
+            ResourceFieldPageItem<R> pageItem = new ResourceFieldPageItem<>();
+            pageItem.setFieldName(propertyName);
+            pageItem.setLabel(servicesCtx.getTranslationService().translate(prefix + "." + propertyName));
+            pageItem.setResourceType(fromResourceType);
+            pageDefinition.addPageItem(pageItem);
+            return pageItem;
+        });
+        fieldConfig.setPopulatePageItem(ctx -> {
+            List<R> resources = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+            if (!resources.isEmpty()) {
+                if (resources.size() > 1) {
+                    throw new ProblemException("Too many links of type [" + linkType + "]");
+                }
+                R resource = resources.get(0);
+                ((ResourceFieldPageItem<R>) ctx.getPageItem()).setValue(resource);
+            }
+        });
+        fieldConfig.setPopulateResource(ctx -> {
+            String value = ctx.getTextValue();
+            if (value == null) {
+                // Remove previous links
+                if (editedResource.getInternalId() != null) {
+                    List<R> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                    currentLinks.stream() //
+                            .forEach(it -> {
+                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                            });
+                }
+            } else {
+                Long linkedResourceId;
+                try {
+                    linkedResourceId = Long.parseLong(value);
+                } catch (Exception e) {
+                    throw new ProblemException("The link id is not numerical", e);
+                }
+
+                Optional<? extends IPResource> linkedResourceOptional = servicesCtx.getResourceService().resourceFind( //
+                        servicesCtx.getResourceService().createResourceQuery(fromResourceType) //
+                                .addIdEquals(linkedResourceId) //
+                );
+                if (!linkedResourceOptional.isPresent()) {
+                    throw new ProblemException("The linked resource does not exist");
+                }
+
+                IPResource finalLink = linkedResourceOptional.get();
+
+                // Remove previous links if not the right one
+                List<R> currentLinks;
+                if (editedResource.getInternalId() == null) {
+                    currentLinks = new ArrayList<>();
+                } else {
+                    currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                    currentLinks.stream() //
+                            .filter(it -> !finalLink.equals(it)) //
+                            .forEach(it -> {
+                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                            });
+                }
+
+                // Add the new links if not the right ones or there were none
+                if (!currentLinks.contains(finalLink)) {
+                    ctx.getChangesContext().linkAdd(editedResource, linkType, finalLink);
+                }
+
+            }
+
+        });
+        fieldConfigConsumer.accept(fieldConfig);
+        fieldConfigs.add(fieldConfig);
+    }
+
+    public <R extends IPResource> void addReverseResource(String propertyName, Class<R> resourceType, String linkType) {
+        addReverseResource(propertyName, resourceType, linkType, (fc) -> {
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    public <R extends IPResource> void addReverseResources(String propertyName, Class<R> fromResourceType, String linkType, Consumer<SimpleResourceEditorDefinitionFieldConfig> fieldConfigConsumer) {
+        SimpleResourceEditorDefinitionFieldConfig fieldConfig = new SimpleResourceEditorDefinitionFieldConfig();
+        fieldConfig.setPropertyName(propertyName);
+        fieldConfig.setGenAndAddPageItem((pageDefinition) -> {
+            ResourcesFieldPageItem<R> pageItem = new ResourcesFieldPageItem<>();
+            pageItem.setFieldName(propertyName);
+            pageItem.setLabel(servicesCtx.getTranslationService().translate(prefix + "." + propertyName));
+            pageItem.setResourceType(fromResourceType);
+            pageDefinition.addPageItem(pageItem);
+            return pageItem;
+        });
+        fieldConfig.setPopulatePageItem(ctx -> {
+            List<R> resources = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+            if (!resources.isEmpty()) {
+                ((ResourcesFieldPageItem<R>) ctx.getPageItem()).setValues(resources);
+            }
+        });
+        fieldConfig.setPopulateResource(ctx -> {
+            String values = ctx.getTextValue();
+            if (values == null) {
+                // Remove previous links
+                if (editedResource.getInternalId() != null) {
+                    List<R> currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                    currentLinks.stream() //
+                            .forEach(it -> {
+                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                            });
+                }
+            } else {
+                String[] valuesParts = values.split(",");
+                long[] linkedResourceIds = new long[valuesParts.length];
+                try {
+                    int idx = 0;
+                    for (String valuePart : valuesParts) {
+                        if (!Strings.isNullOrEmpty(valuePart)) {
+                            linkedResourceIds[idx++] = Long.parseLong(valuePart);
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new ProblemException("The link id is not numerical", e);
+                }
+
+                List<? extends IPResource> finalLinks = servicesCtx.getResourceService().resourceFindAll( //
+                        servicesCtx.getResourceService().createResourceQuery(fromResourceType) //
+                                .addIdEquals(linkedResourceIds) //
+                );
+
+                // Remove previous links if not the right one
+                List<R> currentLinks;
+                if (editedResource.getInternalId() == null) {
+                    currentLinks = new ArrayList<>();
+                } else {
+                    currentLinks = servicesCtx.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(fromResourceType, linkType, editedResource);
+                    currentLinks.stream() //
+                            .filter(it -> !finalLinks.contains(it)) //
+                            .forEach(it -> {
+                                ctx.getChangesContext().linkDelete(editedResource, linkType, it);
+                            });
+                }
+
+                // Add the new links if not the right ones or there were none
+                finalLinks.stream() //
+                        .filter(it -> !currentLinks.contains(it)) //
+                        .forEach(it -> {
+                            ctx.getChangesContext().linkAdd(editedResource, linkType, it);
+                        });
+            }
+
+        });
+        fieldConfigConsumer.accept(fieldConfig);
+        fieldConfigs.add(fieldConfig);
+    }
+
+    public <R extends IPResource> void addReverseResources(String propertyName, Class<R> resourceType, String linkType) {
+        addReverseResources(propertyName, resourceType, linkType, (fc) -> {
+        });
+    }
+
     public void addSelectOptionsField(String propertyName, List<String> validValues) {
         addSelectOptionsField(propertyName, validValues, (fc) -> {
         });

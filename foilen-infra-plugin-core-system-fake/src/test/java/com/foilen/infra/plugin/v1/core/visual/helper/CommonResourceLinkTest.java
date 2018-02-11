@@ -154,6 +154,60 @@ public class CommonResourceLinkTest {
     }
 
     @Test
+    public void testAddReverseResourcePageItem_hasMany() {
+
+        thrown.expectMessage("Too many links of type [MANAGER]");
+
+        // Execute
+        PageDefinition pageDefinition = new PageDefinition("");
+        EmployeeResource alain = getEmployee("Alain");
+        CommonResourceLink.addReverseResourcePageItem(commonServicesContext, pageDefinition, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain, "", FIELD_NAME_MANAGER);
+
+    }
+
+    @Test
+    public void testAddReverseResourcePageItem_hasNone() {
+        PageDefinition pageDefinition = new PageDefinition("");
+        EmployeeResource cecille = getEmployee("Cecille");
+        CommonResourceLink.addReverseResourcePageItem(commonServicesContext, pageDefinition, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, cecille, "", FIELD_NAME_MANAGER);
+
+        EmployeeResource managerResource = getManagerFromResourceFieldPageItem(pageDefinition);
+        Assert.assertNull(managerResource);
+    }
+
+    @Test
+    public void testAddReverseResourcePageItem_hasOne() {
+        PageDefinition pageDefinition = new PageDefinition("");
+        EmployeeResource bernard = getEmployee("Bernard");
+        CommonResourceLink.addReverseResourcePageItem(commonServicesContext, pageDefinition, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, bernard, "", FIELD_NAME_MANAGER);
+
+        EmployeeResource managerResource = getManagerFromResourceFieldPageItem(pageDefinition);
+        Assert.assertEquals("Donald", managerResource.getFirstName());
+    }
+
+    @Test
+    public void testAddReverseResourcesPageItem_hasNone() {
+        PageDefinition pageDefinition = new PageDefinition("");
+        EmployeeResource cecille = getEmployee("Cecille");
+        CommonResourceLink.addReverseResourcesPageItem(commonServicesContext, pageDefinition, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, cecille, "", FIELD_NAME_MANAGER);
+
+        List<EmployeeResource> managersResource = getManagerFromResourcesFieldPageItem(pageDefinition);
+        Assert.assertTrue(managersResource.isEmpty());
+    }
+
+    @Test
+    public void testAddReverseResourcesPageItem_hasOne() {
+        PageDefinition pageDefinition = new PageDefinition("");
+        EmployeeResource bernard = getEmployee("Alain");
+        CommonResourceLink.addReverseResourcesPageItem(commonServicesContext, pageDefinition, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, bernard, "", FIELD_NAME_MANAGER);
+
+        List<EmployeeResource> managersResource = getManagerFromResourcesFieldPageItem(pageDefinition);
+        Assert.assertEquals(2, managersResource.size());
+        Assert.assertEquals("Bernard", managersResource.get(0).getFirstName());
+        Assert.assertEquals("Cecille", managersResource.get(1).getFirstName());
+    }
+
+    @Test
     public void testFillResourceLink_Change() {
         // Check initial value
         EmployeeResource bernard = getEmployee("Bernard");
@@ -260,6 +314,118 @@ public class CommonResourceLinkTest {
         Assert.assertEquals(2, links.size());
         Assert.assertEquals("Alain", links.get(0).getFirstName());
         Assert.assertEquals("Cecille", links.get(1).getFirstName());
+    }
+
+    @Test
+    public void testFillReverseResourceLink_Change() {
+        // Check initial value
+        EmployeeResource bernard = getEmployee("Bernard");
+        List<EmployeeResource> links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER,
+                bernard);
+        Assert.assertEquals(1, links.size());
+        Assert.assertEquals("Donald", links.get(0).getFirstName());
+
+        // Change
+        Map<String, String> formValues = new HashMap<>();
+        formValues.put(FIELD_NAME_MANAGER, String.valueOf(getEmployee("Cecille").getInternalId()));
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
+        CommonResourceLink.fillReverseResourceLink(commonServicesContext, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, bernard, FIELD_NAME_MANAGER, formValues, changesContext);
+        fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
+
+        // Check changed value
+        links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, bernard);
+        Assert.assertEquals(1, links.size());
+        Assert.assertEquals("Cecille", links.get(0).getFirstName());
+    }
+
+    @Test
+    public void testFillReverseResourceLink_Remove() {
+        // Check initial value
+        EmployeeResource bernard = getEmployee("Bernard");
+        List<EmployeeResource> links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER,
+                bernard);
+        Assert.assertEquals(1, links.size());
+        Assert.assertEquals("Donald", links.get(0).getFirstName());
+
+        // Change
+        Map<String, String> formValues = new HashMap<>();
+        formValues.put(FIELD_NAME_MANAGER, null);
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
+        CommonResourceLink.fillReverseResourceLink(commonServicesContext, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, bernard, FIELD_NAME_MANAGER, formValues, changesContext);
+        fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
+
+        // Check changed value
+        links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, bernard);
+        Assert.assertTrue(links.isEmpty());
+    }
+
+    @Test
+    public void testFillReverseResourcesLink_0() {
+        // Check initial value
+        EmployeeResource alain = getEmployee("Alain");
+        List<EmployeeResource> links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER,
+                alain);
+        Assert.assertEquals(2, links.size());
+        Assert.assertEquals("Bernard", links.get(0).getFirstName());
+        Assert.assertEquals("Cecille", links.get(1).getFirstName());
+
+        // Change
+        Map<String, String> formValues = new HashMap<>();
+        formValues.put(FIELD_NAME_MANAGER, null);
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
+        CommonResourceLink.fillReverseResourcesLink(commonServicesContext, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain, FIELD_NAME_MANAGER, formValues, changesContext);
+        fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
+
+        // Check changed value
+        links = commonServicesContext.getResourceService().linkFindAllByFromResourceAndLinkTypeAndToResourceClass(alain, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class);
+        Assert.assertTrue(links.isEmpty());
+    }
+
+    @Test
+    public void testFillReverseResourcesLink_1() {
+        // Check initial value
+        EmployeeResource alain = getEmployee("Alain");
+        List<EmployeeResource> links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER,
+                alain);
+        Assert.assertEquals(2, links.size());
+        Assert.assertEquals("Bernard", links.get(0).getFirstName());
+        Assert.assertEquals("Cecille", links.get(1).getFirstName());
+
+        // Change
+        Map<String, String> formValues = new HashMap<>();
+        formValues.put(FIELD_NAME_MANAGER, String.valueOf(getEmployee("Cecille").getInternalId()));
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
+        CommonResourceLink.fillReverseResourcesLink(commonServicesContext, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain, FIELD_NAME_MANAGER, formValues, changesContext);
+        fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
+
+        // Check changed value
+        links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain);
+        Assert.assertEquals(1, links.size());
+        Assert.assertEquals("Cecille", links.get(0).getFirstName());
+    }
+
+    @Test
+    public void testFillReverseResourcesLink_2() {
+        // Check initial value
+        EmployeeResource alain = getEmployee("Alain");
+        List<EmployeeResource> links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER,
+                alain);
+        Assert.assertEquals(2, links.size());
+        Assert.assertEquals("Bernard", links.get(0).getFirstName());
+        Assert.assertEquals("Cecille", links.get(1).getFirstName());
+
+        // Add
+        Map<String, String> formValues = new HashMap<>();
+        formValues.put(FIELD_NAME_MANAGER, String.valueOf(getEmployee("Bernard").getInternalId()) + "," + String.valueOf(getEmployee("Donald").getInternalId()));
+        ChangesContext changesContext = new ChangesContext(fakeSystemServicesImpl);
+        CommonResourceLink.fillReverseResourcesLink(commonServicesContext, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain, FIELD_NAME_MANAGER, formValues, changesContext);
+        fakeSystemServicesImpl.getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
+
+        // Check changed value
+        links = commonServicesContext.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain);
+        Assert.assertEquals(2, links.size());
+        Assert.assertEquals("Bernard", links.get(0).getFirstName());
+        Assert.assertEquals("Donald", links.get(1).getFirstName());
     }
 
 }
