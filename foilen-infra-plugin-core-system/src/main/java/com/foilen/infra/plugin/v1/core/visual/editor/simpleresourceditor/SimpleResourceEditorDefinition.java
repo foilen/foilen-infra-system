@@ -266,6 +266,11 @@ public class SimpleResourceEditorDefinition {
         fieldConfigs.add(fieldConfig);
     }
 
+    public <R extends IPResource> void addReverseResource(String propertyName, Class<R> resourceType, String linkType) {
+        addReverseResource(propertyName, resourceType, linkType, (fc) -> {
+        });
+    }
+
     @SuppressWarnings("unchecked")
     public <R extends IPResource> void addReverseResource(String propertyName, Class<R> fromResourceType, String linkType, Consumer<SimpleResourceEditorDefinitionFieldConfig> fieldConfigConsumer) {
         SimpleResourceEditorDefinitionFieldConfig fieldConfig = new SimpleResourceEditorDefinitionFieldConfig();
@@ -342,8 +347,8 @@ public class SimpleResourceEditorDefinition {
         fieldConfigs.add(fieldConfig);
     }
 
-    public <R extends IPResource> void addReverseResource(String propertyName, Class<R> resourceType, String linkType) {
-        addReverseResource(propertyName, resourceType, linkType, (fc) -> {
+    public <R extends IPResource> void addReverseResources(String propertyName, Class<R> resourceType, String linkType) {
+        addReverseResources(propertyName, resourceType, linkType, (fc) -> {
         });
     }
 
@@ -419,11 +424,6 @@ public class SimpleResourceEditorDefinition {
         });
         fieldConfigConsumer.accept(fieldConfig);
         fieldConfigs.add(fieldConfig);
-    }
-
-    public <R extends IPResource> void addReverseResources(String propertyName, Class<R> resourceType, String linkType) {
-        addReverseResources(propertyName, resourceType, linkType, (fc) -> {
-        });
     }
 
     public void addSelectOptionsField(String propertyName, List<String> validValues) {
