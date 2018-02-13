@@ -129,7 +129,7 @@ public interface UnixShellAndFsUtils {
      * @param permission
      *            the permission of the file
      */
-    void folderCreate(String directoryPath, int owner, int group, String permission);
+    void folderCreate(String directoryPath, Integer owner, Integer group, String permission);
 
     /**
      * Create a folder.
@@ -143,7 +143,16 @@ public interface UnixShellAndFsUtils {
      * @param permission
      *            the permission of the file
      */
-    void folderCreate(String[] directoryPathParts, int owner, int group, String permission);
+    void folderCreate(String[] directoryPathParts, Integer owner, Integer group, String permission);
+
+    /**
+     * Tells if the folder exists
+     *
+     * @param directoryPath
+     *            the full path of the folder to create
+     * @return true if it exists and is a folder
+     */
+    boolean folderExists(String directoryPath);
 
     /**
      * To create a symbolic link.

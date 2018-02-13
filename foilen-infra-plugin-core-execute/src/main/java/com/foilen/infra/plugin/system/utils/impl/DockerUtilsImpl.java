@@ -28,6 +28,7 @@ import org.slf4j.event.Level;
 
 import com.foilen.infra.plugin.system.utils.DockerUtils;
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
+import com.foilen.infra.plugin.system.utils.UtilsException;
 import com.foilen.infra.plugin.system.utils.callback.DockerContainerManagementCallback;
 import com.foilen.infra.plugin.system.utils.callback.NoOpDockerContainerManagementCallback;
 import com.foilen.infra.plugin.system.utils.model.DockerPs;
@@ -602,8 +603,19 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
     public void volumeHostCreate(IPApplicationDefinition applicationDefinition) {
         if (!applicationDefinition.getVolumes().isEmpty()) {
             for (IPApplicationDefinitionVolume volume : applicationDefinition.getVolumes()) {
-                logger.info("[VOLUME HOST] Creating volume {}", volume.getHostFolder());
-                unixShellAndFsUtils.folderCreate(hostFs + volume.getHostFolder(), volume.getOwnerId(), volume.getGroupId(), volume.getPermissions());
+                logger.info("[VOLUME HOST] Creating volume {}", volume);
+
+                if (volume.getHostFolder() != null) {
+                    if (CollectionsTools.isAnyItemNotNull(volume.getOwnerId(), volume.getGroupId(), volume.getPermissions())) {
+                        if (!unixShellAndFsUtils.folderExists(hostFs + volume.getHostFolder())) {
+                            throw new UtilsException("The folder " + volume.getHostFolder() + " does not exists. Cannot create since there is no specified owner/group/permissions");
+                        }
+                    } else {
+                        unixShellAndFsUtils.folderCreate(hostFs + volume.getHostFolder(), volume.getOwnerId(), volume.getGroupId(), volume.getPermissions());
+                    }
+                } else {
+                    logger.info("[VOLUME HOST] Skipping volume {} since it is only used internally (no mount points)", volume);
+                }
             }
         }
     }

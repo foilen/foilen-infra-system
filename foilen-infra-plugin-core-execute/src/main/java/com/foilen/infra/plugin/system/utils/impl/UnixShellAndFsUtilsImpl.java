@@ -25,6 +25,7 @@ import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.FreemarkerTools;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 
 public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShellAndFsUtils {
 
@@ -122,18 +123,29 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public void folderCreate(String directoryPath, int owner, int group, String permission) {
+    public void folderCreate(String directoryPath, Integer owner, Integer group, String permission) {
         logger.info("[FOLDER] Creating directory {}", directoryPath);
         if (!DirectoryTools.createPath(directoryPath)) {
             throw new UtilsException("[FOLDER] [" + directoryPath + "] Could not be created");
         }
-        FileTools.changePermissions(directoryPath, false, permission);
-        executeCommandQuiet("FOLDER", "Update owner", "/bin/chown", owner + ":" + group, directoryPath);
+        if (!Strings.isNullOrEmpty(permission)) {
+            FileTools.changePermissions(directoryPath, false, permission);
+        }
+        if (owner != null && group != null) {
+            executeCommandQuiet("FOLDER", "Update owner", "/bin/chown", owner + ":" + group, directoryPath);
+        }
     }
 
     @Override
-    public void folderCreate(String[] directoryPathParts, int owner, int group, String permission) {
+    public void folderCreate(String[] directoryPathParts, Integer owner, Integer group, String permission) {
         folderCreate(PATH_JOINER.join(directoryPathParts), owner, group, permission);
+    }
+
+    @Override
+    public boolean folderExists(String directoryPath) {
+        File file = new File(directoryPath);
+        logger.debug("[FOLDER] Folder exists. Exists {}; is a folder {}", file.exists(), file.isDirectory());
+        return file.exists() && file.isDirectory();
     }
 
     @Override
