@@ -117,6 +117,7 @@ public class DockerContainerOutput {
 
                     if (host == null || port == null) {
                         logger.error("[{}] Infra {} -> Missing dependency to {}", imageName, portRedirect.getLocalPort(), machineContainerEndpoint);
+                        logger.debug("Known dependencies: {}", getKnownDependencies(ctx));
                         missingDependency = true;
                     } else {
                         logger.info("[{}] Infra {} -> {}:{}", imageName, portRedirect.getLocalPort(), host, port);
@@ -210,6 +211,16 @@ public class DockerContainerOutput {
         }).collect(Collectors.toList()));
         model.put("command", command);
         return FreemarkerTools.processTemplate("/com/foilen/infra/plugin/v1/model/outputter/docker/waitInfra.sh.ftl", model);
+    }
+
+    private static String getKnownDependencies(DockerContainerOutputContext ctx) {
+        StringBuilder result = new StringBuilder();
+        result.append("\n");
+        for (String name : ctx.getRedirectIpByMachineContainerEndpoint().keySet()) {
+            result.append("\t").append(name).append(" -> ");
+            result.append(ctx.getRedirectIpByMachineContainerEndpoint().get(name)).append(":").append(ctx.getRedirectPortByMachineContainerEndpoint().get(name)).append("\n");
+        }
+        return result.toString();
     }
 
     protected static String sanitize(String text) {
