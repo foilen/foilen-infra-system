@@ -17,6 +17,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.foilen.infra.plugin.v1.model.docker.DockerContainerEndpoints;
 import com.foilen.smalltools.hash.HashSha256;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.foilen.smalltools.tuple.Tuple2;
@@ -103,6 +104,14 @@ public class IPApplicationDefinition {
         this.getHostToIpMapping().add(new Tuple2<>(host, ip));
     }
 
+    /**
+     * Add an endpoint available for the redirection feature.
+     *
+     * @param containerPort
+     *            the internal port
+     * @param endpoint
+     *            the endpoint name. Can be in {@link DockerContainerEndpoints} list.
+     */
     public void addPortEndpoint(int containerPort, String endpoint) {
         portsEndpoint.put(containerPort, endpoint);
     }
