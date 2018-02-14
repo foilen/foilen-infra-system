@@ -201,8 +201,7 @@ public class MachineHaProxyUpdateHandler extends AbstractCommonMethodUpdateEvent
                 }
             }
 
-            applicationDefinition.setFrom("ubuntu:16.04");
-            applicationDefinition.addBuildStepCommand("export TERM=dumb ; apt-get update && apt-get install -y haproxy && apt-get clean && rm -rf /var/lib/apt/lists/*");
+            applicationDefinition.setFrom("foilen/fcloud-docker-haproxy:1.6.3-002");
 
             applicationDefinition.addPortExposed(80, 8080);
             applicationDefinition.addPortExposed(443, 4433);

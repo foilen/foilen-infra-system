@@ -35,7 +35,6 @@ import com.foilen.smalltools.tools.FreemarkerTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.foilen.smalltools.tuple.Tuple2;
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
@@ -68,7 +67,6 @@ public class DockerContainerOutput {
             logger.info("[{}] Has multiple services to run or some port redirects", imageName);
 
             IPApplicationDefinitionAssetsBundle assetsBundle = transformedApplicationDefinition.addAssetsBundle();
-            List<String> additionnalAppsToInstall = new ArrayList<>();
 
             // Make sure there is at least one known service/command to run
             if (transformedApplicationDefinition.getCommand() == null && services.isEmpty()) {
@@ -102,7 +100,6 @@ public class DockerContainerOutput {
                     }
                 }
 
-                additionnalAppsToInstall.add("haproxy");
                 HaProxyConfig haProxyConfig = new HaProxyConfig();
                 haProxyConfig.setUser(null);
                 haProxyConfig.setGroup(null);
@@ -138,7 +135,6 @@ public class DockerContainerOutput {
 
             // Supervisor command & user list
             StringBuilder supervisorUsersToInstall = new StringBuilder();
-            additionnalAppsToInstall.add("supervisor");
             StringBuilder supervisorConfigContent = new StringBuilder();
             supervisorConfigContent.append("[supervisord]\n");
             supervisorConfigContent.append("nodaemon=true\n\n");
@@ -172,11 +168,6 @@ public class DockerContainerOutput {
 
                 assetsBundle.addAssetContent("_infra/program_" + service.getName() + ".sh", serviceScriptContent);
             }
-
-            transformedApplicationDefinition.addBuildStepCommand("export TERM=dumb ; " + //
-                    "apt-get update && " + //
-                    "apt-get install -y " + Joiner.on(' ').join(additionnalAppsToInstall) + " && " + //
-                    "apt-get clean && rm -rf /var/lib/apt/lists/*");
 
             assetsBundle.addAssetContent("_infra/supervisord_users.txt", supervisorUsersToInstall.toString());
 
