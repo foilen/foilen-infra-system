@@ -606,12 +606,12 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 logger.info("[VOLUME HOST] Creating volume {}", volume);
 
                 if (volume.getHostFolder() != null) {
-                    if (CollectionsTools.isAnyItemNotNull(volume.getOwnerId(), volume.getGroupId(), volume.getPermissions())) {
+                    if (CollectionsTools.isAllItemNotNull(volume.getOwnerId(), volume.getGroupId(), volume.getPermissions())) {
+                        unixShellAndFsUtils.folderCreate(hostFs + volume.getHostFolder(), volume.getOwnerId(), volume.getGroupId(), volume.getPermissions());
+                    } else {
                         if (!unixShellAndFsUtils.folderExists(hostFs + volume.getHostFolder())) {
                             throw new UtilsException("The folder " + volume.getHostFolder() + " does not exists. Cannot create since there is no specified owner/group/permissions");
                         }
-                    } else {
-                        unixShellAndFsUtils.folderCreate(hostFs + volume.getHostFolder(), volume.getOwnerId(), volume.getGroupId(), volume.getPermissions());
                     }
                 } else {
                     logger.info("[VOLUME HOST] Skipping volume {} since it is only used internally (no mount points)", volume);

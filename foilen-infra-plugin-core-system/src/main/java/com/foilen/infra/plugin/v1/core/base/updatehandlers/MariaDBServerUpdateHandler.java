@@ -126,21 +126,11 @@ public class MariaDBServerUpdateHandler extends AbstractCommonMethodUpdateEventH
 
             IPApplicationDefinition applicationDefinition = application.getApplicationDefinition();
 
-            applicationDefinition.setFrom("mariadb:10.3.2");
-            applicationDefinition.addBuildStepCommand("export TERM=dumb ; " + //
-                    "echo \"deb https://dl.bintray.com/foilen/debian stable main\" > /etc/apt/sources.list.d/foilen.list && " + //
-                    "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61 && " + //
-                    "apt-get update && " + //
-                    "apt-get install -y mysql-manager=1.0.1 && " + //
-                    "apt-get clean && rm -rf /var/lib/apt/lists/*");
+            applicationDefinition.setFrom("foilen/fcloud-docker-mariadb:10.3.2-1.0.1-001");
 
             applicationDefinition.addService("app", "/mariadb-start.sh");
             IPApplicationDefinitionAssetsBundle assetsBundle = applicationDefinition.addAssetsBundle();
-            assetsBundle.addAssetResource("/mariadb-start.sh", "/com/foilen/infra/plugin/v1/core/base/resources/mariadb/mariadb-start.sh");
-            assetsBundle.addAssetResource("/mariadb-update-manager.sh", "/com/foilen/infra/plugin/v1/core/base/resources/mariadb/mariadb-update-manager.sh");
-            applicationDefinition.addBuildStepCommand("chmod 755 /*.sh");
             applicationDefinition.addContainerUserToChangeId("mysql", unixUser.getId());
-            assetsBundle.addAssetResource("/etc/mysql/mysql.conf.d/mysqld.cnf", "/com/foilen/infra/plugin/v1/core/base/resources/mariadb/mysqld.cnf");
 
             applicationDefinition.addPortEndpoint(3306, DockerContainerEndpoints.MYSQL_TCP);
 
