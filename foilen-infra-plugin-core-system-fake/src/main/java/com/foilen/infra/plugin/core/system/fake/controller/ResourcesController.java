@@ -9,6 +9,9 @@
  */
 package com.foilen.infra.plugin.core.system.fake.controller;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -45,8 +48,11 @@ import com.foilen.infra.plugin.v1.core.visual.pageItem.field.HiddenFieldPageItem
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.reflection.ReflectionTools;
 import com.foilen.smalltools.tools.AbstractBasics;
+import com.foilen.smalltools.tools.DirectoryTools;
+import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tuple.Tuple2;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 
 @Controller
@@ -82,6 +88,60 @@ public class ResourcesController extends AbstractBasics {
         }
 
         return modelAndView;
+    }
+
+    @RequestMapping("exportFolder")
+    public String exportFolder(@RequestParam String folder, HttpServletRequest httpServletRequest) {
+        File exportFolder = new File(folder);
+        String path = exportFolder.getAbsolutePath();
+        if (exportFolder.exists()) {
+            logger.error("The folder {} already exist", exportFolder.getAbsolutePath());
+            return "redirect:list";
+        }
+
+        logger.info("Exporting in the folder {}", exportFolder.getAbsolutePath());
+        if (!DirectoryTools.createPath(exportFolder)) {
+            logger.error("Could not create the folder {}", exportFolder.getAbsolutePath());
+            return "redirect:list";
+        }
+
+        // Export
+        List<String> links = new ArrayList<>();
+        List<String> tags = new ArrayList<>();
+        for (IPResource resource : resourceService.resourceFindAll()) {
+            // Export resources
+            String resourceType = resourceService.getResourceDefinition(resource).getResourceType();
+            String resourceFilename = path + "/" + resourceType + "/" + resource.getResourceName().replaceAll("/", "_") + ".json";
+            DirectoryTools.createPathToFile(resourceFilename);
+            JsonTools.writeToFile(resourceFilename, resource);
+
+            // Export tags
+            resourceService.tagFindAllByResource(resource).stream() //
+                    .map(it -> {
+                        return resourceType + "/" + resource.getResourceName() + //
+                        ";" + it;
+                    }) //
+                    .forEach(it -> tags.add(it));
+
+            // Export links
+            resourceService.linkFindAllByFromResource(resource).stream() //
+                    .map(it -> {
+                        String toResourceType = resourceService.getResourceDefinition(it.getB()).getResourceType();
+                        return resourceType + "/" + resource.getResourceName() + //
+                        ";" + it.getA() + ";" //
+                                + toResourceType + "/" + it.getB().getResourceName();
+                    }) //
+                    .forEach(it -> links.add(it));
+
+        }
+
+        // Save tags and links
+        Collections.sort(links);
+        Collections.sort(tags);
+        FileTools.writeFile(Joiner.on('\n').join(tags), path + "/tags.txt");
+        FileTools.writeFile(Joiner.on('\n').join(links), path + "/links.txt");
+
+        return "redirect:list";
     }
 
     @RequestMapping("createPageDefinition/{editorName}")

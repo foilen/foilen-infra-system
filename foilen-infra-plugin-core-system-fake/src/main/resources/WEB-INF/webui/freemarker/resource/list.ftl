@@ -1,6 +1,16 @@
 <#include "/common/header.ftl">
 
 <h1>Resources</h1>
+<div>
+  <form class="form-horizontal" action="/resource/exportFolder" method="post">
+    <div class="form-group">
+      <label class="col-xs-3" for="folder"><@spring.message "export.folder" /></label> 
+      <div class="col-xs-9">
+        <input class="form-control" id="folder" name="folder" type="text" />
+      </div>
+    </div>
+  </form>
+</div>
 <table class="table table-striped">
   <tr>
     <th>Type</th>
