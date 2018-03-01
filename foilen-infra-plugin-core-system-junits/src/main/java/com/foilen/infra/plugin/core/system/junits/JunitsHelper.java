@@ -11,14 +11,23 @@ package com.foilen.infra.plugin.core.system.junits;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
+import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
+import com.foilen.infra.plugin.v1.core.exception.ResourceNotFoundException;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
+import com.foilen.infra.plugin.v1.core.service.IPResourceService;
+import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.model.junit.JunitResource;
 import com.foilen.infra.plugin.v1.model.junit.JunitResourceEnum;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
@@ -28,9 +37,12 @@ import com.foilen.infra.plugin.v1.withparent.ConcreteLevel2;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.DateTools;
 import com.foilen.smalltools.tools.JsonTools;
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
 public class JunitsHelper {
+
+    private static final Logger logger = LoggerFactory.getLogger(JunitsHelper.class);
 
     public static void addResourcesDefinition(InternalServicesContext ctx) {
         IPResourceDefinition resourceDefinition = new IPResourceDefinition(JunitResource.class, "Junit", //
@@ -202,6 +214,109 @@ public class JunitsHelper {
         junitResource.setSetIntegers(setIntegers);
         junitResource.setSetTexts(setTexts);
         return junitResource;
+    }
+
+    public static ResourcesDump dumpExport(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext) {
+        ResourcesDump dump = new ResourcesDump();
+
+        IPResourceService resourceService = commonServicesContext.getResourceService();
+        for (IPResource resource : internalServicesContext.getInternalIPResourceService().resourceFindAll()) {
+            String resourceType = resourceService.getResourceDefinition(resource).getResourceType();
+            String resourceTypeAndName = resourceType + "/" + resource.getResourceName();
+
+            // Export resource
+            dump.getResources().add(new ResourcesDumpResource(resourceType, resource));
+
+            // Export tags
+            resourceService.tagFindAllByResource(resource).stream() //
+                    .forEach(it -> dump.getTags().add(new ResourcesDumpTag(resourceTypeAndName, it)));
+
+            // Export links
+            resourceService.linkFindAllByFromResource(resource).stream() //
+                    .map(it -> {
+                        String toResourceType = resourceService.getResourceDefinition(it.getB()).getResourceType();
+                        String toResourceTypeAndName = toResourceType + "/" + it.getB().getResourceName();
+                        return new ResourcesDumpLink(resourceTypeAndName, it.getA(), toResourceTypeAndName);
+                    }) //
+                    .forEach(it -> dump.getLinks().add(it));
+
+        }
+
+        dump.sort();
+        return dump;
+    }
+
+    public static void dumpImport(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext, ResourcesDump resourcesDump) {
+        // Import all the resources
+        Map<String, IPResource> resourcesByTypeAndName = new HashMap<>();
+        IPResourceService resourceService = commonServicesContext.getResourceService();
+        InternalChangeService internalChangeService = internalServicesContext.getInternalChangeService();
+        ChangesContext changes = new ChangesContext(resourceService);
+        logger.info("Importing Resources");
+        for (ResourcesDumpResource dumpResource : resourcesDump.getResources()) {
+            String resourceType = dumpResource.getResourceType();
+            logger.info("Type: {}", resourceType);
+            Class<? extends IPResource> resourceClass = resourceService.getResourceDefinition(resourceType).getResourceClass();
+
+            String resourceName = dumpResource.getResourceName();
+
+            IPResource resource = JsonTools.readFromString(dumpResource.getResourceJson(), resourceClass);
+            resourcesByTypeAndName.put(resourceType + "/" + resourceName, resource);
+
+            changes.resourceAdd(resource);
+        }
+
+        // Import all the tags
+        logger.info("Importing Tags");
+        for (ResourcesDumpTag dumpTag : resourcesDump.getTags()) {
+
+            String resourceTypeAndName = dumpTag.getResourceTypeAndName();
+            String tagName = dumpTag.getTag();
+
+            IPResource resource = resourcesByTypeAndName.get(resourceTypeAndName);
+            if (resource == null) {
+                logger.error("The resource {} does not exit", resourceTypeAndName);
+                throw new ResourceNotFoundException(resourceTypeAndName);
+            }
+            if (Strings.isNullOrEmpty(tagName)) {
+                logger.error("The tag name cannot be empty for resource {}", resourceTypeAndName);
+                throw new IllegalUpdateException("The tag name cannot be empty for resource " + resourceTypeAndName);
+            }
+
+            changes.tagAdd(resource, tagName);
+
+        }
+
+        // Import all the links
+        logger.info("Importing Links");
+        for (ResourcesDumpLink dumpLink : resourcesDump.getLinks()) {
+
+            String fromResourceTypeAndName = dumpLink.getFromResourceTypeAndName();
+            String linkType = dumpLink.getLinkType();
+            String toResourceTypeAndName = dumpLink.getToResourceTypeAndName();
+
+            IPResource fromResource = resourcesByTypeAndName.get(fromResourceTypeAndName);
+            if (fromResource == null) {
+                logger.error("The resource {} does not exit", fromResourceTypeAndName);
+                throw new ResourceNotFoundException(fromResourceTypeAndName);
+            }
+            if (Strings.isNullOrEmpty(linkType)) {
+                logger.error("The link type cannot be empty");
+                throw new IllegalUpdateException("The link type cannot be em");
+            }
+            IPResource toResource = resourcesByTypeAndName.get(toResourceTypeAndName);
+            if (toResource == null) {
+                logger.error("The resource {} does not exit", toResourceTypeAndName);
+                throw new ResourceNotFoundException(toResourceTypeAndName);
+            }
+
+            changes.linkAdd(fromResource, linkType, toResource);
+
+        }
+
+        // Execute the changes
+        logger.info("Execute the changes");
+        internalChangeService.changesExecute(changes);
     }
 
     protected static String getResourceDetails(IPResource resource) {

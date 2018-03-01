@@ -11,6 +11,11 @@
     </div>
   </form>
 </div>
+<div>
+  <form action="/resource/exportFile" method="get">
+    <button class="btn btn-sm btn-info"><@spring.message "export.file" /></button> 
+  </form>
+</div>
 <table class="table table-striped">
   <tr>
     <th>Type</th>

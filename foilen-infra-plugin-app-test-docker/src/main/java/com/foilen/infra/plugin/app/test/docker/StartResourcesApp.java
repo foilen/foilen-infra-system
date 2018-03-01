@@ -27,6 +27,8 @@ import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
 import com.foilen.infra.plugin.core.system.fake.CommonServicesContextBean;
 import com.foilen.infra.plugin.core.system.fake.InitSystemBean;
 import com.foilen.infra.plugin.core.system.fake.InternalServicesContextBean;
+import com.foilen.infra.plugin.core.system.junits.JunitsHelper;
+import com.foilen.infra.plugin.core.system.junits.ResourcesDump;
 import com.foilen.infra.plugin.system.utils.DockerUtils;
 import com.foilen.infra.plugin.system.utils.UnixUsersAndGroupsUtils;
 import com.foilen.infra.plugin.system.utils.impl.DockerUtilsImpl;
@@ -35,6 +37,8 @@ import com.foilen.infra.plugin.system.utils.model.DockerState;
 import com.foilen.infra.plugin.v1.core.base.resources.Application;
 import com.foilen.infra.plugin.v1.core.base.resources.UnixUser;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
+import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
+import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
@@ -49,55 +53,7 @@ import com.google.common.io.Files;
 
 public class StartResourcesApp {
 
-    public static void main(String[] args) {
-
-        List<String> arguments = new ArrayList<>(Arrays.asList(args));
-
-        // Check if debug mode
-        boolean isDebug = false;
-        boolean isInfo = false;
-        if (arguments.remove("--debug")) {
-            isDebug = true;
-        }
-        if (arguments.remove("--info")) {
-            isInfo = true;
-        }
-
-        if (arguments.size() != 1) {
-            System.out.println("You need to provide a directory where to read all the resources from");
-            System.exit(1);
-        }
-
-        // Get the directory
-        String inputDirectoryName = arguments.get(0);
-        File inputDirectory = new File(inputDirectoryName);
-        if (inputDirectory.exists()) {
-            if (!inputDirectory.isDirectory()) {
-                System.out.println("The path " + inputDirectoryName + " is not a directory");
-                System.exit(1);
-            }
-        } else {
-            System.out.println("The directory " + inputDirectoryName + " does not exist");
-            System.exit(1);
-        }
-
-        // Start the plugin service
-        if (isDebug) {
-            LogbackTools.changeConfig("/logback-debug.xml");
-        } else if (isInfo) {
-            LogbackTools.changeConfig("/logback-info.xml");
-        } else {
-            LogbackTools.changeConfig("/logback-quiet.xml");
-        }
-        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
-        applicationContext.register(CreateSampleResourcesApp.class);
-        applicationContext.register(CommonServicesContextBean.class);
-        applicationContext.register(InitSystemBean.class);
-        applicationContext.register(InternalServicesContextBean.class);
-        applicationContext.register(IPPluginServiceImpl.class);
-        applicationContext.scan("com.foilen.infra.plugin.core.system.fake.service");
-        applicationContext.refresh();
-
+    protected static void importFromDirectory(File inputDirectory, AnnotationConfigApplicationContext applicationContext) {
         // Import all the resources
         Map<String, IPResource> resourcesByFullName = new HashMap<>();
         IPResourceService resourceService = applicationContext.getBean(IPResourceService.class);
@@ -195,6 +151,70 @@ public class StartResourcesApp {
         System.out.println("\n---[ Execute the changes ]---");
         internalChangeService.changesExecute(changes);
         changes.clear();
+    }
+
+    public static void main(String[] args) {
+
+        List<String> arguments = new ArrayList<>(Arrays.asList(args));
+
+        // Check if debug mode
+        boolean isDebug = false;
+        boolean isInfo = false;
+        if (arguments.remove("--debug")) {
+            isDebug = true;
+        }
+        if (arguments.remove("--info")) {
+            isInfo = true;
+        }
+
+        if (arguments.size() != 1) {
+            System.out.println("You need to provide a directory or file where to read all the resources from");
+            System.exit(1);
+        }
+
+        // Check if directory or file mode
+        boolean isFile = false;
+        String inputName = arguments.get(0);
+        File inputFileOrDirectory = new File(inputName);
+        if (inputFileOrDirectory.exists()) {
+            isFile = !inputFileOrDirectory.isDirectory();
+            if (isFile) {
+                System.out.println("Reading a file");
+            } else {
+                System.out.println("Reading a directory");
+            }
+        } else {
+            System.out.println("The file or directory " + inputName + " does not exist");
+            System.exit(1);
+        }
+
+        // Start the plugin service
+        if (isDebug) {
+            LogbackTools.changeConfig("/logback-debug.xml");
+        } else if (isInfo) {
+            LogbackTools.changeConfig("/logback-info.xml");
+        } else {
+            LogbackTools.changeConfig("/logback-quiet.xml");
+        }
+        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
+        applicationContext.register(CreateSampleResourcesApp.class);
+        applicationContext.register(CommonServicesContextBean.class);
+        applicationContext.register(InitSystemBean.class);
+        applicationContext.register(InternalServicesContextBean.class);
+        applicationContext.register(IPPluginServiceImpl.class);
+        applicationContext.scan("com.foilen.infra.plugin.core.system.fake.service");
+        applicationContext.refresh();
+
+        // Import from directory or file
+        IPResourceService resourceService = applicationContext.getBean(IPResourceService.class);
+        if (isFile) {
+            CommonServicesContext commonServicesContext = applicationContext.getBean(CommonServicesContext.class);
+            InternalServicesContext internalServicesContext = applicationContext.getBean(InternalServicesContext.class);
+            ResourcesDump resourcesDump = JsonTools.readFromFile(inputFileOrDirectory, ResourcesDump.class);
+            JunitsHelper.dumpImport(commonServicesContext, internalServicesContext, resourcesDump);
+        } else {
+            importFromDirectory(inputFileOrDirectory, applicationContext);
+        }
 
         // Install unix users
         System.out.println("\n---[ Install unix users ]---");

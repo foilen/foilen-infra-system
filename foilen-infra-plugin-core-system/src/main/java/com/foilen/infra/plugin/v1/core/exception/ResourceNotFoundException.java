@@ -36,4 +36,8 @@ public class ResourceNotFoundException extends RuntimeException {
         super("Tried to update an unexisting resource with id " + internalId);
     }
 
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+
 }
