@@ -34,17 +34,22 @@ import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.comparator.ClassNameComparator;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.AssertTools;
+import com.foilen.smalltools.tools.SystemTools;
 import com.foilen.smalltools.tuple.Tuple3;
 
 public class IPPluginServiceImpl extends AbstractBasics implements IPPluginService {
 
     private static final Reflections reflections;
 
+    private static final boolean skipUpdateEvents;
+
     static {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.forPackages("");
         configurationBuilder.addUrls(ClasspathHelper.forManifest());
         reflections = new Reflections(configurationBuilder);
+
+        skipUpdateEvents = Boolean.valueOf(SystemTools.getPropertyOrEnvironment("FOILEN_PLUGIN_SKIP_UPDATE_EVENTS", "false"));
     }
 
     private List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> brokenPlugins;
@@ -214,6 +219,10 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
         this.brokenPlugins = Collections.unmodifiableList(brokenPlugins);
         this.availablePlugins = Collections.unmodifiableList(availablePlugins.stream().map(Tuple3::getC).collect(Collectors.toList()));
         this.updateEvents = Collections.unmodifiableList(updateEvents);
+        if (skipUpdateEvents) {
+            logger.warn("Skipping all update events: FOILEN_PLUGIN_SKIP_UPDATE_EVENTS=true");
+            this.updateEvents = Collections.emptyList();
+        }
     }
 
     /**
