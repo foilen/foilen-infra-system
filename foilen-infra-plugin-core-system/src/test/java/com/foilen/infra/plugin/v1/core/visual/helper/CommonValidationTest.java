@@ -24,17 +24,17 @@ public class CommonValidationTest {
 
     private String fieldName = "test";
 
-    private void assertAlphaNum(List<String> values, List<Boolean> isValids) {
+    private void assertAlphaNumLower(List<String> values, List<Boolean> isValids) {
         Map<String, String> map = new HashMap<>();
         fillValues(values, map);
-        List<Tuple2<String, String>> errors = CommonValidation.validateAlphaNum(map, fieldName);
+        List<Tuple2<String, String>> errors = CommonValidation.validateAlphaNumLower(map, fieldName);
         assertValues(errors, isValids);
     }
 
-    private void assertAlphaNum(String value, boolean isValid) {
+    private void assertAlphaNumLower(String value, boolean isValid) {
         Map<String, String> map = new HashMap<>();
         map.put(fieldName, value);
-        List<Tuple2<String, String>> errors = CommonValidation.validateAlphaNum(map, fieldName);
+        List<Tuple2<String, String>> errors = CommonValidation.validateAlphaNumLower(map, fieldName);
         Assert.assertEquals(isValid, errors.isEmpty());
     }
 
@@ -138,14 +138,14 @@ public class CommonValidationTest {
 
     @Test
     public void testValidateAlphaNum() {
-        assertAlphaNum("abc", true);
-        assertAlphaNum("ab.c", true);
-        assertAlphaNum("ab_c", true);
-        assertAlphaNum("ab c", false);
-        assertAlphaNum("ab+c", false);
-        assertAlphaNum("ab*c", false);
+        assertAlphaNumLower("abc", true);
+        assertAlphaNumLower("ab.c", true);
+        assertAlphaNumLower("ab_c", true);
+        assertAlphaNumLower("ab c", false);
+        assertAlphaNumLower("ab+c", false);
+        assertAlphaNumLower("ab*c", false);
 
-        assertAlphaNum(Arrays.asList("abc", "ab*c"), Arrays.asList(true, false));
+        assertAlphaNumLower(Arrays.asList("abc", "ab*c"), Arrays.asList(true, false));
     }
 
     @Test

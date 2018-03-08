@@ -30,7 +30,7 @@ public class WebsiteEditor extends SimpleResourceEditor<Website> {
             fieldConfigConsumer.addFormator(CommonFormatting::toLowerCase);
             fieldConfigConsumer.addFormator(CommonFormatting::trimSpacesAround);
             fieldConfigConsumer.addValidator(CommonValidation::validateNotNullOrEmpty);
-            fieldConfigConsumer.addValidator(CommonValidation::validateAlphaNum);
+            fieldConfigConsumer.addValidator(CommonValidation::validateAlphaNumLower);
         });
 
         simpleResourceEditorDefinition.addListInputText(Website.PROPERTY_DOMAIN_NAMES, fieldConfigConsumer -> {

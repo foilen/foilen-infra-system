@@ -26,7 +26,8 @@ import com.google.common.base.Strings;
 
 public class CommonValidation {
 
-    private static Pattern nameValidationRegex = Pattern.compile("[a-z0-9\\.\\_\\-]+");
+    private static Pattern alphaNumLowerValidationRegex = Pattern.compile("[a-z0-9\\.\\_\\-]+");
+    private static Pattern alphaNumLowerAndUpperValidationRegex = Pattern.compile("[a-zA-Z0-9\\.\\_\\-]+");
 
     private static int count(String hayStash, char needle) {
         int count = 0;
@@ -74,25 +75,73 @@ public class CommonValidation {
         }
     }
 
+    @Deprecated
     public static List<Tuple2<String, String>> validateAlphaNum(Map<String, String> formValues) {
+        return validateAlphaNumLower(formValues);
+    }
+
+    @Deprecated
+    public static List<Tuple2<String, String>> validateAlphaNum(Map<String, String> formValues, String... fieldNames) {
+        return validateAlphaNumLower(formValues, fieldNames);
+    }
+
+    /**
+     *
+     * @param fieldName
+     *            the name of the field
+     * @param fieldValue
+     *            the value of the field
+     * @return the errors
+     * @deprecated use {@link #validateAlphaNumLower(String, String)}
+     */
+    @Deprecated
+    public static List<Tuple2<String, String>> validateAlphaNum(String fieldName, String fieldValue) {
+        return validateAlphaNumLower(fieldName, fieldValue);
+    }
+
+    public static List<Tuple2<String, String>> validateAlphaNumLower(Map<String, String> formValues) {
         Set<String> fieldNames = formValues.keySet();
         return validateAlphaNum(formValues, fieldNames.toArray(new String[fieldNames.size()]));
     }
 
-    public static List<Tuple2<String, String>> validateAlphaNum(Map<String, String> formValues, String... fieldNames) {
+    public static List<Tuple2<String, String>> validateAlphaNumLower(Map<String, String> formValues, String... fieldNames) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
             String fieldValue = formValues.get(fieldName);
-            errors.addAll(validateAlphaNum(fieldName, fieldValue));
+            errors.addAll(validateAlphaNumLower(fieldName, fieldValue));
         }
         return errors;
     }
 
-    public static List<Tuple2<String, String>> validateAlphaNum(String fieldName, String fieldValue) {
+    public static List<Tuple2<String, String>> validateAlphaNumLower(String fieldName, String fieldValue) {
         List<Tuple2<String, String>> errors = new ArrayList<>();
         if (!Strings.isNullOrEmpty(fieldValue)) {
-            if (!nameValidationRegex.matcher(fieldValue).matches()) {
-                errors.add(new Tuple2<>(fieldName, "error.notAlphaNum"));
+            if (!alphaNumLowerValidationRegex.matcher(fieldValue).matches()) {
+                errors.add(new Tuple2<>(fieldName, "error.notAlphaNumLower"));
+            }
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateAlphaNumLowerAndUpper(Map<String, String> formValues) {
+        Set<String> fieldNames = formValues.keySet();
+        return validateAlphaNum(formValues, fieldNames.toArray(new String[fieldNames.size()]));
+    }
+
+    public static List<Tuple2<String, String>> validateAlphaNumLowerAndUpper(Map<String, String> formValues, String... fieldNames) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        for (String fieldName : CommonFieldHelper.getAllFieldNames(formValues, fieldNames)) {
+            String fieldValue = formValues.get(fieldName);
+            errors.addAll(validateAlphaNumLowerAndUpper(fieldName, fieldValue));
+        }
+        return errors;
+    }
+
+    public static List<Tuple2<String, String>> validateAlphaNumLowerAndUpper(String fieldName, String fieldValue) {
+        List<Tuple2<String, String>> errors = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(fieldValue)) {
+            if (!alphaNumLowerAndUpperValidationRegex.matcher(fieldValue).matches()) {
+                errors.add(new Tuple2<>(fieldName, "error.notAlphaNumLowerAndUpper"));
             }
         }
         return errors;
