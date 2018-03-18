@@ -247,10 +247,12 @@ public class JunitsHelper {
     }
 
     public static void dumpImport(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext, ResourcesDump resourcesDump) {
+        dumpImport(commonServicesContext.getResourceService(), internalServicesContext.getInternalChangeService(), resourcesDump);
+    }
+
+    public static void dumpImport(IPResourceService resourceService, InternalChangeService internalChangeService, ResourcesDump resourcesDump) {
         // Import all the resources
         Map<String, IPResource> resourcesByTypeAndName = new HashMap<>();
-        IPResourceService resourceService = commonServicesContext.getResourceService();
-        InternalChangeService internalChangeService = internalServicesContext.getInternalChangeService();
         ChangesContext changes = new ChangesContext(resourceService);
         logger.info("Importing Resources");
         for (ResourcesDumpResource dumpResource : resourcesDump.getResources()) {
