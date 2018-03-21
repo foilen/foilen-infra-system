@@ -63,10 +63,9 @@ public class DockerContainerOutput {
 
         // Use a single assetsBundle for (supervisor if more than 1 service ; if infra)
         List<IPApplicationDefinitionPortRedirect> portsRedirect = transformedApplicationDefinition.getPortsRedirect();
+        IPApplicationDefinitionAssetsBundle assetsBundle = transformedApplicationDefinition.addAssetsBundle();
         if (!portsRedirect.isEmpty() || services.size() > 1) {
             logger.info("[{}] Has multiple services to run or some port redirects", imageName);
-
-            IPApplicationDefinitionAssetsBundle assetsBundle = transformedApplicationDefinition.addAssetsBundle();
 
             // Make sure there is at least one known service/command to run
             if (transformedApplicationDefinition.getCommand() == null && services.isEmpty()) {
@@ -189,6 +188,12 @@ public class DockerContainerOutput {
             }
         }
 
+        // If there are users to fix, add the script
+        if (!transformedApplicationDefinition.getContainerUsersToChangeId().isEmpty()) {
+            assetsBundle.addAssetResource("_infra/fixUserPermissions.sh", "/com/foilen/infra/plugin/v1/model/outputter/docker/fixUserPermissions.sh");
+            transformedApplicationDefinition.addBuildStepCommand("chmod -R 777 /_infra/");
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("[{}] Final application definition\n{}", imageName, JsonTools.prettyPrint(transformedApplicationDefinition));
         }
@@ -298,13 +303,11 @@ public class DockerContainerOutput {
         // Fix permissions
         content.append("\n");
         for (Tuple2<String, Integer> containerUserAndId : applicationDefinition.getContainerUsersToChangeId()) {
-            content.append("RUN ");
-            content.append("FIX_CONTAINER_USER_ID=$(id -u ").append(containerUserAndId.getA()).append(") ;");
-            content.append("FIX_CONTAINER_GROUP_ID=$(id -g ").append(containerUserAndId.getA()).append(") ;");
-            content.append("usermod -u ").append(containerUserAndId.getB()).append(" ").append(containerUserAndId.getA()).append(" -o ;");
-            content.append("groupmod -g ").append(containerUserAndId.getB()).append(" ").append(containerUserAndId.getA()).append(" -o ;");
-            content.append("find /etc /home /opt /root /run /srv /tmp /usr /var -uid $FIX_CONTAINER_USER_ID -exec chown ").append(containerUserAndId.getA()).append(" {} \\; ;");
-            content.append("find /etc /home /opt /root /run /srv /tmp /usr /var -gid $FIX_CONTAINER_GROUP_ID -exec chgrp ").append(containerUserAndId.getA()).append(" {} \\; ;");
+            content.append("RUN /_infra/fixUserPermissions.sh");
+            content.append(" ").append(containerUserAndId.getA());
+            content.append(" ").append(containerUserAndId.getA());
+            content.append(" ").append(containerUserAndId.getB());
+            content.append(" ").append(containerUserAndId.getB());
             content.append("\n");
         }
         content.append("\n");
