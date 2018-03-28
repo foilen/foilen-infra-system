@@ -3,7 +3,8 @@
     "_nextAssetId" : 2,
     "assetsBundles" : [ {
       "assetsFolderPath" : "_assets_1/",
-      "assetsRelativePathAndContent" : [ {
+      "assetsRelativePathAndBinaryContent" : [ ],
+      "assetsRelativePathAndTextContent" : [ {
         "a" : "/login_config.json",
         "b" : "{\n  \"administratorEmail\" : \"login-admin@example.com\",\n  \"applicationId\" : \"__the_app_id__\",\n  \"cookieDateName\" : \"login_date\",\n  \"cookieSignatureName\" : \"login_signature\",\n  \"cookieSignatureSalt\" : \"__login_cookie_signature_salt__\",\n  \"cookieUserName\" : \"login_username\",\n  \"csrfSalt\" : \"__login_crsf_salt__\",\n  \"fromEmail\" : \"login-from@example.com\",\n  \"loginBaseUrl\" : \"http://login.example.com\",\n  \"mysqlDatabaseName\" : \"infra_login_db\",\n  \"mysqlDatabasePassword\" : \"llll\",\n  \"mysqlDatabaseUserName\" : \"infra_login_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
       } ]
@@ -53,7 +54,8 @@
     "_nextAssetId" : 2,
     "assetsBundles" : [ {
       "assetsFolderPath" : "_assets_1/",
-      "assetsRelativePathAndContent" : [ {
+      "assetsRelativePathAndBinaryContent" : [ ],
+      "assetsRelativePathAndTextContent" : [ {
         "a" : "/ui_config.json",
         "b" : "{\n  \"baseUrl\" : \"http://ui.example.com\",\n  \"csrfSalt\" : \"__ui_crsf_salt__\",\n  \"loginConfigDetails\" : {\n    \"appId\" : \"__the_app_id__\",\n    \"baseUrl\" : \"http://login.example.com\",\n    \"certFile\" : null,\n    \"certText\" : null\n  },\n  \"loginCookieSignatureSalt\" : \"__ui_login_cookie_signature_salt__\",\n  \"mailAlertsTo\" : \"ui-alerts@example.com\",\n  \"mailFrom\" : \"ui-from@example.com\",\n  \"mailHost\" : \"127.0.0.1\",\n  \"mailPassword\" : null,\n  \"mailPort\" : 25,\n  \"mailUsername\" : null,\n  \"mysqlDatabaseName\" : \"infra_ui_db\",\n  \"mysqlDatabasePassword\" : \"uuuu\",\n  \"mysqlDatabaseUserName\" : \"infra_ui_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
       } ]

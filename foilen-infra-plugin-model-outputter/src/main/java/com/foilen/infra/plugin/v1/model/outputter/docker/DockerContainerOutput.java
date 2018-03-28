@@ -262,11 +262,23 @@ public class DockerContainerOutput {
         logger.info("[{}] Copying {} assets bundles", imageName, assetsBundles.size());
         for (IPApplicationDefinitionAssetsBundle assetBundles : assetsBundles) {
             String assetsFolderPath = assetBundles.getAssetsFolderPath();
-            List<Tuple2<String, String>> assetsRelativePathAndContent = assetBundles.getAssetsRelativePathAndContent();
-            for (Tuple2<String, String> assetRelativePathAndContent : assetsRelativePathAndContent) {
+
+            // Text files
+            List<Tuple2<String, String>> assetsRelativePathAndTextContent = assetBundles.getAssetsRelativePathAndTextContent();
+            for (Tuple2<String, String> assetRelativePathAndContent : assetsRelativePathAndTextContent) {
                 String assetPath = assetsFolderPath + assetRelativePathAndContent.getA();
                 String absoluteAssetPath = buildDirectory + assetPath;
                 String content = assetRelativePathAndContent.getB();
+                DirectoryTools.createPathToFile(absoluteAssetPath);
+                FileTools.writeFile(content, absoluteAssetPath);
+            }
+
+            // Binary files
+            List<Tuple2<String, byte[]>> assetsRelativePathAndBinaryContent = assetBundles.getAssetsRelativePathAndBinaryContent();
+            for (Tuple2<String, byte[]> assetRelativePathAndContent : assetsRelativePathAndBinaryContent) {
+                String assetPath = assetsFolderPath + assetRelativePathAndContent.getA();
+                String absoluteAssetPath = buildDirectory + assetPath;
+                byte[] content = assetRelativePathAndContent.getB();
                 DirectoryTools.createPathToFile(absoluteAssetPath);
                 FileTools.writeFile(content, absoluteAssetPath);
             }

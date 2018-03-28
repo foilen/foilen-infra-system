@@ -24,7 +24,8 @@ public class IPApplicationDefinitionAssetsBundle extends AbstractBasics {
 
     private String assetsFolderPath;
 
-    private List<Tuple2<String, String>> assetsRelativePathAndContent = new ArrayList<>();
+    private List<Tuple2<String, String>> assetsRelativePathAndTextContent = new ArrayList<>();
+    private List<Tuple2<String, byte[]>> assetsRelativePathAndBinaryContent = new ArrayList<>();
 
     public IPApplicationDefinitionAssetsBundle() {
     }
@@ -33,8 +34,13 @@ public class IPApplicationDefinitionAssetsBundle extends AbstractBasics {
         this.assetsFolderPath = assetsFolderPath;
     }
 
+    public IPApplicationDefinitionAssetsBundle addAssetContent(String assetRelativePath, byte[] content) {
+        assetsRelativePathAndBinaryContent.add(new Tuple2<>(assetRelativePath, content));
+        return this;
+    }
+
     public IPApplicationDefinitionAssetsBundle addAssetContent(String assetRelativePath, String content) {
-        assetsRelativePathAndContent.add(new Tuple2<>(assetRelativePath, content));
+        assetsRelativePathAndTextContent.add(new Tuple2<>(assetRelativePath, content));
         return this;
     }
 
@@ -47,16 +53,24 @@ public class IPApplicationDefinitionAssetsBundle extends AbstractBasics {
         return assetsFolderPath;
     }
 
-    public List<Tuple2<String, String>> getAssetsRelativePathAndContent() {
-        return assetsRelativePathAndContent;
+    public List<Tuple2<String, byte[]>> getAssetsRelativePathAndBinaryContent() {
+        return assetsRelativePathAndBinaryContent;
+    }
+
+    public List<Tuple2<String, String>> getAssetsRelativePathAndTextContent() {
+        return assetsRelativePathAndTextContent;
     }
 
     public void setAssetsFolderPath(String assetsFolderPath) {
         this.assetsFolderPath = assetsFolderPath;
     }
 
-    public void setAssetsRelativePathAndContent(List<Tuple2<String, String>> assetsRelativePathAndContent) {
-        this.assetsRelativePathAndContent = assetsRelativePathAndContent;
+    public void setAssetsRelativePathAndBinaryContent(List<Tuple2<String, byte[]>> assetsRelativePathAndBinaryContent) {
+        this.assetsRelativePathAndBinaryContent = assetsRelativePathAndBinaryContent;
+    }
+
+    public void setAssetsRelativePathAndTextContent(List<Tuple2<String, String>> assetsRelativePathAndTextContent) {
+        this.assetsRelativePathAndTextContent = assetsRelativePathAndTextContent;
     }
 
 }
