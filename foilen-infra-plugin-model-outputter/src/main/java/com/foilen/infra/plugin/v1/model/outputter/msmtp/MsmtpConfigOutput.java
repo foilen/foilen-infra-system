@@ -18,6 +18,12 @@ public class MsmtpConfigOutput {
         content.append("account default\n");
         content.append("host ").append(msmtpConfig.getHostname()).append("\n");
         content.append("port ").append(msmtpConfig.getPort()).append("\n");
+        if (msmtpConfig.getUsername() != null) {
+            content.append("user ").append(msmtpConfig.getUsername()).append("\n");
+        }
+        if (msmtpConfig.getPassword() != null) {
+            content.append("password ").append(msmtpConfig.getPassword()).append("\n");
+        }
         return content.toString();
     }
 

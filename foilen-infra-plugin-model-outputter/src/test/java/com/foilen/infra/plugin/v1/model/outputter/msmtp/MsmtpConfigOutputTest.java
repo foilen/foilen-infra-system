@@ -18,8 +18,17 @@ import com.foilen.smalltools.tools.ResourceTools;
 public class MsmtpConfigOutputTest {
 
     @Test
-    public void testToConfig() {
-        String expected = ResourceTools.getResourceAsString("MsmtpConfigOutputTest-testToConfig-expected.txt", getClass());
+    public void testToConfig_FullAccount() {
+        String expected = ResourceTools.getResourceAsString("MsmtpConfigOutputTest-testToConfig_FullAccount-expected.txt", getClass());
+        String actual = MsmtpConfigOutput.toConfig(new MsmtpConfig("192.168.0.1", 547) //
+                .setUsername("myUser").setPassword("myPass"));
+
+        AssertTools.assertIgnoreLineFeed(expected, actual);
+    }
+
+    @Test
+    public void testToConfig_HostPort_Only() {
+        String expected = ResourceTools.getResourceAsString("MsmtpConfigOutputTest-testToConfig_HostPort_Only-expected.txt", getClass());
         String actual = MsmtpConfigOutput.toConfig(new MsmtpConfig("192.168.0.1", 547));
 
         AssertTools.assertIgnoreLineFeed(expected, actual);
