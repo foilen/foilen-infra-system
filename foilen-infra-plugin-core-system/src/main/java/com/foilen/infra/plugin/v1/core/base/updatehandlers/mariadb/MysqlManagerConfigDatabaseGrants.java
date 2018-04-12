@@ -18,12 +18,12 @@ import com.foilen.smalltools.tools.AbstractBasics;
 public class MysqlManagerConfigDatabaseGrants extends AbstractBasics {
 
     private String databaseName;
-    private List<MysqlManagerConfigGrant> grants = new ArrayList<>();
+    private List<String> grants = new ArrayList<>();
 
     public MysqlManagerConfigDatabaseGrants() {
     }
 
-    public MysqlManagerConfigDatabaseGrants(String databaseName, MysqlManagerConfigGrant... grants) {
+    public MysqlManagerConfigDatabaseGrants(String databaseName, String... grants) {
         this.databaseName = databaseName;
         this.grants.addAll(Arrays.asList(grants));
     }
@@ -32,7 +32,7 @@ public class MysqlManagerConfigDatabaseGrants extends AbstractBasics {
         return databaseName;
     }
 
-    public List<MysqlManagerConfigGrant> getGrants() {
+    public List<String> getGrants() {
         return grants;
     }
 
@@ -40,7 +40,7 @@ public class MysqlManagerConfigDatabaseGrants extends AbstractBasics {
         this.databaseName = databaseName;
     }
 
-    public void setGrants(List<MysqlManagerConfigGrant> grants) {
+    public void setGrants(List<String> grants) {
         this.grants = grants;
     }
 

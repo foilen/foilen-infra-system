@@ -23,7 +23,6 @@ import com.foilen.infra.plugin.v1.core.base.resources.UnixUser;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerConfig;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerConfigAdmin;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerConfigDatabaseGrants;
-import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerConfigGrant;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerConfigPermission;
 import com.foilen.infra.plugin.v1.core.base.updatehandlers.mariadb.MysqlManagerConfigUser;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
@@ -80,26 +79,34 @@ public class MariaDBServerUpdateHandler extends AbstractCommonMethodUpdateEventH
             // ADMIN
             services.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(MariaDBUser.class, MariaDBUser.LINK_TYPE_ADMIN, mariaDBDatabase).forEach(mariaDBUser -> {
                 logger.debug("[{}] Database {} has user {} as ADMIN", serverName, databaseName, mariaDBUser.getName());
-                List<MysqlManagerConfigGrant> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
-                grants.add(MysqlManagerConfigGrant.CREATE);
-                grants.add(MysqlManagerConfigGrant.ALTER);
-                grants.add(MysqlManagerConfigGrant.DROP);
+                List<String> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
+                grants.add("ALTER");
+                grants.add("CREATE");
+                grants.add("CREATE ROUTINE");
+                grants.add("CREATE TEMPORARY TABLES");
+                grants.add("CREATE VIEW");
+                grants.add("DROP");
+                grants.add("EVENT");
+                grants.add("INDEX");
+                grants.add("LOCK TABLES");
+                grants.add("SHOW VIEW");
+                grants.add("TRIGGER");
             });
 
             // READ
             services.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(MariaDBUser.class, MariaDBUser.LINK_TYPE_READ, mariaDBDatabase).forEach(mariaDBUser -> {
                 logger.debug("[{}] Database {} has user {} as READ", serverName, databaseName, mariaDBUser.getName());
-                List<MysqlManagerConfigGrant> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
-                grants.add(MysqlManagerConfigGrant.SELECT);
+                List<String> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
+                grants.add("SELECT");
             });
 
             // WRITE
             services.getResourceService().linkFindAllByFromResourceClassAndLinkTypeAndToResource(MariaDBUser.class, MariaDBUser.LINK_TYPE_WRITE, mariaDBDatabase).forEach(mariaDBUser -> {
                 logger.debug("[{}] Database {} has user {} as WRITE", serverName, databaseName, mariaDBUser.getName());
-                List<MysqlManagerConfigGrant> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
-                grants.add(MysqlManagerConfigGrant.INSERT);
-                grants.add(MysqlManagerConfigGrant.UPDATE);
-                grants.add(MysqlManagerConfigGrant.DELETE);
+                List<String> grants = getGrantsByUserAndDatabase(userConfigByName, mariaDBUser, databaseName);
+                grants.add("INSERT");
+                grants.add("UPDATE");
+                grants.add("DELETE");
             });
 
         });
@@ -126,7 +133,7 @@ public class MariaDBServerUpdateHandler extends AbstractCommonMethodUpdateEventH
 
             IPApplicationDefinition applicationDefinition = application.getApplicationDefinition();
 
-            applicationDefinition.setFrom("foilen/fcloud-docker-mariadb:10.3.2-1.0.1-001");
+            applicationDefinition.setFrom("foilen/fcloud-docker-mariadb:10.3.5-1.1.0-001");
 
             applicationDefinition.addService("app", "/mariadb-start.sh");
             IPApplicationDefinitionAssetsBundle assetsBundle = applicationDefinition.addAssetsBundle();
@@ -167,7 +174,7 @@ public class MariaDBServerUpdateHandler extends AbstractCommonMethodUpdateEventH
         }
     }
 
-    private List<MysqlManagerConfigGrant> getGrantsByUserAndDatabase(Map<String, MysqlManagerConfigPermission> userConfigByName, MariaDBUser mariaDBUser, String databaseName) {
+    private List<String> getGrantsByUserAndDatabase(Map<String, MysqlManagerConfigPermission> userConfigByName, MariaDBUser mariaDBUser, String databaseName) {
         MysqlManagerConfigPermission userConfig = userConfigByName.get(mariaDBUser.getName());
         if (userConfig == null) {
             userConfig = new MysqlManagerConfigPermission(mariaDBUser.getName(), "%", mariaDBUser.getPassword());
@@ -175,7 +182,7 @@ public class MariaDBServerUpdateHandler extends AbstractCommonMethodUpdateEventH
         }
 
         Optional<MysqlManagerConfigDatabaseGrants> grantsOptional = userConfig.getDatabaseGrants().stream().filter(it -> databaseName.equals(it.getDatabaseName())).findAny();
-        List<MysqlManagerConfigGrant> grants;
+        List<String> grants;
         if (grantsOptional.isPresent()) {
             grants = grantsOptional.get().getGrants();
         } else {
