@@ -1,6 +1,8 @@
 dependencies {
 
   compile project(":foilen-infra-plugin-model-outputter")
+  
+  compile 'org.quartz-scheduler:quartz'
 
   // Logging
   compile "org.slf4j:slf4j-api"

@@ -33,6 +33,8 @@ import com.foilen.infra.plugin.system.utils.DockerUtils;
 import com.foilen.infra.plugin.system.utils.UnixUsersAndGroupsUtils;
 import com.foilen.infra.plugin.system.utils.impl.DockerUtilsImpl;
 import com.foilen.infra.plugin.system.utils.impl.UnixUsersAndGroupsUtilsImpl;
+import com.foilen.infra.plugin.system.utils.model.ApplicationBuildDetails;
+import com.foilen.infra.plugin.system.utils.model.ContainersManageContext;
 import com.foilen.infra.plugin.system.utils.model.DockerState;
 import com.foilen.infra.plugin.v1.core.base.resources.Application;
 import com.foilen.infra.plugin.v1.core.base.resources.UnixUser;
@@ -41,13 +43,11 @@ import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
-import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutputContext;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.LogbackTools;
-import com.foilen.smalltools.tuple.Tuple2;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
@@ -230,13 +230,16 @@ public class StartResourcesApp {
         System.out.println("\n---[ Install application (docker) ]---");
         List<Application> applications = resourceService.resourceFindAll(resourceService.createResourceQuery(Application.class));
         DockerState dockerState = stateGetOrCreate();
-        List<Tuple2<DockerContainerOutputContext, IPApplicationDefinition>> outputContextAndApplicationDefinitions = applications.stream() //
+        List<ApplicationBuildDetails> alwaysRunningApplications = applications.stream() //
                 .map(application -> {
                     String applicationName = application.getName();
                     String buildDirectory = tmpDirectory.getAbsolutePath() + "/" + applicationName + "/";
-                    return new Tuple2<>(new DockerContainerOutputContext(applicationName, applicationName, applicationName, buildDirectory), application.getApplicationDefinition());
+                    return new ApplicationBuildDetails().setApplicationDefinition(application.getApplicationDefinition()) //
+                            .setOutputContext(new DockerContainerOutputContext(applicationName, applicationName, applicationName, buildDirectory));
                 }).collect(Collectors.toList());
-        dockerUtils.containersManage(dockerState, outputContextAndApplicationDefinitions);
+        dockerUtils.containersManage(new ContainersManageContext() //
+                .setDockerState(dockerState) //
+                .setAlwaysRunningApplications(alwaysRunningApplications));
         stateSave(dockerState);
         List<String> applicationStatuses = new ArrayList<>();
         dockerState.getFailedContainersByName().keySet().forEach(it -> {

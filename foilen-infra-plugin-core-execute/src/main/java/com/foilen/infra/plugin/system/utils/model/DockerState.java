@@ -25,6 +25,10 @@ public class DockerState {
     private Map<String, DockerStateIds> failedContainersByName = new HashMap<>();
     private Map<String, String> ipByName = new HashMap<>();
 
+    // Cron
+    private Map<String, DockerStateIds> cronContainersByName = new HashMap<>();
+    private Map<String, String> cronTimeByName = new HashMap<>();
+
     // Redirection details
     private int redirectorBridgePort = 11000;
     private List<String> redirectorCaCerts = new ArrayList<>();
@@ -35,6 +39,14 @@ public class DockerState {
 
     // Executions
     private Map<String, Future<Boolean>> executionsFutures = new HashMap<>();
+
+    public Map<String, DockerStateIds> getCronContainersByName() {
+        return cronContainersByName;
+    }
+
+    public Map<String, String> getCronTimeByName() {
+        return cronTimeByName;
+    }
 
     public Map<String, Future<Boolean>> getExecutionsFutures() {
         return executionsFutures;
@@ -74,6 +86,14 @@ public class DockerState {
 
     public Map<String, DockerStateIds> getRunningContainersByName() {
         return runningContainersByName;
+    }
+
+    public void setCronContainersByName(Map<String, DockerStateIds> cronContainersByName) {
+        this.cronContainersByName = cronContainersByName;
+    }
+
+    public void setCronTimeByName(Map<String, String> cronTimeByName) {
+        this.cronTimeByName = cronTimeByName;
     }
 
     public void setExecutionsFutures(Map<String, Future<Boolean>> executionsFutures) {

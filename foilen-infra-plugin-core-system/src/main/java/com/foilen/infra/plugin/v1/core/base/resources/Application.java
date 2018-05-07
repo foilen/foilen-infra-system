@@ -12,6 +12,7 @@ package com.foilen.infra.plugin.v1.core.base.resources;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.foilen.infra.plugin.v1.core.base.resources.model.ExecutionPolicy;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.resource.AbstractIPResource;
 import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
@@ -41,6 +42,10 @@ public class Application extends AbstractIPResource implements Comparable<Applic
     private String name;
     private String description;
 
+    // Execution
+    private ExecutionPolicy executionPolicy = ExecutionPolicy.ALWAYS_ON;
+    private String executionCronDetails;
+
     // Details
     private IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
 
@@ -67,6 +72,14 @@ public class Application extends AbstractIPResource implements Comparable<Applic
 
     public Set<String> getDomainNames() {
         return domainNames;
+    }
+
+    public String getExecutionCronDetails() {
+        return executionCronDetails;
+    }
+
+    public ExecutionPolicy getExecutionPolicy() {
+        return executionPolicy;
     }
 
     public String getName() {
@@ -98,6 +111,14 @@ public class Application extends AbstractIPResource implements Comparable<Applic
 
     public void setDomainNames(Set<String> domainNames) {
         this.domainNames = domainNames;
+    }
+
+    public void setExecutionCronDetails(String executionCronDetails) {
+        this.executionCronDetails = executionCronDetails;
+    }
+
+    public void setExecutionPolicy(ExecutionPolicy executionPolicy) {
+        this.executionPolicy = executionPolicy;
     }
 
     public void setName(String name) {
