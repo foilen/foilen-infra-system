@@ -1,6 +1,6 @@
 /*
-    Foilen Infra Plugin
-    https://github.com/foilen/foilen-infra-plugin
+    Foilen Infra System
+    https://github.com/foilen/foilen-infra-system
     Copyright (c) 2017-2018 Foilen (http://foilen.com)
 
     The MIT License

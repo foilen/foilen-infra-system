@@ -1,19 +1,17 @@
 # About
 
-The plugin development environment for Foilen Infra.
+The system development environment for Foilen Infra using the plugin system.
 
 License: The MIT License (MIT)
 
 
 # Projects
 
-- foilen-infra-plugin-model: The common objects models.
-- foilen-infra-plugin-model-outputter: Some helper to output configuration from the models.
-- foilen-infra-plugin-core-execute: Some Linux and Docker services for the executor.
-- foilen-infra-plugin-core-system: All the services definitions for plugins.
-- foilen-infra-plugin-core-system-junits: The junits for testing any system implementation.
-- foilen-infra-plugin-core-system-fake: An implementation of the services for pluging used in unit tests and standalone tests.
-- foilen-infra-plugin-app-test-docker: An application to generate sample resource files and run applications from files.
+- foilen-infra-system-core-execute: Some Linux and Docker services for the executor.
+- foilen-infra-system-core-system-common: All the services definitions for plugins.
+- foilen-infra-system-core-system-junits: The junits for testing any system implementation.
+- foilen-infra-system-core-system-fake: An implementation of the services for pluging used in unit tests and standalone tests.
+- foilen-infra-system-app-test-docker: An application to generate sample resource files and run applications from files.
 
 # Usage
 
@@ -21,15 +19,11 @@ License: The MIT License (MIT)
 
 You can see the latest version and the Maven and Gradle settings here:
 
-https://bintray.com/foilen/maven/com.foilen:foilen-infra-plugin-core
-
-## Plugin
-
-- See docs/plugin_creation.odt
+https://bintray.com/foilen/maven/com.foilen:foilen-infra-plugin-core-common
 
 ## System
 
-- Use foilen-infra-plugin-core-system-common
+- Use foilen-infra-system-core-system-common
 - Implement all the services:
     - com.foilen.infra.plugin.v1.core.service.IPPluginService
     - com.foilen.infra.plugin.v1.core.service.IPResourceService
@@ -41,7 +35,7 @@ https://bintray.com/foilen/maven/com.foilen:foilen-infra-plugin-core
 
 ## System test
 
-- Use foilen-infra-plugin-core-system-junits (can be in the same project, but in the "test" configuration)
+- Use foilen-infra-system-core-system-junits (can be in the same project, but in the "test" configuration)
 - Create a unit test that extends AbstractIPResourceServiceTest
 
 # Process
@@ -77,10 +71,10 @@ docker run -ti \
   --user $USER_ID \
   --volume $FOLDER_SAMPLE:/data \
   --volume $FOLDER_PLUGINS_JARS:/plugins \
-  foilen-infra-plugin-app-test-docker:master-SNAPSHOT \
+  foilen-infra-system-app-test-docker:master-SNAPSHOT \
   create-sample \
   /data
-  
+
 # Create files in "import-resources"
 
 # Import files and execute applications in Docker
@@ -96,7 +90,7 @@ docker run -ti \
   --volume /usr/lib/x86_64-linux-gnu/libltdl.so.7.3.1:/usr/lib/x86_64-linux-gnu/libltdl.so.7 \
   --volume /var/run/docker.sock:/var/run/docker.sock \
   --workdir /data \
-  foilen-infra-plugin-app-test-docker:master-SNAPSHOT \
+  foilen-infra-system-app-test-docker:master-SNAPSHOT \
   start-resources \
   /data
 
