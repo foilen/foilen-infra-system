@@ -14,7 +14,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is for having A and AAAA entries pointing to machines. <br/>
+ * This is for having A and AAAA entries pointing to machines. <br>
  * Links to:
  * <ul>
  * <li>{@link Machine}: (optional / many) POINTS_TO - All the machines to point to.</li>

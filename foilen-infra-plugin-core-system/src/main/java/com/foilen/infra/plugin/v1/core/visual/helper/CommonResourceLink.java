@@ -50,6 +50,8 @@ public class CommonResourceLink {
      *            the code for the label to display
      * @param fieldName
      *            the name of the field that contains the id of the resource to link
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void addResourcePageItem(CommonServicesContext servicesCtx, PageDefinition pageDefinition, IPResource editedResource, String linkType, Class<L> resourceType,
             String labelCode, String fieldName) {
@@ -89,6 +91,8 @@ public class CommonResourceLink {
      *            the code for the label to display
      * @param fieldName
      *            the name of the field that contains the ids of the resources to link
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void addResourcesPageItem(CommonServicesContext servicesCtx, PageDefinition pageDefinition, IPResource editedResource, String linkType, Class<L> resourceType,
             String labelCode, String fieldName) {
@@ -125,6 +129,8 @@ public class CommonResourceLink {
      *            the code for the label to display
      * @param fieldName
      *            the name of the field that contains the id of the resource to link
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void addReverseResourcePageItem(CommonServicesContext servicesCtx, PageDefinition pageDefinition, Class<L> resourceType, String linkType,
             IPResource editedResource, String labelCode, String fieldName) {
@@ -164,6 +170,8 @@ public class CommonResourceLink {
      *            the code for the label to display
      * @param fieldName
      *            the name of the field that contains the ids of the resources to link
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void addReverseResourcesPageItem(CommonServicesContext servicesCtx, PageDefinition pageDefinition, Class<L> resourceType, String linkType,
             IPResource editedResource, String labelCode, String fieldName) {
@@ -200,6 +208,8 @@ public class CommonResourceLink {
      *            the form
      * @param changesContext
      *            the change context where to add the modifications
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void fillResourceLink(CommonServicesContext servicesCtx, IPResource editedResource, String linkType, Class<L> toResourceType, String fieldName,
             Map<String, String> formValues, ChangesContext changesContext) {
@@ -271,6 +281,8 @@ public class CommonResourceLink {
      *            the form
      * @param changesContext
      *            the change context where to add the modifications
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void fillResourcesLink(CommonServicesContext servicesCtx, IPResource editedResource, String linkType, Class<L> toResourceType, String fieldName,
             Map<String, String> formValues, ChangesContext changesContext) {
@@ -344,6 +356,8 @@ public class CommonResourceLink {
      *            the form
      * @param changesContext
      *            the change context where to add the modifications
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void fillReverseResourceLink(CommonServicesContext servicesCtx, Class<L> fromResourceType, String linkType, IPResource editedResource, String fieldName,
             Map<String, String> formValues, ChangesContext changesContext) {
@@ -415,6 +429,8 @@ public class CommonResourceLink {
      *            the form
      * @param changesContext
      *            the change context where to add the modifications
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void fillReverseResourcesLink(CommonServicesContext servicesCtx, Class<L> fromResourceType, String linkType, IPResource editedResource, String fieldName,
             Map<String, String> formValues, ChangesContext changesContext) {
@@ -486,6 +502,8 @@ public class CommonResourceLink {
      *            the "to" resource
      * @param finalFromResources
      *            all the "from" resources that you want at the end
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void syncFromLinks(CommonServicesContext servicesCtx, ChangesContext changesContext, //
             Class<L> resourceFromType, String linkType, IPResource toResource, List<L> finalFromResources) {
@@ -529,6 +547,8 @@ public class CommonResourceLink {
      *            the type of the "to" resource of the links
      * @param finalToResources
      *            all the "to" resources that you want at the end
+     * @param <L>
+     *            type of liked resource
      */
     public static <L extends IPResource> void syncToLinks(CommonServicesContext servicesCtx, ChangesContext changesContext, //
             IPResource fromResource, String linkType, Class<L> resourceToType, List<L> finalToResources) {

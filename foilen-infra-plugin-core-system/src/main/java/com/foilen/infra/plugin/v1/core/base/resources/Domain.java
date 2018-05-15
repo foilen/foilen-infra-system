@@ -14,7 +14,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is a domain/sub-domain name. Mostly used to make sure the users only use the domains they own.<br/>
+ * This is a domain/sub-domain name. Mostly used to make sure the users only use the domains they own.<br>
  * Links to:
  * <ul>
  * </ul>

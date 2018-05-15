@@ -14,7 +14,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is a machine that FoilenCloud is managing. <br/>
+ * This is a machine that FoilenCloud is managing. <br>
  * Links to:
  * <ul>
  * </ul>

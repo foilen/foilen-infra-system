@@ -19,7 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is a website that points to the application that is serving it. <br/>
+ * This is a website that points to the application that is serving it. <br>
  * Links to:
  * <ul>
  * <li>{@link Application}: (required / many) POINTS_TO - The applications that are serving that web site. (are the end points ; not where the web site is installed)</li>

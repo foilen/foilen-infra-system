@@ -14,7 +14,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is for a MariaDB User. <br/>
+ * This is for a MariaDB User. <br>
  * Links to:
  * <ul>
  * <li>{@link MariaDBDatabase}: (optional / many) CAN_READ - The databases that this user can read in (grants SELECT).</li>

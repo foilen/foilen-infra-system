@@ -25,7 +25,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is a web certificate. <br/>
+ * This is a web certificate. <br>
  * Links to:
  * <ul>
  * </ul>

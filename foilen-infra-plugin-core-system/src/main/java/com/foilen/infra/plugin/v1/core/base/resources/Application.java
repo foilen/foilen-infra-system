@@ -18,7 +18,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is for any application/service that is installed on a machine. <br/>
+ * This is for any application/service that is installed on a machine. <br>
  * Links to:
  * <ul>
  * <li>{@link UnixUser}: (optional / 1) RUN_AS - The user that executes that application. Will update the "runAs" of the Application itself and the "runAs" of all the services that are "null"</li>

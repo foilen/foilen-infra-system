@@ -69,7 +69,7 @@ public interface ResourceEditor<R extends IPResource> {
      *            the services
      * @param rawFormValues
      *            the values on the form
-     * @return list of errors: fieldName -> errorCode
+     * @return list of errors: fieldName -&gt; errorCode
      */
     List<Tuple2<String, String>> validateForm(CommonServicesContext servicesCtx, Map<String, String> rawFormValues);
 

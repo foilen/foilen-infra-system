@@ -17,7 +17,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is a DNS entry.<br/>
+ * This is a DNS entry.<br>
  *
  * Links to:
  * <ul>

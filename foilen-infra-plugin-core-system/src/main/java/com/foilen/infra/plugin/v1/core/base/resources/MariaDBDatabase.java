@@ -14,7 +14,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is for a MariaDB Database. <br/>
+ * This is for a MariaDB Database. <br>
  * Links to:
  * <ul>
  * <li>{@link MariaDBServer}: (optional / many) INSTALLED_ON - On which server to install it.</li>

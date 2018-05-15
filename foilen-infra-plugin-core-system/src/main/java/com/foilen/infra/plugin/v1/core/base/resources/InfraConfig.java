@@ -13,7 +13,7 @@ import com.foilen.infra.plugin.v1.model.resource.AbstractIPResource;
 import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 
 /**
- * This is for managing the basic infrastructure resources: Login and UI. <br/>
+ * This is for managing the basic infrastructure resources: Login and UI. <br>
  * Links to:
  * <ul>
  * <li>{@link WebsiteCertificate}: (optional / 1) LOGIN_USES - The certificate.</li>

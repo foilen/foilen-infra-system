@@ -55,7 +55,7 @@ public class ChangesContext {
     }
 
     /**
-     * Get the links to add in the format: from -> linkType -> to.
+     * Get the links to add in the format: from -&gt; linkType -&gt; to.
      *
      * @return the list of links to add
      */
@@ -64,7 +64,7 @@ public class ChangesContext {
     }
 
     /**
-     * Get the links to delete in the format: from -> linkType -> to.
+     * Get the links to delete in the format: from -&gt; linkType -&gt; to.
      *
      * @return the list of links to delete
      */
@@ -85,7 +85,7 @@ public class ChangesContext {
     }
 
     /**
-     * Get the resources to update in the format: currentResourceInternalId -> updatedResource
+     * Get the resources to update in the format: currentResourceInternalId -&gt; updatedResource
      *
      * @return the list of resources to update
      */

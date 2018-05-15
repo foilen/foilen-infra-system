@@ -30,6 +30,8 @@ public interface IPResourceService {
      * @param resourceClass
      *            the class of the resource
      * @return a new resource query
+     * @param <T>
+     *            type of resource
      */
     <T extends IPResource> IPResourceQuery<T> createResourceQuery(Class<T> resourceClass);
 
@@ -39,6 +41,8 @@ public interface IPResourceService {
      * @param resourceType
      *            the type of the resource
      * @return a new resource query
+     * @param <T>
+     *            type of resource
      */
     <T extends IPResource> IPResourceQuery<T> createResourceQuery(String resourceType);
 
@@ -94,7 +98,7 @@ public interface IPResourceService {
      *
      * @param fromResource
      *            the "from" resource
-     * @return all the linkType -> "to" resources
+     * @return all the linkType -&gt; "to" resources
      */
     List<Tuple2<String, ? extends IPResource>> linkFindAllByFromResource(IPResource fromResource);
 
@@ -119,6 +123,8 @@ public interface IPResourceService {
      * @param toResourceClass
      *            the "to" resource type
      * @return all the "to" resources
+     * @param <R>
+     *            type of linked resource
      */
     <R extends IPResource> List<R> linkFindAllByFromResourceAndLinkTypeAndToResourceClass(IPResource fromResource, String linkType, Class<R> toResourceClass);
 
@@ -132,6 +138,8 @@ public interface IPResourceService {
      * @param toResource
      *            the "to" resource
      * @return all the "from" resources
+     * @param <R>
+     *            type of linked resource
      */
     <R extends IPResource> List<R> linkFindAllByFromResourceClassAndLinkTypeAndToResource(Class<R> fromResourceClass, String linkType, IPResource toResource);
 
@@ -181,6 +189,10 @@ public interface IPResourceService {
      * @param b
      *            the second resource
      * @return true if the pk is the same
+     * @param <R>
+     *            type of resource
+     * @param <T>
+     *            type of resource
      */
     <R extends IPResource, T extends IPResource> boolean resourceEqualsPk(R a, T b);
 
@@ -190,6 +202,8 @@ public interface IPResourceService {
      * @param query
      *            the query
      * @return the resource
+     * @param <T>
+     *            type of resource
      */
     <T extends IPResource> Optional<T> resourceFind(IPResourceQuery<T> query);
 
@@ -201,6 +215,8 @@ public interface IPResourceService {
      * @param query
      *            the query
      * @return the resources
+     * @param <T>
+     *            type of resource
      */
     <T extends IPResource> List<T> resourceFindAll(IPResourceQuery<T> query);
 
@@ -210,6 +226,8 @@ public interface IPResourceService {
      * @param resource
      *            the resource with the primary key
      * @return the resource if present
+     * @param <R>
+     *            type of resource
      */
     <R extends IPResource> Optional<R> resourceFindByPk(R resource);
 

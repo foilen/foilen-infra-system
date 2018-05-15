@@ -14,7 +14,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is for a MariaDB Server installation. <br/>
+ * This is for a MariaDB Server installation. <br>
  * Links to:
  * <ul>
  * <li>{@link UnixUser}: RUN_AS - The user that executes that databse.</li>

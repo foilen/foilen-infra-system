@@ -15,7 +15,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is a url redirection to another url. <br/>
+ * This is a url redirection to another url. <br>
  * Links to:
  * <ul>
  * <li>{@link Machine}: (optional / many) INSTALLED_ON - Where to install that redirection.</li>

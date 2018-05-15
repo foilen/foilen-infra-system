@@ -14,7 +14,7 @@ import com.foilen.infra.plugin.v1.model.resource.InfraPluginResourceCategory;
 import com.google.common.collect.ComparisonChain;
 
 /**
- * This is a unix user that is installed on some {@link Machine}.<br/>
+ * This is a unix user that is installed on some {@link Machine}.<br>
  * Links to:
  * <ul>
  * <li>{@link Machine}: (optional / many) INSTALLED_ON - The machines where to install that unix user</li>
