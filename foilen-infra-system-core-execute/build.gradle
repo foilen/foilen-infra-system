@@ -23,7 +23,7 @@ bintray {
   pkg {
     repo = 'maven'
     userOrg = 'foilen'
-    name = 'com.foilen:foilen-infra-plugin-core-execute'
+    name = 'com.foilen:foilen-infra-system-core-execute'
     licenses = ['MIT']
     vcsUrl = 'https://github.com/foilen/foilen-infra-plugin.git'
   }
@@ -38,7 +38,7 @@ publishing {
       artifact sourcesJar
       artifact javadocJar
       groupId 'com.foilen'
-      artifactId 'foilen-infra-plugin-docker-utils'
+      artifactId 'foilen-infra-system-core-execute'
     }
   }
 }
