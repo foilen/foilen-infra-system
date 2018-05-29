@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
@@ -53,11 +54,11 @@ import com.google.common.io.Files;
 
 public class StartResourcesApp {
 
-    protected static void importFromDirectory(File inputDirectory, AnnotationConfigApplicationContext applicationContext) {
+    protected static void importFromDirectory(File inputDirectory, ConfigurableApplicationContext ctx) {
         // Import all the resources
         Map<String, IPResource> resourcesByFullName = new HashMap<>();
-        IPResourceService resourceService = applicationContext.getBean(IPResourceService.class);
-        InternalChangeService internalChangeService = applicationContext.getBean(InternalChangeService.class);
+        IPResourceService resourceService = ctx.getBean(IPResourceService.class);
+        InternalChangeService internalChangeService = ctx.getBean(InternalChangeService.class);
         File[] subDirectories = inputDirectory.listFiles(new FileFilter() {
             @Override
             public boolean accept(File file) {

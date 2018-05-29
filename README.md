@@ -87,6 +87,20 @@ docker run -ti \
 
 # Create files in "_import-resources"
 
+# You can generate the files by using the web ui and export as a file or directory
+docker run -ti \
+  --rm \
+  --env PLUGINS_JARS=/plugins \
+  --user $USER_ID \
+  --volume $FOLDER_IMPORT:/data \
+  --volume $FOLDER_PLUGINS_JARS:/plugins \
+  --publish 8080:8080 \
+  foilen-infra-system-app-test-docker:master-SNAPSHOT \
+  web \
+  /data/
+  
+  # Go on http://localhost:8080
+
 # Import files and execute applications in Docker
 docker run -ti \
   --rm \

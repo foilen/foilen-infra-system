@@ -38,6 +38,9 @@ public class TestDockerApp {
         case "start-resources":
             StartResourcesApp.main(newArgs.toArray(new String[newArgs.size()]));
             break;
+        case "web":
+            WebApp.main(newArgs.toArray(new String[newArgs.size()]));
+            break;
         default:
             System.out.println("Invalid component: " + component);
             System.exit(1);
