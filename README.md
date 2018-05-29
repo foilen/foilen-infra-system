@@ -19,7 +19,7 @@ License: The MIT License (MIT)
 
 You can see the latest version and the Maven and Gradle settings here:
 
-https://bintray.com/foilen/maven/com.foilen:foilen-infra-plugin-core-common
+https://bintray.com/foilen/maven/com.foilen:foilen-infra-system-core-system-common
 
 ## System
 
@@ -59,10 +59,20 @@ For changes/removals in the stable API:
 
 USER_ID=$(id -u)
 
-FOLDER_SAMPLE=$(pwd)/sample-templates
-FOLDER_IMPORT=$(pwd)/import-resources
-FOLDER_PLUGINS_JARS=$(pwd)/plugins-jars
+FOLDER_SAMPLE=$(pwd)/_sample-templates
+FOLDER_IMPORT=$(pwd)/_import-resources
+FOLDER_PLUGINS_JARS=$(pwd)/_plugins-jars
 mkdir -p $FOLDER_SAMPLE $FOLDER_IMPORT $FOLDER_PLUGINS_JARS
+
+# Download plugins
+docker run -ti \
+  --rm \
+  --env PLUGINS_JARS=/plugins \
+  --user $USER_ID \
+  --volume $FOLDER_PLUGINS_JARS:/plugins \
+  foilen-infra-system-app-test-docker:master-SNAPSHOT \
+  download-latest-plugins \
+  /plugins application domain dns infraconfig machine mariadb unixuser webcertificate website
 
 # Create sample data
 docker run -ti \
@@ -75,7 +85,7 @@ docker run -ti \
   create-sample \
   /data
 
-# Create files in "import-resources"
+# Create files in "_import-resources"
 
 # Import files and execute applications in Docker
 docker run -ti \

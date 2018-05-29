@@ -7,6 +7,12 @@ buildscript {
 dependencies {
   compile project(":foilen-infra-system-core-execute")
   compile project(":foilen-infra-system-core-system-fake")
+  
+	compile "commons-io:commons-io:2.6"
+	compile "org.jsoup:jsoup:1.11.3"
+  
+  compileOnly "com.foilen:foilen-infra-resource-application:0.1.0"
+  compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.0"
 }
 
 apply plugin: 'application'

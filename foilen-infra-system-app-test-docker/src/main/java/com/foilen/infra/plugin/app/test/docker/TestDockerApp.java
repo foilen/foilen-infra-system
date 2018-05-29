@@ -32,6 +32,9 @@ public class TestDockerApp {
         case "create-sample":
             CreateSampleResourcesApp.main(newArgs.toArray(new String[newArgs.size()]));
             break;
+        case "download-latest-plugins":
+            DownloadLatestPluginsApp.main(newArgs.toArray(new String[newArgs.size()]));
+            break;
         case "start-resources":
             StartResourcesApp.main(newArgs.toArray(new String[newArgs.size()]));
             break;
