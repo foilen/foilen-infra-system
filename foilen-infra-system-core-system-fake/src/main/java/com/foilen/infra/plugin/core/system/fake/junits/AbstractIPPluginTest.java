@@ -26,12 +26,14 @@ import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
+import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tuple.Tuple2;
+import com.google.common.base.Strings;
 
 /**
  * Extends to test your plugin.
@@ -97,6 +99,31 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
     }
 
     /**
+     * Load the page definition.
+     *
+     * @param editorName
+     *            the editor to use
+     * @param editedResource
+     *            the resource to load
+     * @param expectedResource
+     *            the filename of the resource
+     * @param expectedContext
+     *            the class in which the resource file is
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected void assertEditorPageDefinition(String editorName, IPResource editedResource, String expectedResource, Class<?> expectedContext) {
+
+        Optional editorOptional = getCommonServicesContext().getPluginService().getResourceEditorByName(editorName);
+
+        ResourceEditor editor = (ResourceEditor) editorOptional.get();
+
+        PageDefinition pageDefinition = editor.providePageDefinition(getCommonServicesContext(), editedResource);
+
+        AssertTools.assertJsonComparison(expectedResource, expectedContext, pageDefinition);
+
+    }
+
+    /**
      * Execute the editor with the form and fails.
      *
      * @param internalId
@@ -124,6 +151,14 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
 
     }
 
+    /**
+     * Assert the amount of resources of the specified type.
+     *
+     * @param expectedCount
+     *            the expected count
+     * @param resourceType
+     *            the resource type
+     */
     protected void assertResourceCount(int expectedCount, Class<? extends IPResource> resourceType) {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
@@ -169,6 +204,20 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
     @Before
     public void init() {
         fakeSystemServicesImpl = FakeSystemServicesTests.init();
+    }
+
+    /**
+     * When there is a value that is changing between unit tests run and you just want to check if it is not null or empty, call this method and the returned value will be: null, "" or "--IS SET--".
+     *
+     * @param value
+     *            the value to check
+     * @return null, "" or "--IS SET--"
+     */
+    protected String notNullOrEmptyToIsSet(String value) {
+        if (!Strings.isNullOrEmpty(value)) {
+            return "--IS SET--";
+        }
+        return value;
     }
 
 }
