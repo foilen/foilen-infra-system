@@ -100,6 +100,8 @@ docker run -ti \
   /data/
   
   # Go on http://localhost:8080
+# You can also add the environment FOILEN_PLUGIN_SKIP_UPDATE_EVENTS=true if you do not want to let the update handlers run. That is useful if you want to create the basic resources and export them to test the update handlers.
+
 
 # Import files and execute applications in Docker
 docker run -ti \
