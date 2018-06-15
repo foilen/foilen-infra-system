@@ -44,6 +44,10 @@ subprojects {
       mavenBom 'io.spring.platform:platform-bom:Brussels-SR5'
     }
   }
+  
+  configurations {
+  	testCompile.extendsFrom compileOnly
+  }
 
   eclipse {
     classpath {
