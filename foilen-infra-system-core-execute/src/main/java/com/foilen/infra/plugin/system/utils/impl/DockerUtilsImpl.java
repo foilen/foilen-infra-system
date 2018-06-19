@@ -16,11 +16,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -51,22 +53,26 @@ import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionAssetsBundle;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionPortRedirect;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionVolume;
-import com.foilen.infra.plugin.v1.model.outputter.DockerMissingDependencyException;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutput;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutputContext;
+import com.foilen.infra.plugin.v1.model.redirectportregistry.RedirectPortRegistryEntries;
+import com.foilen.infra.plugin.v1.model.redirectportregistry.RedirectPortRegistryEntry;
 import com.foilen.infra.plugin.v1.model.redirectportregistry.RedirectPortRegistryExit;
 import com.foilen.infra.plugin.v1.model.redirectportregistry.RedirectPortRegistryExits;
 import com.foilen.smalltools.JavaEnvironmentValues;
 import com.foilen.smalltools.consolerunner.ConsoleRunner;
 import com.foilen.smalltools.iterable.FileLinesIterable;
 import com.foilen.smalltools.tools.AbstractBasics;
+import com.foilen.smalltools.tools.AssertTools;
 import com.foilen.smalltools.tools.CollectionsTools;
 import com.foilen.smalltools.tools.DirectoryTools;
 import com.foilen.smalltools.tools.ExecutorsTools;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.MultiDependenciesResolverTools;
+import com.foilen.smalltools.tools.SearchingAvailabilityIntTools;
 import com.foilen.smalltools.tools.SpaceConverterTool;
+import com.foilen.smalltools.tools.StringTools;
 import com.foilen.smalltools.tools.SystemTools;
 import com.foilen.smalltools.tools.ThreadTools;
 import com.foilen.smalltools.tuple.Tuple2;
@@ -222,13 +228,17 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
         // Check if needs the ports redirector applications (in and out) and add them if needed
         MultiDependenciesResolverTools dependenciesResolver = new MultiDependenciesResolverTools();
-        boolean needsRedirectorEntry = containersManageContext.getCronApplications().stream() //
+        List<ApplicationBuildDetails> allApplicationBuildDetails = new ArrayList<>();
+        allApplicationBuildDetails.addAll(containersManageContext.getAlwaysRunningApplications());
+        allApplicationBuildDetails.addAll(containersManageContext.getCronApplications());
+        boolean needsRedirectorEntry = allApplicationBuildDetails.stream() //
                 .filter(it -> it.getApplicationDefinition().getPortsRedirect().stream() //
                         .filter(pr -> !pr.isToLocalMachine())//
                         .findAny().isPresent()) //
                 .findAny().isPresent();
         boolean needsRedirectorExit = false;
         Map<String, ApplicationBuildDetails> applicationBuildDetailsByName = new HashMap<>();
+        List<String> remoteMachineContainerEndpointsToSet = new ArrayList<>();
         for (ApplicationBuildDetails applicationBuildDetails : containersManageContext.getAlwaysRunningApplications()) {
 
             // Add the app to the dependencies resolver
@@ -262,8 +272,96 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         // Add the Redirectors applications if needed
         RedirectPortRegistryExits redirectPortRegistryExits = new RedirectPortRegistryExits();
         if (needsRedirectorEntry) {
-            // TODO REDIRECTOR_ENTRY - Implement application
-            throw new DockerMissingDependencyException("Not implemented " + DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME);
+            RedirectPortRegistryEntries redirectPortRegistryEntries = new RedirectPortRegistryEntries();
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME);
+            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
+            applicationDefinition.setFrom("foilen/redirectport-registry:1.1.0");
+            applicationDefinition.setRunAs(65534); // Nobody
+
+            IPApplicationDefinitionAssetsBundle assetBundle = applicationDefinition.addAssetsBundle();
+            boolean isRedirectorSsl = CollectionsTools.isAllItemNotNullOrEmpty(dockerState.getRedirectorNodeCert(), dockerState.getRedirectorNodeKey());
+            if (dockerState.getRedirectorCaCerts().isEmpty()) {
+                isRedirectorSsl = false;
+            }
+            List<String> arguments = new ArrayList<>();
+            if (isRedirectorSsl) {
+                assetBundle.addAssetContent("/data/ca-certs.json", JsonTools.prettyPrint(dockerState.getRedirectorCaCerts()));
+                assetBundle.addAssetContent("/data/node-cert.pem", dockerState.getRedirectorNodeCert());
+                assetBundle.addAssetContent("/data/node-key.pem", dockerState.getRedirectorNodeKey());
+
+                arguments.add("--caCertsFile");
+                arguments.add("/data/ca-certs.json");
+                arguments.add("--bridgeCertFile");
+                arguments.add("/data/node-cert.pem");
+                arguments.add("--bridgePrivateKeyFile");
+                arguments.add("/data/node-key.pem");
+            }
+
+            // For all the apps that needs to redirect to a remote machine
+            Set<Integer> usedRedirectPort = new HashSet<>();
+            allApplicationBuildDetails.stream() //
+                    .filter(it -> it.getApplicationDefinition().getPortsRedirect().stream() //
+                            .filter(pr -> !pr.isToLocalMachine())//
+                            .findAny().isPresent()) //
+                    .forEach(applicationBuildDetails -> {
+                        applicationBuildDetails.getApplicationDefinition().getPortsRedirect().stream() //
+                                .filter(pr -> !pr.isToLocalMachine())//
+                                .forEach(pr -> {
+                                    Integer next = dockerState.getRedirectPortByMachineContainerEndpoint().get(pr.getMachineContainerEndpoint());
+                                    if (next != null) {
+                                        usedRedirectPort.add(next);
+                                    }
+                                });
+                    });
+
+            SearchingAvailabilityIntTools searchingAvailabilityRedirectPort = new SearchingAvailabilityIntTools(2000, 65000, 1, (from, to) -> {
+                for (int i = from; i <= to; ++i) {
+                    if (!usedRedirectPort.contains(i)) {
+                        return Optional.of(i);
+                    }
+                }
+                return Optional.empty();
+            });
+            allApplicationBuildDetails.stream() //
+                    .filter(it -> it.getApplicationDefinition().getPortsRedirect().stream() //
+                            .filter(pr -> !pr.isToLocalMachine())//
+                            .findAny().isPresent()) //
+                    .forEach(applicationBuildDetails -> {
+                        applicationBuildDetails.getApplicationDefinition().getPortsRedirect().stream() //
+                                .filter(pr -> !pr.isToLocalMachine())//
+                                .forEach(pr -> {
+                                    // Save endpoints in state
+                                    String machineContainerEndpoint = pr.getMachineContainerEndpoint();
+
+                                    Integer port = dockerState.getRedirectPortByMachineContainerEndpoint().get(machineContainerEndpoint);
+                                    if (port == null) {
+                                        Optional<Integer> portOptional = searchingAvailabilityRedirectPort.getNext();
+                                        AssertTools.assertTrue(portOptional.isPresent(), "There is no more available ports for the redirections");
+                                        port = portOptional.get();
+                                        usedRedirectPort.add(port);
+                                    }
+
+                                    remoteMachineContainerEndpointsToSet.add(machineContainerEndpoint);
+                                    dockerState.getRedirectPortByMachineContainerEndpoint().put(machineContainerEndpoint, port);
+
+                                    // Add to redirectPortRegistryEntries
+                                    redirectPortRegistryEntries.getEntries().add(new RedirectPortRegistryEntry(port, pr.getToMachine(), pr.getToContainerName(), pr.getToEndpoint()));
+                                });
+
+                    });
+
+            assetBundle.addAssetContent("/data/entry.json", JsonTools.prettyPrint(redirectPortRegistryEntries));
+
+            arguments.add("--bridgePort");
+            arguments.add(String.valueOf(dockerState.getRedirectorBridgePort()));
+            arguments.add("--entryBridgeRegistryFile");
+            arguments.add("/data/entry.json");
+            applicationDefinition.setCommand(JsonTools.compactPrint(arguments));
+
+            // Add to the list
+            applicationBuildDetailsByName.put(DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME, new ApplicationBuildDetails() //
+                    .setApplicationDefinition(applicationDefinition) //
+                    .setOutputContext(outputContext));
         }
         if (needsRedirectorExit) {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME);
@@ -289,7 +387,6 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 arguments.add("--bridgePrivateKeyFile");
                 arguments.add("/data/node-key.pem");
             }
-            assetBundle.addAssetContent("/data/exit.json", JsonTools.prettyPrint(redirectPortRegistryExits));
 
             arguments.add("--bridgePort");
             arguments.add(String.valueOf(dockerState.getRedirectorBridgePort()));
@@ -304,14 +401,10 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         }
 
         // Stop any non-needed applications
-        List<String> neededContainerNames = containersManageContext.getAlwaysRunningApplications().stream() //
+        List<String> neededContainerNames = allApplicationBuildDetails.stream() //
                 .map(it -> it.getOutputContext().getContainerName()) //
                 .sorted() //
                 .collect(Collectors.toList());
-        neededContainerNames.addAll(containersManageContext.getCronApplications().stream() //
-                .map(it -> it.getOutputContext().getContainerName()) //
-                .sorted() //
-                .collect(Collectors.toList()));
         List<String> runningContainerNames = dockerState.getRunningContainersByName().keySet().stream() //
                 .sorted() //
                 .collect(Collectors.toList());
@@ -326,7 +419,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         logger.debug("[MANAGER] Starting order: {}", startOrder);
 
         dockerState.getFailedContainersByName().clear();
-        boolean existingRedirectorEntryPortOrHostChanged = false; // TODO REDIRECTOR_ENTRY - existingRedirectorEntryPortOrHostChanged
+        boolean existingRedirectorEntryPortOrHostChanged = false;
         for (String applicationNameToStart : startOrder) {
             logger.info("[MANAGER] Processing application [{}]", applicationNameToStart);
 
@@ -336,11 +429,13 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             if (currentDockerPsOptional.isPresent()) {
                 needStart |= currentDockerPsOptional.get().getStatus() != DockerPsStatus.Up;
             }
-            boolean dependsOnRedirectorEntry = false; // TODO REDIRECTOR_ENTRY - dependsOnRedirectorEntry
             DockerStateIds runningContainer = dockerState.getRunningContainersByName().get(applicationNameToStart);
             ApplicationBuildDetails applicationBuildDetails = applicationBuildDetailsByName.get(applicationNameToStart);
             DockerContainerOutputContext ctx = applicationBuildDetails.getOutputContext();
             IPApplicationDefinition applicationDefinition = applicationBuildDetails.getApplicationDefinition();
+            boolean dependsOnRedirectorEntry = applicationDefinition.getPortsRedirect().stream() //
+                    .filter(pr -> !pr.isToLocalMachine()) //
+                    .findAny().isPresent();
 
             // Add redirection details on the context
             ctx.setRedirectIpByMachineContainerEndpoint(dockerState.getRedirectIpByMachineContainerEndpoint());
@@ -348,7 +443,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
             // Save redirectPortRegistryExits in the applicationDetails if is that container
             if (DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME.equals(applicationNameToStart)) {
-                applicationDefinition.addCopyWhenStartedContent("/data/exit.json", JsonTools.prettyPrint(redirectPortRegistryExits));
+                applicationDefinition.addAssetContent("/data/exit.json", JsonTools.prettyPrint(redirectPortRegistryExits));
             }
 
             // Check the steps to execute
@@ -461,6 +556,20 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     DockerPs container = containerOptional.get();
                     ip = container.getIp();
                     dockerState.getIpByName().put(applicationNameToStart, ip);
+
+                    // Special case for Redirection Entry
+                    if (DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME.equals(applicationNameToStart)) {
+
+                        // Check IP changed
+                        if (!StringTools.safeEquals(lastRunningIp, ip)) {
+                            existingRedirectorEntryPortOrHostChanged = true;
+                        }
+
+                        // Set redirectIp/PortByMachineContainerEndpoint for all the endpoints
+                        for (String mce : remoteMachineContainerEndpointsToSet) {
+                            dockerState.getRedirectIpByMachineContainerEndpoint().put(mce, ip);
+                        }
+                    }
                     dockerState.getRunningContainersByName().put(applicationNameToStart, dockerStateIds);
                 } else {
                     logger.error("[MANAGER] [{}] Could not find it running", applicationNameToStart);
@@ -468,6 +577,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             }
 
             // Exposing endpoints
+            logger.info("[MANAGER] [{}] Has {} enpoints to expose to the exit container ; exposing with ip {}", applicationNameToStart, transformedApplicationDefinition.getPortsEndpoint().size(), ip);
             if (!transformedApplicationDefinition.getPortsEndpoint().isEmpty() && ip != null) {
                 for (Entry<Integer, String> portEndpoint : transformedApplicationDefinition.getPortsEndpoint().entrySet()) {
                     // Fill redirectPortRegistryExits
@@ -486,7 +596,6 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 }
                 Collections.sort(redirectPortRegistryExits.getExits());
             }
-            // TODO REDIRECTOR_ENTRY - (also the redirector entries if it is this one) ; see if setting existingRedirectorEntryPortOrHostChanged to true
 
         }
 
@@ -496,10 +605,12 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             logger.info("[MANAGER] Processing cron [{}]", containerName);
 
             // Get all the needed state and status
-            boolean dependsOnRedirectorEntry = false; // TODO REDIRECTOR_ENTRY - dependsOnRedirectorEntry
             DockerStateIds cronContainerStateId = dockerState.getCronContainersByName().get(containerName);
             DockerContainerOutputContext ctx = applicationBuildDetails.getOutputContext();
             IPApplicationDefinition applicationDefinition = applicationBuildDetails.getApplicationDefinition();
+            boolean dependsOnRedirectorEntry = applicationDefinition.getPortsRedirect().stream() //
+                    .filter(pr -> !pr.isToLocalMachine()) //
+                    .findAny().isPresent();
 
             // Add redirection details on the context
             ctx.setRedirectIpByMachineContainerEndpoint(dockerState.getRedirectIpByMachineContainerEndpoint());
