@@ -350,7 +350,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
                     });
 
-            assetBundle.addAssetContent("/data/entry.json", JsonTools.prettyPrint(redirectPortRegistryEntries));
+            applicationDefinition.addCopyWhenStartedContent("/data/entry.json", JsonTools.prettyPrint(redirectPortRegistryEntries));// We want hot change
 
             arguments.add("--bridgePort");
             arguments.add(String.valueOf(dockerState.getRedirectorBridgePort()));
@@ -443,7 +443,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
             // Save redirectPortRegistryExits in the applicationDetails if is that container
             if (DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME.equals(applicationNameToStart)) {
-                applicationDefinition.addAssetContent("/data/exit.json", JsonTools.prettyPrint(redirectPortRegistryExits));
+                applicationDefinition.addCopyWhenStartedContent("/data/exit.json", JsonTools.prettyPrint(redirectPortRegistryExits));// We want hot change
             }
 
             // Check the steps to execute
