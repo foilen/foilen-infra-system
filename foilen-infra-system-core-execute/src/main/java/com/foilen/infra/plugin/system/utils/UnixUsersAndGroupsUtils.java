@@ -89,7 +89,7 @@ public interface UnixUsersAndGroupsUtils {
      *            (optional) the already hashed password of the user
      * @return true if was created or updated
      */
-    boolean userCreate(String username, Integer id, String homeFolder, String shell, String hashedPassword);
+    boolean userCreate(String username, Long id, String homeFolder, String shell, String hashedPassword);
 
     /**
      * Create a unix user or update its information.
@@ -108,7 +108,7 @@ public interface UnixUsersAndGroupsUtils {
      *            (optional) the content of the sudo file
      * @return true if was created or updated
      */
-    boolean userCreate(String username, Integer id, String homeFolder, String shell, String hashedPassword, String sudoFileContent);
+    boolean userCreate(String username, Long id, String homeFolder, String shell, String hashedPassword, String sudoFileContent);
 
     /**
      * Tells if the unix user exists.

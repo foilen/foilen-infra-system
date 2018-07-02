@@ -53,7 +53,7 @@ public interface UnixShellAndFsUtils {
      * @param permission
      *            the posix permissions of the file ; the numeric permissions (e.g "777")
      */
-    void fileChangeOwnerAndPermissions(String path, int owner, int group, String permission);
+    void fileChangeOwnerAndPermissions(String path, long owner, long group, String permission);
 
     /**
      * Delete some files.
@@ -79,7 +79,7 @@ public interface UnixShellAndFsUtils {
      *            the posix permissions of the file ; the numeric permissions (e.g "777")
      * @return true if the file was created or the content is different
      */
-    boolean fileInstall(String path, String content, int owner, int group, String permission);
+    boolean fileInstall(String path, String content, long owner, long group, String permission);
 
     /**
      * Create a file.
@@ -96,7 +96,7 @@ public interface UnixShellAndFsUtils {
      *            the posix permissions of the file ; the numeric permissions (e.g "777")
      * @return true if the file was created or the content is different
      */
-    boolean fileInstall(String[] pathParts, String content, int owner, int group, String permission);
+    boolean fileInstall(String[] pathParts, String content, long owner, long group, String permission);
 
     /**
      * Create a file. Used by other resources to pass their name
@@ -115,7 +115,7 @@ public interface UnixShellAndFsUtils {
      *            the posix permissions of the file ; the numeric permissions (e.g "777")
      * @return true if the file was created or the content is different
      */
-    boolean fileInstallQuiet(String actionName, String path, String content, int owner, int group, String permissions);
+    boolean fileInstallQuiet(String actionName, String path, String content, long owner, long group, String permissions);
 
     /**
      * Create a folder.
@@ -129,7 +129,7 @@ public interface UnixShellAndFsUtils {
      * @param permission
      *            the permission of the file
      */
-    void folderCreate(String directoryPath, Integer owner, Integer group, String permission);
+    void folderCreate(String directoryPath, Long owner, Long group, String permission);
 
     /**
      * Create a folder.
@@ -143,7 +143,7 @@ public interface UnixShellAndFsUtils {
      * @param permission
      *            the permission of the file
      */
-    void folderCreate(String[] directoryPathParts, Integer owner, Integer group, String permission);
+    void folderCreate(String[] directoryPathParts, Long owner, Long group, String permission);
 
     /**
      * Tells if the folder exists
@@ -180,7 +180,7 @@ public interface UnixShellAndFsUtils {
      *            the permission of the file
      * @return true if created or updated
      */
-    boolean resourceInstall(String resourceName, String installPath, int owner, int group, String permission);
+    boolean resourceInstall(String resourceName, String installPath, long owner, long group, String permission);
 
     /**
      * Install a file from a Freemarker template.
@@ -199,6 +199,6 @@ public interface UnixShellAndFsUtils {
      *            the variables in the template
      * @return true if created or updated
      */
-    boolean templateInstall(String templateName, String installPath, int owner, int group, String permission, Map<String, ?> model);
+    boolean templateInstall(String templateName, String installPath, long owner, long group, String permission, Map<String, ?> model);
 
 }

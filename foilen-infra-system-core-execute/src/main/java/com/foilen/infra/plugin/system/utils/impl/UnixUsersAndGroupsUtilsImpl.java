@@ -217,12 +217,12 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
     }
 
     @Override
-    public boolean userCreate(String username, Integer id, String homeFolder, String shell, String hashedPassword) {
+    public boolean userCreate(String username, Long id, String homeFolder, String shell, String hashedPassword) {
         return userCreate(username, id, homeFolder, shell, hashedPassword, null);
     }
 
     @Override
-    public boolean userCreate(String username, Integer id, String homeFolder, String shell, String hashedPassword, String sudoFileContent) {
+    public boolean userCreate(String username, Long id, String homeFolder, String shell, String hashedPassword, String sudoFileContent) {
         logger.info("[USER] Creating {} with id {} , home {} , shell {} and hashed password {}", username, id, homeFolder, shell, hashedPassword);
 
         boolean shellSet = !Strings.isNullOrEmpty(shell);

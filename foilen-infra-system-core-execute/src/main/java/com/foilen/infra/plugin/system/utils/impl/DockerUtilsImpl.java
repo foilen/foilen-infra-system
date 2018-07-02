@@ -276,7 +276,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME);
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
             applicationDefinition.setFrom("foilen/redirectport-registry:1.1.0");
-            applicationDefinition.setRunAs(65534); // Nobody
+            applicationDefinition.setRunAs(65534L); // Nobody
 
             IPApplicationDefinitionAssetsBundle assetBundle = applicationDefinition.addAssetsBundle();
             boolean isRedirectorSsl = CollectionsTools.isAllItemNotNullOrEmpty(dockerState.getRedirectorNodeCert(), dockerState.getRedirectorNodeKey());
@@ -367,7 +367,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME);
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
             applicationDefinition.setFrom("foilen/redirectport-registry:1.1.0");
-            applicationDefinition.setRunAs(65534); // Nobody
+            applicationDefinition.setRunAs(65534L); // Nobody
 
             IPApplicationDefinitionAssetsBundle assetBundle = applicationDefinition.addAssetsBundle();
             boolean isRedirectorSsl = CollectionsTools.isAllItemNotNullOrEmpty(dockerState.getRedirectorNodeCert(), dockerState.getRedirectorNodeKey());

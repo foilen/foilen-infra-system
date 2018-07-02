@@ -22,7 +22,7 @@
       "CONFIG_FILE" : "/login_config.json"
     },
     "executeWhenStartedCommands" : [ ],
-    "from" : "foilen-login:0.2.1",
+    "from" : "foilen/foilen-login:0.2.1",
     "hostToIpMapping" : [ ],
     "portsEndpoint" : {
       "14010" : "HTTP_TCP"
@@ -36,7 +36,7 @@
       "toLocalMachine" : false,
       "toMachine" : "m1.example.com"
     } ],
-    "runAs" : 2000,
+    "runAs" : 70000,
     "services" : [ ],
     "udpPortsExposed" : { },
     "volumes" : [ ],
@@ -66,16 +66,20 @@
     "buildSteps" : [ {
       "step" : "_assets_1/ /",
       "type" : "COPY"
+    }, {
+      "step" : "mkdir /plugins/",
+      "type" : "COMMAND"
     } ],
-    "command" : "java -jar /app/foilen-infra-ui.jar",
+    "command" : "/app/bin/foilen-infra-ui",
     "containerUsersToChangeId" : [ ],
     "copyWhenStartedPathAndContentFiles" : [ ],
     "entrypoint" : [ ],
     "environments" : {
-      "CONFIG_FILE" : "/ui_config.json"
+      "CONFIG_FILE" : "/ui_config.json",
+      "PLUGINS_JARS" : "/plugins/"
     },
     "executeWhenStartedCommands" : [ ],
-    "from" : "foilen-infra-ui:0.1.0",
+    "from" : "foilen/foilen-infra-ui:0.1.0",
     "hostToIpMapping" : [ ],
     "portsEndpoint" : {
       "8080" : "HTTP_TCP"
@@ -89,7 +93,7 @@
       "toLocalMachine" : false,
       "toMachine" : "m1.example.com"
     } ],
-    "runAs" : 2001,
+    "runAs" : 70001,
     "services" : [ ],
     "udpPortsExposed" : { },
     "volumes" : [ ],

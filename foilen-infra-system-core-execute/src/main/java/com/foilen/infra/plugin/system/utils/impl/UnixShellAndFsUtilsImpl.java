@@ -63,7 +63,7 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public void fileChangeOwnerAndPermissions(String path, int owner, int group, String permission) {
+    public void fileChangeOwnerAndPermissions(String path, long owner, long group, String permission) {
         logger.info("[{}] Changing ownership and permissions {} {} {}", path, owner, group, permission);
         executeCommandQuiet("FILE", "Update owner", "/bin/chown", owner + ":" + group, path);
         FileTools.changePermissions(path, false, permission);
@@ -80,7 +80,7 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public boolean fileInstall(String path, String content, int owner, int group, String permission) {
+    public boolean fileInstall(String path, String content, long owner, long group, String permission) {
         logger.info("[FILE] Installing {}", path);
         try {
             boolean changed = FileTools.writeFileWithContentCheck(path, content);
@@ -99,12 +99,12 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public boolean fileInstall(String[] pathParts, String content, int owner, int group, String permission) {
+    public boolean fileInstall(String[] pathParts, String content, long owner, long group, String permission) {
         return fileInstall(PATH_JOINER.join(pathParts), content, owner, group, permission);
     }
 
     @Override
-    public boolean fileInstallQuiet(String actionName, String path, String content, int owner, int group, String permissions) {
+    public boolean fileInstallQuiet(String actionName, String path, String content, long owner, long group, String permissions) {
         logger.info("[{}] Installing {}", actionName, path);
         try {
             boolean changed = FileTools.writeFileWithContentCheck(path, content);
@@ -123,7 +123,7 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public void folderCreate(String directoryPath, Integer owner, Integer group, String permission) {
+    public void folderCreate(String directoryPath, Long owner, Long group, String permission) {
         logger.info("[FOLDER] Creating directory {}", directoryPath);
         if (!DirectoryTools.createPath(directoryPath)) {
             throw new UtilsException("[FOLDER] [" + directoryPath + "] Could not be created");
@@ -137,7 +137,7 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public void folderCreate(String[] directoryPathParts, Integer owner, Integer group, String permission) {
+    public void folderCreate(String[] directoryPathParts, Long owner, Long group, String permission) {
         folderCreate(PATH_JOINER.join(directoryPathParts), owner, group, permission);
     }
 
@@ -181,7 +181,7 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public boolean resourceInstall(String resourceName, String installPath, int owner, int group, String permission) {
+    public boolean resourceInstall(String resourceName, String installPath, long owner, long group, String permission) {
         try {
             return fileInstall(installPath, ResourceTools.getResourceAsString(resourceName), owner, group, permission);
         } catch (UtilsException e) {
@@ -192,7 +192,7 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
-    public boolean templateInstall(String templateName, String installPath, int owner, int group, String permission, Map<String, ?> model) {
+    public boolean templateInstall(String templateName, String installPath, long owner, long group, String permission, Map<String, ?> model) {
         logger.info("[TEMPLATE] Installing {} to {}", templateName, installPath);
         String content = FreemarkerTools.processTemplate(templateName, model);
         return fileInstallQuiet("TEMPLATE", installPath, content, owner, group, permission);
