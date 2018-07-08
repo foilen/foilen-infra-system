@@ -6,7 +6,7 @@
       "assetsRelativePathAndBinaryContent" : [ ],
       "assetsRelativePathAndTextContent" : [ {
         "a" : "/login_config.json",
-        "b" : "{\n  \"administratorEmail\" : \"login-admin@example.com\",\n  \"applicationId\" : \"__the_app_id__\",\n  \"cookieDateName\" : \"login_date\",\n  \"cookieSignatureName\" : \"login_signature\",\n  \"cookieSignatureSalt\" : \"__login_cookie_signature_salt__\",\n  \"cookieUserName\" : \"login_username\",\n  \"csrfSalt\" : \"__login_crsf_salt__\",\n  \"fromEmail\" : \"login-from@example.com\",\n  \"loginBaseUrl\" : \"https://login.example.com\",\n  \"mysqlDatabaseName\" : \"infra_login_db\",\n  \"mysqlDatabasePassword\" : \"llll\",\n  \"mysqlDatabaseUserName\" : \"infra_login_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
+        "b" : "{\n  \"administratorEmail\" : \"login-admin@example.com\",\n  \"applicationId\" : \"__the_app_id__\",\n  \"cookieDateName\" : \"login_date\",\n  \"cookieSignatureName\" : \"login_signature\",\n  \"cookieSignatureSalt\" : \"__login_cookie_signature_salt__\",\n  \"cookieUserName\" : \"login_username\",\n  \"csrfSalt\" : \"__login_crsf_salt__\",\n  \"fromEmail\" : \"login-from@example.com\",\n  \"loginBaseUrl\" : \"https://login.example.com\",\n  \"mailHost\" : null,\n  \"mailPassword\" : null,\n  \"mailPort\" : 25,\n  \"mailUsername\" : null,\n  \"mysqlDatabaseName\" : \"infra_login_db\",\n  \"mysqlDatabasePassword\" : \"llll\",\n  \"mysqlDatabaseUserName\" : \"infra_login_user\",\n  \"mysqlHostName\" : \"127.0.0.1\",\n  \"mysqlPort\" : 3306\n}"
       } ]
     } ],
     "assetsPathAndContent" : [ ],
