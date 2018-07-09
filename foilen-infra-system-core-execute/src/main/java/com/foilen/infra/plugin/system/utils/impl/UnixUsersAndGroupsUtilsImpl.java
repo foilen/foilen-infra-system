@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,8 @@ import com.foilen.smalltools.tools.SystemTools;
 import com.google.common.base.Strings;
 
 public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixUsersAndGroupsUtils {
+
+    private final static List<String> noPasswords = Collections.unmodifiableList(Arrays.asList("", "!", "*"));
 
     private UnixShellAndFsUtils unixShellAndFsUtils;
 
@@ -366,6 +369,11 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
             int i = 0;
             unixUserDetails.setName(parts[i++]);
             unixUserDetails.setHashedPassword(parts[i++]);
+
+            // Put hashed password to null if no password account
+            if (noPasswords.contains(unixUserDetails.getHashedPassword())) {
+                unixUserDetails.setHashedPassword(null);
+            }
         }
 
         // Read the sudo files
@@ -420,6 +428,9 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
         if (!userExists(username)) {
             logger.error("[USER PASSWORD] User {} does not exists", username);
             throw new UtilsException("[USER PASSWORD] User [" + username + "] does not exists");
+        }
+        if (Strings.isNullOrEmpty(hashedPassword)) {
+            hashedPassword = "*";
         }
         String line = username + ":" + hashedPassword;
         ConsoleRunner consoleRunner = new ConsoleRunner();

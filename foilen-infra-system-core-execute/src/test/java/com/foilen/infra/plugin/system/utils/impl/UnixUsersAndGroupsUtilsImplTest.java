@@ -73,6 +73,13 @@ public class UnixUsersAndGroupsUtilsImplTest {
         Assert.assertEquals(2, sudos.size());
         Assert.assertEquals("/bin/chown ccloud-1:ccloud-1 -R /home/ccloud-1/gitlab/", sudos.get(0));
         Assert.assertEquals("/home/ccloud-1/update.sh", sudos.get(1));
+
+        // Check null hashed password
+        UnixUserDetail ccloud2 = unixUserDetails.get(8);
+        Assert.assertNull(ccloud2.getHashedPassword());
+        UnixUserDetail ccloud3 = unixUserDetails.get(8);
+        Assert.assertNull(ccloud3.getHashedPassword());
+
     }
 
     @Test
