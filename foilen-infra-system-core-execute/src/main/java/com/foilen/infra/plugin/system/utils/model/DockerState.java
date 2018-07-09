@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -38,6 +39,7 @@ public class DockerState {
     private Map<String, String> redirectIpByMachineContainerEndpoint = new HashMap<>();
 
     // Executions
+    @JsonIgnore
     private Map<String, Future<Boolean>> executionsFutures = new HashMap<>();
 
     public Map<String, DockerStateIds> getCronContainersByName() {
