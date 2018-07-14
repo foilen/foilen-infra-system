@@ -108,6 +108,9 @@ public class DockerUtilsImplTest {
         updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
         assertList(Arrays.asList("infra_redirector_entry", "app1", "infra_redirector_exit"), updatedInstanceNames);
 
+        // Executing a second time (should not change anything)
+        updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
+        assertList(Arrays.asList(), updatedInstanceNames);
     }
 
     @Test
