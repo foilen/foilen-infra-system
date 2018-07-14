@@ -50,8 +50,9 @@ public interface DockerUtils {
      *
      * @param containersManageContext
      *            all the applications details
+     * @return the name of the containers that were changed
      */
-    void containersManage(ContainersManageContext containersManageContext);
+    List<String> containersManage(ContainersManageContext containersManageContext);
 
     boolean containerStartOnce(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx);
 

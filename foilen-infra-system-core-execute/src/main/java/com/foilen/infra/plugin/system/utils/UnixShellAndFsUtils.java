@@ -11,7 +11,25 @@ package com.foilen.infra.plugin.system.utils;
 
 import java.util.Map;
 
+import org.slf4j.event.Level;
+
 public interface UnixShellAndFsUtils {
+
+    /**
+     * Execute command.
+     *
+     * @param loggerLevel
+     *            for the output, in which logger level to send it
+     * @param actionDetails
+     *            tells what the command is used for
+     * @param command
+     *            the command to run
+     * @param arguments
+     *            arguments
+     * @throws UtilsException
+     *             if fails
+     */
+    void executeCommandOrFail(Level loggerLevel, String actionDetails, String command, String... arguments);
 
     /**
      * Execute command.
@@ -30,6 +48,24 @@ public interface UnixShellAndFsUtils {
     /**
      * Execute command.
      *
+     * @param loggerLevel
+     *            for the output, in which logger level to send it
+     * @param actionDetails
+     *            tells what the command is used for
+     * @param workingDirectory
+     *            the working directory
+     * @param command
+     *            the command to run
+     * @param arguments
+     *            arguments
+     * @throws UtilsException
+     *             if fails
+     */
+    void executeCommandOrFailWithWorkDir(Level loggerLevel, String actionDetails, String workingDirectory, String command, String... arguments);
+
+    /**
+     * Execute command.
+     *
      * @param actionName
      *            the name of the action to put between []
      * @param actionDetails
@@ -40,6 +76,21 @@ public interface UnixShellAndFsUtils {
      *            arguments
      */
     void executeCommandQuiet(String actionName, String actionDetails, String command, String... arguments);
+
+    /**
+     * Execute command.
+     *
+     * @param actionName
+     *            the name of the action to put between []
+     * @param actionDetails
+     *            tells what the command is used for
+     * @param command
+     *            the command to run
+     * @param arguments
+     *            arguments
+     * @return the output
+     */
+    String executeCommandQuietAndGetOutput(String actionName, String actionDetails, String command, String... arguments);
 
     /**
      * Change file or directory ownership and permissions.

@@ -32,12 +32,45 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     private static final Joiner PATH_JOINER = Joiner.on('/');
 
     @Override
+    public void executeCommandOrFail(Level loggerLevel, String actionDetails, String command, String... arguments) {
+        logger.info("[EXECUTE] {} : {}", actionDetails, command);
+
+        ConsoleRunner consoleRunner = new ConsoleRunner().setRedirectErrorStream(true) //
+                .setCommand(command).addArguments(arguments);
+        consoleRunner.executeWithLogger(logger, loggerLevel);
+        int status = consoleRunner.getStatusCode();
+        if (status == 0) {
+            logger.info("[EXECUTE] command for [{}] was successful", actionDetails);
+        } else {
+            logger.error("[EXECUTE] command for [{}] failed", actionDetails);
+            throw new UtilsException("[EXECUTE] action [" + actionDetails + "] with command [" + command + "] failed. Return code [" + status + "]");
+        }
+    }
+
+    @Override
     public void executeCommandOrFail(String actionDetails, String command, String... arguments) {
         logger.info("[EXECUTE] {} : {}", actionDetails, command);
 
         ConsoleRunner consoleRunner = new ConsoleRunner().setRedirectErrorStream(true) //
                 .setCommand(command).addArguments(arguments);
         consoleRunner.executeWithLogger(logger, Level.INFO);
+        int status = consoleRunner.getStatusCode();
+        if (status == 0) {
+            logger.info("[EXECUTE] command for [{}] was successful", actionDetails);
+        } else {
+            logger.error("[EXECUTE] command for [{}] failed", actionDetails);
+            throw new UtilsException("[EXECUTE] action [" + actionDetails + "] with command [" + command + "] failed. Return code [" + status + "]");
+        }
+    }
+
+    @Override
+    public void executeCommandOrFailWithWorkDir(Level loggerLevel, String actionDetails, String workingDirectory, String command, String... arguments) {
+        logger.info("[EXECUTE] {} : {}", actionDetails, command);
+
+        ConsoleRunner consoleRunner = new ConsoleRunner().setRedirectErrorStream(true) //
+                .setCommand(command).addArguments(arguments) //
+                .setWorkingDirectory(workingDirectory);
+        consoleRunner.executeWithLogger(logger, loggerLevel);
         int status = consoleRunner.getStatusCode();
         if (status == 0) {
             logger.info("[EXECUTE] command for [{}] was successful", actionDetails);
@@ -56,6 +89,23 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
         boolean success = consoleRunner.execute() == 0;
         if (success) {
             logger.info("[{}] {} successfully", actionName, actionDetails);
+        } else {
+            logger.error("[{}] {} failed", actionName, actionDetails);
+            throw new UtilsException("[" + actionName + "] " + actionDetails + " failed");
+        }
+    }
+
+    @Override
+    public String executeCommandQuietAndGetOutput(String actionName, String actionDetails, String command, String... arguments) {
+        logger.info("[{}] {}", actionName, actionDetails);
+        ConsoleRunner consoleRunner = new ConsoleRunner();
+        consoleRunner.setCommand(command);
+        consoleRunner.addArguments(arguments);
+        String output = consoleRunner.executeForString();
+        boolean success = consoleRunner.getStatusCode() == 0;
+        if (success) {
+            logger.info("[{}] {} successfully", actionName, actionDetails);
+            return output;
         } else {
             logger.error("[{}] {} failed", actionName, actionDetails);
             throw new UtilsException("[" + actionName + "] " + actionDetails + " failed");
