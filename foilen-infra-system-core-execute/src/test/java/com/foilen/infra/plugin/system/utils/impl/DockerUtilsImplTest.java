@@ -55,11 +55,9 @@ public class DockerUtilsImplTest {
                 + "\n444444\tinfra_redirector_entry\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)");
         DockerUtils dockerUtils = new DockerUtilsImpl(unixShellAndFsUtils);
 
-        ContainersManageContext containersManageContext = new ContainersManageContext();
         DockerState dockerState = new DockerState();
-        containersManageContext.setDockerState(dockerState);
+        ContainersManageContext containersManageContext = new ContainersManageContext().setDockerState(dockerState);
 
-        // alwaysRunningApplications
         {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
@@ -87,11 +85,35 @@ public class DockerUtilsImplTest {
         assertList(Arrays.asList("app1_mysql", "app1", "infra_redirector_exit"), updatedInstanceNames);
 
         // Executing a second time (should not change anything)
+        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
+
+        {
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
+            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
+            applicationDefinition.addPortEndpoint(8080, DockerContainerEndpoints.HTTP_TCP);
+            applicationDefinition.addPortRedirect(3306, "localhost", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
+            applicationDefinition.setRunAs(65000L);
+            applicationDefinition.setCommand("/app1.sh");
+            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+                    .setOutputContext(outputContext) //
+                    .setApplicationDefinition(applicationDefinition));
+        }
+        {
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1_mysql", "app1_mysql");
+            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
+            applicationDefinition.addPortEndpoint(3306, DockerContainerEndpoints.MYSQL_TCP);
+            applicationDefinition.setRunAs(65000L);
+            applicationDefinition.setCommand("/mysql-start.sh");
+            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+                    .setOutputContext(outputContext) //
+                    .setApplicationDefinition(applicationDefinition));
+        }
+
         updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
         assertList(Arrays.asList(), updatedInstanceNames);
 
-        // Update
-        containersManageContext.getAlwaysRunningApplications().clear();
+        // Update and Execute (should change)
+        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
         {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
@@ -104,11 +126,23 @@ public class DockerUtilsImplTest {
                     .setApplicationDefinition(applicationDefinition));
         }
 
-        // Execute (should change)
         updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
         assertList(Arrays.asList("infra_redirector_entry", "app1", "infra_redirector_exit"), updatedInstanceNames);
 
         // Executing a second time (should not change anything)
+        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
+        {
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
+            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
+            applicationDefinition.addPortEndpoint(8080, DockerContainerEndpoints.HTTP_TCP);
+            applicationDefinition.addPortRedirect(3306, "remote", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
+            applicationDefinition.setRunAs(65000L);
+            applicationDefinition.setCommand("/app1.sh");
+            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+                    .setOutputContext(outputContext) //
+                    .setApplicationDefinition(applicationDefinition));
+        }
+
         updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
         assertList(Arrays.asList(), updatedInstanceNames);
     }

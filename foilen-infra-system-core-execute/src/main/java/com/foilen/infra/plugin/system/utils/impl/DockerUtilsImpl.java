@@ -410,6 +410,12 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         List<String> runningContainerNames = dockerState.getRunningContainersByName().keySet().stream() //
                 .sorted() //
                 .collect(Collectors.toList());
+        if (needsRedirectorEntry) {
+            neededContainerNames.add(DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME);
+        }
+        if (needsRedirectorExit) {
+            neededContainerNames.add(DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME);
+        }
         runningContainerNames.removeAll(neededContainerNames);
         for (String containerToStop : runningContainerNames) {
             logger.info("[MANAGER] Stop extra applications [{}]", containerToStop);
