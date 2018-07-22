@@ -9,9 +9,6 @@
  */
 package com.foilen.infra.plugin.core.system.fake.controller;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -25,21 +22,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.foilen.infra.plugin.core.system.fake.controller.response.ResourceSuggestResponse;
 import com.foilen.infra.plugin.core.system.fake.controller.response.ResourceUpdateResponse;
+import com.foilen.infra.plugin.core.system.fake.mvc.Authentication;
+import com.foilen.infra.plugin.core.system.fake.mvc.UiSuccessErrorView;
+import com.foilen.infra.plugin.core.system.fake.service.EntitlementService;
 import com.foilen.infra.plugin.core.system.fake.service.FakeSystemServicesImpl;
-import com.foilen.infra.plugin.core.system.junits.JunitsHelper;
-import com.foilen.infra.plugin.core.system.junits.ResourcesDump;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
-import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.core.service.IPPluginService;
@@ -50,30 +49,27 @@ import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.HiddenFieldPageItem;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.smalltools.reflection.ReflectionTools;
-import com.foilen.smalltools.tools.AbstractBasics;
-import com.foilen.smalltools.tools.DirectoryTools;
-import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tuple.Tuple2;
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 
 @Controller
 @RequestMapping("resource")
-public class ResourcesController extends AbstractBasics {
+public class ResourcesController extends ResourcesControllerExtra {
 
     public static final String RESOURCE_ID_FIELD = "_resourceId";
+    public static final String VIEW_BASE_PATH = "resource";
 
     @Autowired
     private CommonServicesContext commonServicesContext;
     @Autowired
     private ConversionService conversionService;
     @Autowired
+    private EntitlementService entitlementService;
+    @Autowired
     private FakeSystemServicesImpl resourceService;
     @Autowired
-    private InternalChangeService internalChangeService;;
-    @Autowired
-    private InternalServicesContext internalServicesContext;
+    private InternalChangeService internalChangeService;
     @Autowired
     private MessageSource messageSource;
     @Autowired
@@ -81,9 +77,9 @@ public class ResourcesController extends AbstractBasics {
     @Autowired
     private SecurityService securityService;
 
-    @RequestMapping("create/{editorName}")
+    @GetMapping("create/{editorName}")
     public ModelAndView create(@PathVariable("editorName") String editorName) {
-        ModelAndView modelAndView = new ModelAndView("resource/create");
+        ModelAndView modelAndView = new ModelAndView(VIEW_BASE_PATH + "/create");
 
         Optional<ResourceEditor<?>> editor = ipPluginService.getResourceEditorByName(editorName);
 
@@ -95,9 +91,9 @@ public class ResourcesController extends AbstractBasics {
         return modelAndView;
     }
 
-    @RequestMapping("createPageDefinition/{editorName}")
+    @GetMapping("createPageDefinition/{editorName}")
     public ModelAndView createPageDefinition(@PathVariable("editorName") String editorName, HttpServletRequest httpServletRequest) {
-        ModelAndView modelAndView = new ModelAndView("resource/resource");
+        ModelAndView modelAndView = new ModelAndView(VIEW_BASE_PATH + "/resource");
 
         Optional<ResourceEditor<?>> editor = ipPluginService.getResourceEditorByName(editorName);
 
@@ -125,9 +121,9 @@ public class ResourcesController extends AbstractBasics {
         return modelAndView;
     }
 
-    @RequestMapping("createPageDefinitionByType/{resourceType}")
+    @GetMapping("createPageDefinitionByType/{resourceType:.*}")
     public ModelAndView createPageDefinitionByType(@PathVariable("resourceType") String resourceType, HttpServletRequest httpServletRequest) {
-        ModelAndView modelAndView = new ModelAndView("resource/resource");
+        ModelAndView modelAndView = new ModelAndView(VIEW_BASE_PATH + "/resource");
 
         Class<?> resourceClass = ReflectionTools.safelyGetClass(resourceType);
         if (resourceClass == null) {
@@ -147,10 +143,25 @@ public class ResourcesController extends AbstractBasics {
         return modelAndView;
     }
 
-    @RequestMapping("edit/{resourceId}")
-    public ModelAndView edit(@PathVariable("resourceId") long resourceId) {
+    @PostMapping("delete")
+    public ModelAndView delete(Authentication authentication, @RequestParam("resourceId") long resourceId, RedirectAttributes redirectAttributes) {
+        return new UiSuccessErrorView(redirectAttributes) //
+                .setSuccessViewName("redirect:/" + VIEW_BASE_PATH + "/list") //
+                .setErrorViewName("redirect:/" + VIEW_BASE_PATH + "/list") //
+                .execute((ui, modelAndView) -> {
+                    entitlementService.canDeleteResourcesOrFailUi(authentication.getName());
+                    ChangesContext changes = new ChangesContext(resourceService);
+                    changes.resourceDelete(resourceId);
+                    internalChangeService.changesExecute(changes);
+                });
+    }
 
-        ModelAndView modelAndView = new ModelAndView("resource/edit");
+    @GetMapping("edit/{resourceId}")
+    public ModelAndView edit(Authentication authentication, @PathVariable("resourceId") long resourceId) {
+
+        ModelAndView modelAndView = new ModelAndView(VIEW_BASE_PATH + "/edit");
+
+        entitlementService.canUpdateResourcesOrFailUi(authentication.getName());
 
         Optional<IPResource> resourceOptional = resourceService.resourceFind(resourceId);
         if (resourceOptional.isPresent()) {
@@ -169,6 +180,8 @@ public class ResourcesController extends AbstractBasics {
             modelAndView.addObject("resourceId", resourceId);
             modelAndView.addObject("resourceType", resource.getClass().getName());
 
+            modelAndView.addObject("resourceName", resource.getResourceName());
+
             modelAndView.addObject("editorNames", editorNames);
         }
 
@@ -176,9 +189,12 @@ public class ResourcesController extends AbstractBasics {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    @RequestMapping("editPageDefinition/{editorName}/{resourceId}")
-    public ModelAndView editPageDefinition(@PathVariable("editorName") String editorName, @PathVariable("resourceId") long resourceId) {
-        ModelAndView modelAndView = new ModelAndView("resource/resource");
+    @GetMapping("editPageDefinition/{editorName}/{resourceId}")
+    public ModelAndView editPageDefinition(Authentication authentication, @PathVariable("editorName") String editorName, @PathVariable("resourceId") long resourceId,
+            HttpServletRequest httpServletRequest) {
+        ModelAndView modelAndView = new ModelAndView(VIEW_BASE_PATH + "/resource");
+
+        entitlementService.canUpdateResourcesOrFailUi(authentication.getName());
 
         Optional editorOptional = ipPluginService.getResourceEditorByName(editorName);
 
@@ -206,6 +222,12 @@ public class ResourcesController extends AbstractBasics {
                 resourceIdField.setFieldValue(String.valueOf(editedResource.getInternalId()));
                 pageDefinition.addPageItem(resourceIdField);
 
+                // _csrf
+                HiddenFieldPageItem csrfField = new HiddenFieldPageItem();
+                csrfField.setFieldName(securityService.getCsrfParameterName());
+                csrfField.setFieldValue(securityService.getCsrfValue(httpServletRequest));
+                pageDefinition.addPageItem(csrfField);
+
                 modelAndView.addObject("pageDefinition", pageDefinition);
             } else {
                 modelAndView.setViewName("error/single-partial");
@@ -219,69 +241,12 @@ public class ResourcesController extends AbstractBasics {
         return modelAndView;
     }
 
-    @ResponseBody
-    @RequestMapping("exportFile")
-    public ResourcesDump exportFile() {
-        return JunitsHelper.dumpExport(commonServicesContext, internalServicesContext);
-    }
+    @GetMapping("list")
+    public ModelAndView list(Authentication authentication) {
 
-    @RequestMapping("exportFolder")
-    public String exportFolder(@RequestParam String folder, HttpServletRequest httpServletRequest) {
-        File exportFolder = new File(folder);
-        String path = exportFolder.getAbsolutePath();
-        if (exportFolder.exists()) {
-            logger.error("The folder {} already exist", exportFolder.getAbsolutePath());
-            return "redirect:list";
-        }
+        entitlementService.isAdminOrFailUi(authentication.getName());
 
-        logger.info("Exporting in the folder {}", exportFolder.getAbsolutePath());
-        if (!DirectoryTools.createPath(exportFolder)) {
-            logger.error("Could not create the folder {}", exportFolder.getAbsolutePath());
-            return "redirect:list";
-        }
-
-        // Export
-        List<String> links = new ArrayList<>();
-        List<String> tags = new ArrayList<>();
-        for (IPResource resource : resourceService.resourceFindAll()) {
-            // Export resources
-            String resourceType = resourceService.getResourceDefinition(resource).getResourceType();
-            String resourceFilename = path + "/" + resourceType + "/" + resource.getResourceName().replaceAll("/", "_") + ".json";
-            DirectoryTools.createPathToFile(resourceFilename);
-            JsonTools.writeToFile(resourceFilename, resource);
-
-            // Export tags
-            resourceService.tagFindAllByResource(resource).stream() //
-                    .map(it -> {
-                        return resourceType + "/" + resource.getResourceName() + //
-                        ";" + it;
-                    }) //
-                    .forEach(it -> tags.add(it));
-
-            // Export links
-            resourceService.linkFindAllByFromResource(resource).stream() //
-                    .map(it -> {
-                        String toResourceType = resourceService.getResourceDefinition(it.getB()).getResourceType();
-                        return resourceType + "/" + resource.getResourceName() + //
-                        ";" + it.getA() + ";" //
-                                + toResourceType + "/" + it.getB().getResourceName();
-                    }) //
-                    .forEach(it -> links.add(it));
-
-        }
-
-        // Save tags and links
-        Collections.sort(links);
-        Collections.sort(tags);
-        FileTools.writeFile(Joiner.on('\n').join(tags), path + "/tags.txt");
-        FileTools.writeFile(Joiner.on('\n').join(links), path + "/links.txt");
-
-        return "redirect:list";
-    }
-
-    @RequestMapping("list")
-    public ModelAndView list() {
-        ModelAndView modelAndView = new ModelAndView("resource/list");
+        ModelAndView modelAndView = new ModelAndView(VIEW_BASE_PATH + "/list");
 
         List<IPResourceDefinition> resourceDefinitions = resourceService.getResourceDefinitions();
         Map<String, List<?>> resourcesByType = new HashMap<>();
@@ -293,11 +258,15 @@ public class ResourcesController extends AbstractBasics {
 
         modelAndView.addObject("resourcesByType", resourcesByType);
         return modelAndView;
+
     }
 
     @ResponseBody
-    @RequestMapping("suggest/{resourceType}")
-    public List<ResourceSuggestResponse> suggest(@PathVariable("resourceType") Class<? extends IPResource> resourceType) {
+    @GetMapping("suggest/{resourceType:.+}")
+    public List<ResourceSuggestResponse> suggest(Authentication authentication, @PathVariable("resourceType") Class<? extends IPResource> resourceType) {
+
+        entitlementService.isAdminOrFailUi(authentication.getName());
+
         return resourceService.resourceFindAll( //
                 resourceService.createResourceQuery(resourceType) //
         ).stream() //
@@ -307,15 +276,17 @@ public class ResourcesController extends AbstractBasics {
     }
 
     @ResponseBody
-    @RequestMapping("suggestEditor/{resourceType}")
+    @GetMapping("suggestEditor/{resourceType:.+}")
     public List<String> suggestEditor(@PathVariable("resourceType") Class<? extends IPResource> resourceType) {
         return ipPluginService.getResourceEditorNamesByResourceType(resourceType);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @ResponseBody
-    @RequestMapping(value = "update", method = RequestMethod.POST)
-    public ResourceUpdateResponse update(@RequestParam Map<String, String> formValues, Locale locale) {
+    @PostMapping("update")
+    public ResourceUpdateResponse update(Authentication authentication, @RequestParam Map<String, String> formValues, Locale locale) {
+
+        entitlementService.canUpdateResourcesOrFailUi(authentication.getName());
 
         ResourceUpdateResponse resourceUpdateResponse = new ResourceUpdateResponse();
 
@@ -357,7 +328,7 @@ public class ResourcesController extends AbstractBasics {
                     resource = (IPResource) resourceType.newInstance();
                 } catch (Exception e) {
                     logger.error("Could not create an empty resource of type {}", resourceType, e);
-                    resourceUpdateResponse.setTopError(messageSource.getMessage("error.internalError", null, locale));
+                    resourceUpdateResponse.setTopError(messageSource.getMessage("error.internalError", new Object[] { e.getMessage() }, locale));
                     return resourceUpdateResponse;
                 }
             }
@@ -378,6 +349,7 @@ public class ResourcesController extends AbstractBasics {
             }
 
             // No errors: save and give the redirection link if no issues
+            Long internalId;
             if (isUpdate) {
 
                 // Update existing resource
@@ -396,11 +368,11 @@ public class ResourcesController extends AbstractBasics {
                     return resourceUpdateResponse;
                 } catch (Exception e) {
                     logger.error("Problem saving the resource", e);
-                    resourceUpdateResponse.setTopError(messageSource.getMessage("error.internalError", null, locale));
+                    resourceUpdateResponse.setTopError(messageSource.getMessage("error.internalError", new Object[] { e.getMessage() }, locale));
                     return resourceUpdateResponse;
                 }
 
-                resource = newResource;
+                internalId = newResource.getInternalId();
 
             } else {
 
@@ -419,15 +391,17 @@ public class ResourcesController extends AbstractBasics {
                     return resourceUpdateResponse;
                 } catch (Exception e) {
                     logger.error("Problem saving the resource", e);
-                    resourceUpdateResponse.setTopError(messageSource.getMessage("error.internalError", null, locale));
+                    resourceUpdateResponse.setTopError(messageSource.getMessage("error.internalError", new Object[] { e.getMessage() }, locale));
                     return resourceUpdateResponse;
                 }
+
+                internalId = resource.getInternalId();
 
             }
 
             // Redirect url
             resourceUpdateResponse.setSuccessResource(resource);
-            resourceUpdateResponse.setSuccessResourceId(resource.getInternalId());
+            resourceUpdateResponse.setSuccessResourceId(internalId);
 
         } else {
             resourceUpdateResponse.setTopError(messageSource.getMessage("error.editorNotFound", null, locale));

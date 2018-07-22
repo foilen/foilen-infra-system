@@ -1,3 +1,5 @@
+const baseUrl = '/resource'
+
 // Form submission confirmation
 jQuery(document).ready(function() {
   jQuery('form.confirm').submit(function() {
@@ -33,7 +35,7 @@ function updateAction(form, successfulUpdateHook) {
   // Send them
   jQuery.ajax({
     type : "POST",
-    url : '/resource/update',
+    url : baseUrl + '/update',
     data : data,
     success : function(result) {
       // Remove mask
@@ -97,7 +99,7 @@ function updateResourceEditor(form, config) {
       form.prepend(editorSelect);
 
       jQuery.ajax({
-        url : '/resource/suggestEditor/' + resourceType,
+        url : baseUrl + '/suggestEditor/' + resourceType,
         success : function(data) {
           // Set the options
           editorSelect.empty();
@@ -134,14 +136,14 @@ function updateResourceEditor(form, config) {
       // When there is a selected editor
       if (resourceId) { 
         // When it is an existing resource
-        form.load('/resource/editPageDefinition/' + editorName + '/' + resourceId, function() {
+        form.load(baseUrl + '/editPageDefinition/' + editorName + '/' + resourceId, function() {
           updateResourceFieldPageItems(form);
           updateListInputTextFieldPageItems(form);
           addButton();
         });
       } else {
         // When it is a new resource
-        form.load('/resource/createPageDefinition/' + editorName, function() {
+        form.load(baseUrl + '/createPageDefinition/' + editorName, function() {
           updateResourceFieldPageItems(form);
           updateListInputTextFieldPageItems(form);
           addButton();
@@ -150,7 +152,7 @@ function updateResourceEditor(form, config) {
       
     } else {
       // When there is no selected editor
-      form.load('/resource/createPageDefinitionByType/' + resourceType, function() {
+      form.load(baseUrl + '/createPageDefinitionByType/' + resourceType, function() {
         updateResourceFieldPageItems(form);
         updateListInputTextFieldPageItems(form);
         addButton();
@@ -167,7 +169,7 @@ function updateResourceEditor(form, config) {
 jQuery(document).ready(function(){
   updateResourceEditor(jQuery('#mainResource'), {
     successHook: function(successResource, successResourceId) {
-      window.location.href = '/resource/edit/' + successResourceId;
+      window.location.href = baseUrl + '/edit/' + successResourceId;
     }
   });
 });
@@ -209,6 +211,9 @@ function updateListInputTextFieldPageItem(listBlock) {
 
 // Create/Edit resources (single one)
 function updateResourceFieldPageItems(context) {
+  jQuery('.ListInputTextFieldPageItem', context).each(function() {
+    updateListInputTextFieldPageItem(jQuery(this));
+  });
   jQuery('.ResourceFieldPageItem', context).each(function() {
     updateResourceFieldPageItem(jQuery(this));
   });
@@ -227,10 +232,10 @@ function updateResourceFieldPageItem(resource) {
   var buttonClear = resource.data('buttonClear');
   var label = resource.data('label');
   var fieldName = resource.data('fieldName');
+  var resourceType = resource.data('resourceType');
   var resourceId = resource.data('resourceId');
   var resourceName = resource.data('resourceName');
   var resourceDescription = resource.data('resourceDescription');
-  var resourceType = resource.data('resourceType');
 
   resource.empty();
 
@@ -294,7 +299,7 @@ function updateResourceFieldPageItem(resource) {
     return false;
   })
   
-    // Choose and change button
+  // Choose and change button
   jQuery('.buttonChoose, .buttonChange', resource).click(function() {
 
     this.disabled = true;
@@ -306,7 +311,7 @@ function updateResourceFieldPageItem(resource) {
     var allData = [];
 
     jQuery.ajax({
-      url : '/resource/suggest/' + resourceType,
+      url : baseUrl + '/suggest/' + resourceType,
       success : function(data) {
         allData = data;
       }
@@ -391,8 +396,7 @@ function updateResourcesFieldPageItem(resource) {
   resource.append('<ul></ul>');
   var itemsList = jQuery('ul', resource);
   jQuery.each(items, function(_, item) {
-    itemsList.append('<li><button class="btn btn-sm btn-danger buttonRemove glyphicons glyphicons-remove" data-resource-id="'
-        + item.resourceId + '"></button> ' + item.resourceName + ': ' + item.resourceDescription + '</li>');
+    itemsList.append('<li><button class="btn btn-sm btn-danger buttonRemove glyphicons glyphicons-remove" data-resource-id="' + item.resourceId + '"></button> ' + item.resourceName + ': ' + item.resourceDescription + '</li>');
   });
   resource.append('<button class="btn btn-sm btn-success buttonCreate">' + buttonCreate + '</button>');
   resource.append('<button class="btn btn-sm btn-info buttonAdd">' + buttonAdd + '</button>');
@@ -417,7 +421,7 @@ function updateResourcesFieldPageItem(resource) {
     updateResourcesFieldPageItem(resource);
     return false;
   });
-  
+
   // Create button
   jQuery('.buttonCreate', resource).click(function() {
     
@@ -461,7 +465,7 @@ function updateResourcesFieldPageItem(resource) {
     var allData = [];
 
     jQuery.ajax({
-      url : '/resource/suggest/' + resourceType,
+      url : baseUrl + '/suggest/' + resourceType,
       success : function(data) {
         allData = data;
       }

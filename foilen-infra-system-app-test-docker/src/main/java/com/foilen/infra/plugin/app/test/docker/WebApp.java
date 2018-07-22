@@ -10,6 +10,7 @@
 package com.foilen.infra.plugin.app.test.docker;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,12 +38,35 @@ public class WebApp {
 
     public static void main(String[] args, Class<? extends WebApp> webAppClass) {
 
-        ConfigurableApplicationContext ctx = SpringApplication.run(webAppClass, args);
+        List<String> arguments = new ArrayList<>(Arrays.asList(args));
+
+        // Check if debug mode
+        boolean isDebug = false;
+        boolean isInfo = false;
+        if (arguments.remove("--debug")) {
+            isDebug = true;
+        }
+        if (arguments.remove("--info")) {
+            isInfo = true;
+        }
+
+        // Start app
+        ConfigurableApplicationContext ctx = SpringApplication.run(webAppClass, arguments.toArray(new String[arguments.size()]));
+
+        // Configure loggers
+        if (isDebug) {
+            LogbackTools.changeConfig("/logback-debug.xml");
+        } else if (isInfo) {
+            LogbackTools.changeConfig("/logback-info.xml");
+        } else {
+            LogbackTools.changeConfig("/logback-quiet.xml");
+        }
 
         WebApp webApp = ctx.getBean(webAppClass);
+
         IPResourceService resourceService = ctx.getBean(IPResourceService.class);
         InternalChangeService internalChangeService = ctx.getBean(InternalChangeService.class);
-        webApp.createFakeData(Arrays.asList(args), ctx, resourceService, internalChangeService);
+        webApp.createFakeData(arguments, ctx, resourceService, internalChangeService);
 
     }
 
@@ -64,9 +88,6 @@ public class WebApp {
                 System.out.println("The file or directory " + path + " does not exist");
                 System.exit(1);
             }
-
-            // Start the plugin service
-            LogbackTools.changeConfig("/logback-quiet.xml");
 
             // Import from directory or file
             if (isFile) {

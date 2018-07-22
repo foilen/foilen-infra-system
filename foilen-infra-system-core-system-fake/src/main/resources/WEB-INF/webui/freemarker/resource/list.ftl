@@ -29,7 +29,20 @@
         <td>${type}</td>
         <td>${resource.resourceName}</td>
         <td>${resource.resourceDescription}</td>
-        <td><a class="btn btn-primary" href="/resource/edit/${resource.internalId}"><@spring.message "button.edit"/></a></td>
+        <td>
+          
+          <#assign resourceNameArgs = [resource.resourceName]/>
+          <form class="confirm form-inline" method="post" action="/resource/delete" data-confirm="<@spring.messageArgs 'prompt.delete.confirm' resourceNameArgs />">
+
+            <input type="hidden" name="resourceId" value="${resource.internalId}" />
+
+            <a class="btn btn-sm btn-primary" href="/resource/edit/${resource.internalId}"><@spring.message "button.edit"/></a>
+        
+            <button class="btn btn-sm btn-danger"><@spring.message 'button.delete'/></button>  
+  
+          </form>
+
+        </td>
       </tr>
    </#list>
   </#list>

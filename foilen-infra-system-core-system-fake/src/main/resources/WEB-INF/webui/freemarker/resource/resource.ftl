@@ -82,7 +82,7 @@
           data-button-change='<@spring.message "button.change"/>'
           data-button-close='<@spring.message "button.close"/>'
           data-button-clear='<@spring.message "button.clear"/>'
-          data-label="${pageItem.label}"
+          data-label='${pageItem.label}'
           data-field-name="${pageItem.fieldName}" 
           data-resource-type="${pageItem.resourceType.name}" 
           data-resource-id="${pageItem.value.internalId}" 
@@ -97,7 +97,7 @@
           data-button-change='<@spring.message "button.change"/>'
           data-button-close='<@spring.message "button.close"/>'
           data-button-clear='<@spring.message "button.clear"/>'
-          data-label="${pageItem.label}"
+          data-label='${pageItem.label}'
           data-field-name="${pageItem.fieldName}" 
           data-resource-type="${pageItem.resourceType.name}" 
           data-resource-id="" 
@@ -112,7 +112,7 @@
         data-button-clear='<@spring.message "button.clearAll"/>'
         data-button-create='<@spring.message "button.create"/>'
         data-button-close='<@spring.message "button.close"/>'
-        data-label="${pageItem.label}"
+        data-label='${pageItem.label}'
         data-field-name="${pageItem.fieldName}" 
         data-resource-type="${pageItem.resourceType.name}" 
         >
