@@ -12,13 +12,14 @@ package com.foilen.infra.plugin.system.utils.impl;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.foilen.infra.plugin.system.utils.model.UnixUserDetail;
+import com.foilen.smalltools.test.asserts.AssertTools;
+import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.google.common.io.Files;
 
@@ -64,15 +65,7 @@ public class UnixUsersAndGroupsUtilsImplTest {
 
         // Check details
         UnixUserDetail ccloud1 = unixUserDetails.get(7);
-        Assert.assertEquals("ccloud-1", ccloud1.getName());
-        Assert.assertEquals((Integer) 10003, ccloud1.getId());
-        Assert.assertEquals("$6$oN3S1aK5$O0/HS5p3QQpr68i3epER7xILkTNBX2uBr71Qqnhd1WS6qnn26s/xCodBOTLVTOmc.Ukxy1nKygiCoYngmSIeS.", ccloud1.getHashedPassword());
-        Assert.assertEquals("/home/ccloud-1", ccloud1.getHomeFolder());
-        Assert.assertEquals("/bin/bash", ccloud1.getShell());
-        List<String> sudos = ccloud1.getSudos().stream().sorted().collect(Collectors.toList());
-        Assert.assertEquals(2, sudos.size());
-        Assert.assertEquals("/bin/chown ccloud-1:ccloud-1 -R /home/ccloud-1/gitlab/", sudos.get(0));
-        Assert.assertEquals("/home/ccloud-1/update.sh", sudos.get(1));
+        AssertTools.assertJsonComparison("UnixUsersAndGroupsUtilsImplTest-testGetAllUsers-ccloud1.json", getClass(), ccloud1);
 
         // Check null hashed password
         UnixUserDetail ccloud2 = unixUserDetails.get(8);
@@ -97,6 +90,26 @@ public class UnixUsersAndGroupsUtilsImplTest {
         Assert.assertTrue(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "postfix", "dovecot"));
         Assert.assertFalse(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "postfix", "www-data"));
 
+    }
+
+    @Test
+    public void testUserSavePasswd() throws IOException {
+
+        List<UnixUserDetail> unixUserDetails = unixUsersAndGroupsUtils.userGetAll();
+
+        Assert.assertEquals(11, unixUserDetails.size());
+
+        // Passwd file
+        File passwdFile = File.createTempFile("passwd", null);
+        unixUsersAndGroupsUtils.setPasswdFile(passwdFile.getAbsolutePath());
+
+        // Save
+        unixUsersAndGroupsUtils.userSavePasswd(unixUserDetails);
+
+        // Assert
+        String expected = ResourceTools.getResourceAsString("UnixUsersAndGroupsUtilsImplTest-passwd.txt", this.getClass());
+        String actual = FileTools.getFileAsString(passwdFile);
+        AssertTools.assertIgnoreLineFeed(expected, actual);
     }
 
 }

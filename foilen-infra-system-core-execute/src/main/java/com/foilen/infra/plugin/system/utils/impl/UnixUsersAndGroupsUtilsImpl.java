@@ -12,6 +12,12 @@ package com.foilen.infra.plugin.system.utils.impl;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,13 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.event.Level;
+
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
 import com.foilen.infra.plugin.system.utils.UnixUsersAndGroupsUtils;
 import com.foilen.infra.plugin.system.utils.UtilsException;
 import com.foilen.infra.plugin.system.utils.model.UnixUserDetail;
 import com.foilen.smalltools.consolerunner.ConsoleRunner;
+import com.foilen.smalltools.streamwrapper.RenamingOnCloseOutputStreamWrapper;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.CharsetTools;
+import com.foilen.smalltools.tools.CloseableTools;
 import com.foilen.smalltools.tools.CollectionsTools;
 import com.foilen.smalltools.tools.DirectoryTools;
 import com.foilen.smalltools.tools.FileTools;
@@ -106,14 +116,16 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
     }
 
     @Override
-    public boolean groupCreate(String groupName) {
-        logger.info("[GROUP] Creating {}", groupName);
+    public boolean groupCreate(String groupName, Long id) {
+
+        logger.info("[GROUP] Creating {} with id {}", groupName, id);
         if (groupExists(groupName)) {
             logger.info("[GROUP] {} already exists", groupName);
         } else {
             ConsoleRunner consoleRunner = new ConsoleRunner();
             consoleRunner.setCommand("groupadd");
-            consoleRunner.addArguments("--root", hostFs + rootDirectory);
+            consoleRunner.addArguments("--root", hostFs);
+            consoleRunner.addArguments("--gid", id.toString());
             consoleRunner.addArguments(groupName);
             boolean created = consoleRunner.execute() == 0;
             if (created) {
@@ -190,6 +202,19 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
                 oldGroupName);
     }
 
+    private void parseUserPasswd(String[] parts, UnixUserDetail unixUserDetail) {
+        int i = 0;
+        unixUserDetail.setName(parts[i++]);
+        ++i;
+        unixUserDetail.setId(Long.valueOf(parts[i++]));
+        unixUserDetail.setGid(Long.valueOf(parts[i++]));
+        unixUserDetail.setGecos(parts[i++]);
+        unixUserDetail.setHomeFolder(parts[i++]);
+        if (parts.length >= 7) {
+            unixUserDetail.setShell(parts[i++]);
+        }
+    }
+
     public UnixUsersAndGroupsUtilsImpl setEtcDirectory(String etcDirectory) {
         this.etcDirectory = DirectoryTools.pathTrailingSlash(etcDirectory);
         return this;
@@ -234,17 +259,20 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
             sudoFileContent = "";
         }
 
-        boolean createdOrUpdated = false;
+        // Create group
+        boolean createdOrUpdated = groupCreate(username, id);
 
         UnixUserDetail currentUserDetail = userGet(username);
 
         // Create if missing
         if (currentUserDetail == null) {
+
+            // Execute
             ConsoleRunner consoleRunner = new ConsoleRunner();
             consoleRunner.setCommand("useradd");
             consoleRunner.addArguments("--root", hostFs + rootDirectory);
-            consoleRunner.addArguments("--uid");
-            consoleRunner.addArguments(id.toString());
+            consoleRunner.addArguments("--uid").addArguments(id.toString());
+            consoleRunner.addArguments("--no-user-group");
             if (homeFolderSet) {
                 consoleRunner.addArguments("--home-dir");
                 consoleRunner.addArguments(homeFolder);
@@ -255,11 +283,13 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
                 consoleRunner.addArguments(shell);
             }
             consoleRunner.addArguments(username);
-            boolean created = consoleRunner.execute() == 0;
+            consoleRunner.setRedirectErrorStream(true);
+            boolean created = consoleRunner.executeWithLogger(logger, Level.DEBUG) == 0;
             if (!created) {
                 logger.error("[USER] {} failed to be created", username);
                 throw new UtilsException("[USER] [" + username + "] failed to be created");
             }
+
             createdOrUpdated = true;
             logger.info("[USER] {} was created", username);
 
@@ -295,6 +325,51 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
                 userPasswordUpdate(username, hashedPassword);
                 createdOrUpdated = true;
             }
+        }
+
+        // Update GID
+        currentUserDetail = userGet(username);
+        if (currentUserDetail.getGid().longValue() != id.longValue()) {
+
+            logger.info("[USER] Updating primary group of {} to gid {}", username, id);
+            File file = new File(hostFs + passwdFile);
+            RandomAccessFile randomAccessFile = null;
+            try {
+                randomAccessFile = new RandomAccessFile(file, "rw");
+
+                try (FileLock fileLock = randomAccessFile.getChannel().lock()) {
+
+                    // Load
+                    List<UnixUserDetail> unixUserDetails = new ArrayList<>();
+                    String line;
+                    while ((line = randomAccessFile.readLine()) != null) {
+                        String parts[] = line.split(":");
+                        if (parts.length < 6) {
+                            continue;
+                        }
+
+                        UnixUserDetail unixUserDetail = new UnixUserDetail();
+                        parseUserPasswd(parts, unixUserDetail);
+                        unixUserDetails.add(unixUserDetail);
+                    }
+
+                    // Change
+                    for (UnixUserDetail unixUserDetail : unixUserDetails) {
+                        if (unixUserDetail.getId().longValue() == id.longValue()) {
+                            unixUserDetail.setGid(id);
+                        }
+                    }
+
+                    // Save
+                    userSavePasswd(unixUserDetails);
+                }
+
+            } catch (Exception e) {
+                throw new UtilsException("[USER GROUP] User [" + username + "] cannot have its gid updated", e);
+            } finally {
+                CloseableTools.close(randomAccessFile);
+            }
+
         }
 
         // Create the home folder
@@ -348,15 +423,7 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
                 continue;
             }
             UnixUserDetail unixUserDetails = CollectionsTools.getOrCreateEmpty(detailsByUsername, parts[0], UnixUserDetail.class);
-            int i = 0;
-            unixUserDetails.setName(parts[i++]);
-            ++i;
-            unixUserDetails.setId(Integer.valueOf(parts[i++]));
-            i += 2;
-            unixUserDetails.setHomeFolder(parts[i++]);
-            if (parts.length >= 7) {
-                unixUserDetails.setShell(parts[i++]);
-            }
+            parseUserPasswd(parts, unixUserDetails);
         }
 
         // Read the shadow file
@@ -394,7 +461,7 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
 
         return detailsByUsername.values().stream() //
                 .filter(it -> it.getId() != null) // Must have an ID
-                .sorted((a, b) -> Integer.compare(a.getId(), b.getId())) // Sort by ID
+                .sorted((a, b) -> Long.compare(a.getId(), b.getId())) // Sort by ID
                 .collect(Collectors.toList());
     }
 
@@ -477,6 +544,38 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
         unixShellAndFsUtils.fileDelete(hostFs + sudoDirectory + username);
 
         return true;
+    }
+
+    @Override
+    public synchronized void userSavePasswd(List<UnixUserDetail> unixUserDetails) {
+
+        PrintWriter printWriter = null;
+
+        try {
+            File stagingFile = new File(hostFs + passwdFile + ".tmp");
+            File finalFile = new File(hostFs + passwdFile);
+            FileOutputStream outputStream = new FileOutputStream(stagingFile);
+            RenamingOnCloseOutputStreamWrapper renamingOnCloseOutputStreamWrapper = new RenamingOnCloseOutputStreamWrapper(outputStream, stagingFile, finalFile, true);
+            printWriter = new PrintWriter(new OutputStreamWriter(renamingOnCloseOutputStreamWrapper));
+
+            PrintWriter printWriterFinal = printWriter;
+
+            unixUserDetails.forEach(unixUserDetail -> {
+                String line = unixUserDetail.getName() + ":x:" //
+                        + unixUserDetail.getId() + ":" //
+                        + unixUserDetail.getGid() + ":" //
+                        + Strings.nullToEmpty(unixUserDetail.getGecos()) + ":" //
+                        + Strings.nullToEmpty(unixUserDetail.getHomeFolder()) + ":" //
+                        + Strings.nullToEmpty(unixUserDetail.getShell());
+                printWriterFinal.println(line);
+            });
+            renamingOnCloseOutputStreamWrapper.setDeleteOnClose(false);
+        } catch (Exception e) {
+
+        } finally {
+            CloseableTools.close(printWriter);
+        }
+
     }
 
     @Override

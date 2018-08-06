@@ -13,12 +13,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.collect.ComparisonChain;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class UnixUserDetail {
+public class UnixUserDetail implements Comparable<UnixUserDetail> {
 
-    private Integer id;
+    private Long id;
+    private Long gid;
     private String name;
+    private String gecos;
     private String homeFolder;
     private String shell;
     private String hashedPassword;
@@ -27,11 +30,25 @@ public class UnixUserDetail {
     public UnixUserDetail() {
     }
 
-    public UnixUserDetail(Integer id, String name, String homeFolder, String shell) {
+    public UnixUserDetail(Long id, Long gid, String name, String homeFolder, String shell) {
         this.id = id;
+        this.gid = gid;
         this.name = name;
         this.homeFolder = homeFolder;
         this.shell = shell;
+    }
+
+    @Override
+    public int compareTo(UnixUserDetail o) {
+        return ComparisonChain.start() //
+                .compare(id, o.id) //
+                .compare(gid, o.gid) //
+                .compare(name, o.name) //
+                .result();
+    }
+
+    public Long getGid() {
+        return gid;
     }
 
     public String getHashedPassword() {
@@ -42,7 +59,7 @@ public class UnixUserDetail {
         return homeFolder;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
@@ -58,6 +75,10 @@ public class UnixUserDetail {
         return sudos;
     }
 
+    public void setGid(Long gid) {
+        this.gid = gid;
+    }
+
     public void setHashedPassword(String hashedPassword) {
         this.hashedPassword = hashedPassword;
     }
@@ -66,7 +87,7 @@ public class UnixUserDetail {
         this.homeFolder = homeFolder;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -114,6 +135,14 @@ public class UnixUserDetail {
             builder.append("\n");
         }
         return builder.toString();
+    }
+
+    public String getGecos() {
+        return gecos;
+    }
+
+    public void setGecos(String gecos) {
+        this.gecos = gecos;
     }
 
 }

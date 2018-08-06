@@ -31,9 +31,11 @@ public interface UnixUsersAndGroupsUtils {
      *
      * @param groupName
      *            the name of the group
+     * @param id
+     *            the id of the group
      * @return true if created
      */
-    boolean groupCreate(String groupName);
+    boolean groupCreate(String groupName, Long id);
 
     /**
      * Delete a unix group.
@@ -174,6 +176,8 @@ public interface UnixUsersAndGroupsUtils {
      * @return true if was removed
      */
     boolean userRemove(String username);
+
+    void userSavePasswd(List<UnixUserDetail> unixUserDetails);
 
     /**
      * Update a unix user shell.
