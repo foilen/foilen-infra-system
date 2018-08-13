@@ -32,6 +32,7 @@ import com.foilen.infra.resource.example.JunitResourceEnum;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.DateTools;
 import com.foilen.smalltools.tools.JsonTools;
+import com.foilen.smalltools.tools.ResourceTools;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
@@ -54,7 +55,7 @@ public class JunitsHelper {
                         // Remove some values
                         IPResource cloned = JsonTools.clone(resource);
                         cloned.setInternalId(null);
-                        resourceState.setContentInJson(JsonTools.prettyPrint(resource));
+                        resourceState.setContent(cloned);
                     }
 
                     // Links
@@ -72,7 +73,11 @@ public class JunitsHelper {
 
         resourcesState.sort();
 
-        AssertTools.assertJsonComparisonWithoutNulls(resourceName, resourceContext, resourcesState);
+        String actualJson = JsonTools.prettyPrintWithoutNulls(resourcesState);
+        actualJson = actualJson.replaceAll("\\\\n", "\n");
+        actualJson = actualJson.replaceAll("\\\\t", "\t");
+        String expectedJson = ResourceTools.getResourceAsString(resourceName, resourceContext);
+        AssertTools.assertIgnoreLineFeed(expectedJson, actualJson);
     }
 
     public static void createFakeData(CommonServicesContext commonCtx, InternalServicesContext internalCtx) {

@@ -2548,7 +2548,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         a1 = resourceService.resourceFindByPk(a1).get();
         a2 = resourceService.resourceFindByPk(a2).get();
         Assert.assertEquals(null, a1.getApplicationDefinition().getRunAs());
-        Assert.assertEquals((long) 70001L, (long) a2.getApplicationDefinition().getRunAs());
+        Assert.assertEquals(70001L, (long) a2.getApplicationDefinition().getRunAs());
 
         // Update the application without links to have links
         changes.linkAdd(a1, LinkTypeConstants.RUN_AS, uu1);
@@ -2558,8 +2558,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-2.json", AbstractIPResourceServiceTest.class);
         a1 = resourceService.resourceFindByPk(a1).get();
         a2 = resourceService.resourceFindByPk(a2).get();
-        Assert.assertEquals((long) 70000L, (long) a1.getApplicationDefinition().getRunAs());
-        Assert.assertEquals((long) 70001L, (long) a2.getApplicationDefinition().getRunAs());
+        Assert.assertEquals(70000L, (long) a1.getApplicationDefinition().getRunAs());
+        Assert.assertEquals(70001L, (long) a2.getApplicationDefinition().getRunAs());
 
         // Update the application with links to different links
         changes.linkAdd(a2, LinkTypeConstants.RUN_AS, uu1);
@@ -2572,8 +2572,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-3.json", AbstractIPResourceServiceTest.class);
         a1 = resourceService.resourceFindByPk(a1).get();
         a2 = resourceService.resourceFindByPk(a2).get();
-        Assert.assertEquals((long) 70000L, (long) a1.getApplicationDefinition().getRunAs());
-        Assert.assertEquals((long) 70000L, (long) a2.getApplicationDefinition().getRunAs());
+        Assert.assertEquals(70000L, (long) a1.getApplicationDefinition().getRunAs());
+        Assert.assertEquals(70000L, (long) a2.getApplicationDefinition().getRunAs());
 
         // Fail if they are both on the same machine with same exposed port
         try {

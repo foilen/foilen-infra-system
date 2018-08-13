@@ -20,14 +20,14 @@ public class ResourceState {
     private String resource;
     private List<ResourcesStateLink> links = new ArrayList<>();
     private List<String> tags = new ArrayList<>();
-    private String contentInJson;
+    private Object content;
 
     public ResourceState(String resource) {
         this.resource = resource;
     }
 
-    public String getContentInJson() {
-        return contentInJson;
+    public Object getContent() {
+        return content;
     }
 
     public List<ResourcesStateLink> getLinks() {
@@ -42,8 +42,8 @@ public class ResourceState {
         return tags;
     }
 
-    public void setContentInJson(String contentInJson) {
-        this.contentInJson = contentInJson;
+    public void setContent(Object content) {
+        this.content = content;
     }
 
     public void setLinks(List<ResourcesStateLink> links) {
