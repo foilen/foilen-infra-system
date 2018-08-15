@@ -20,7 +20,9 @@ public class TestDockerApp {
         if (args.length == 0) {
             System.out.println("You need to provide the component to use");
             System.out.println("\tcreate-sample: to create sample files of each resource type");
+            System.out.println("\tdownload-latest-plugins: to download the latest version of the specified plugins");
             System.out.println("\tstart-resources: to import the resource files and start the applications in Docker");
+            System.out.println("\tweb: to start a fake web ui to interact with and export resources");
             System.exit(1);
         }
 
