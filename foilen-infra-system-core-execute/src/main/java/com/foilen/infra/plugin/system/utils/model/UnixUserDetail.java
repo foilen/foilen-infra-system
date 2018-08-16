@@ -47,6 +47,10 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
                 .result();
     }
 
+    public String getGecos() {
+        return gecos;
+    }
+
     public Long getGid() {
         return gid;
     }
@@ -73,6 +77,10 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
 
     public Set<String> getSudos() {
         return sudos;
+    }
+
+    public void setGecos(String gecos) {
+        this.gecos = gecos;
     }
 
     public void setGid(Long gid) {
@@ -135,14 +143,6 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
             builder.append("\n");
         }
         return builder.toString();
-    }
-
-    public String getGecos() {
-        return gecos;
-    }
-
-    public void setGecos(String gecos) {
-        this.gecos = gecos;
     }
 
 }

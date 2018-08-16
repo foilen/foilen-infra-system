@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.slf4j.event.Level;
@@ -30,6 +31,7 @@ import org.slf4j.event.Level;
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
 import com.foilen.infra.plugin.system.utils.UnixUsersAndGroupsUtils;
 import com.foilen.infra.plugin.system.utils.UtilsException;
+import com.foilen.infra.plugin.system.utils.model.UnixGroupDetail;
 import com.foilen.infra.plugin.system.utils.model.UnixUserDetail;
 import com.foilen.smalltools.consolerunner.ConsoleRunner;
 import com.foilen.smalltools.streamwrapper.RenamingOnCloseOutputStreamWrapper;
@@ -41,6 +43,7 @@ import com.foilen.smalltools.tools.DirectoryTools;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.StringTools;
 import com.foilen.smalltools.tools.SystemTools;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 
 public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixUsersAndGroupsUtils {
@@ -51,6 +54,7 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
 
     private String hostFs = SystemTools.getPropertyOrEnvironment("HOSTFS", "/");
 
+    private String groupFile = "/etc/group";
     private String passwdFile = "/etc/passwd";
     private String shadowFile = "/etc/shadow";
     private String rootDirectory = "/";
@@ -68,6 +72,10 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
 
     public String getEtcDirectory() {
         return etcDirectory;
+    }
+
+    public String getGroupFile() {
+        return groupFile;
     }
 
     public String getPasswdFile() {
@@ -143,19 +151,12 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
     public boolean groupDelete(String groupName) {
         logger.info("[GROUP] Deleting {}", groupName);
         if (groupExists(groupName)) {
-            // Delete
-            ConsoleRunner consoleRunner = new ConsoleRunner();
-            consoleRunner.setCommand("groupdel");
-            consoleRunner.addArguments("--root", hostFs + rootDirectory);
-            consoleRunner.addArguments(groupName);
-            boolean deleted = consoleRunner.execute() == 0;
-            if (deleted) {
-                logger.info("[GROUP] {} was deleted", groupName);
-            } else {
-                logger.error("[GROUP] {} failed to be deleted", groupName);
-                throw new UtilsException("[GROUP] [" + groupName + "] failed to be deleted");
-            }
-            return deleted;
+
+            groupUpdateGroupFile(unixGroupDetails -> {
+                unixGroupDetails.removeIf(it -> StringTools.safeEquals(groupName, it.getName()));
+            });
+
+            return true;
         } else {
             logger.info("[GROUP] {} already deleted", groupName);
         }
@@ -173,6 +174,29 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
         }
 
         return false;
+    }
+
+    @Override
+    public List<UnixGroupDetail> groupGetAll() {
+
+        List<UnixGroupDetail> unixGroupDetails = new ArrayList<>();
+
+        // Read the group file
+        for (String line : FileTools.readFileLinesIteration(hostFs + groupFile)) {
+            String parts[] = line.split(":");
+            if (parts.length != 3 && parts.length != 4) {
+                throw new UtilsException("[GROUP GET] The entry [" + line + "] is invalid in the group file");
+            }
+
+            UnixGroupDetail unixGroupDetail = parseGroup(parts);
+
+            unixGroupDetails.add(unixGroupDetail);
+        }
+
+        Collections.sort(unixGroupDetails);
+
+        return unixGroupDetails;
+
     }
 
     @Override
@@ -202,6 +226,95 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
                 oldGroupName);
     }
 
+    protected synchronized void groupSaveGroup(List<UnixGroupDetail> unixGroupDetails) {
+
+        PrintWriter printWriter = null;
+
+        try {
+            File stagingFile = new File(hostFs + groupFile + ".tmp");
+            File finalFile = new File(hostFs + groupFile);
+            FileOutputStream outputStream = new FileOutputStream(stagingFile);
+            RenamingOnCloseOutputStreamWrapper renamingOnCloseOutputStreamWrapper = new RenamingOnCloseOutputStreamWrapper(outputStream, stagingFile, finalFile, true);
+            printWriter = new PrintWriter(new OutputStreamWriter(renamingOnCloseOutputStreamWrapper));
+
+            PrintWriter printWriterFinal = printWriter;
+
+            unixGroupDetails.forEach(unixGroupDetail -> {
+                String line = unixGroupDetail.getName() + ":x:" //
+                        + unixGroupDetail.getGid() + ":" //
+                        + Joiner.on(',').join(unixGroupDetail.getMembers());
+                printWriterFinal.println(line);
+            });
+            renamingOnCloseOutputStreamWrapper.setDeleteOnClose(false);
+        } catch (Exception e) {
+
+        } finally {
+            CloseableTools.close(printWriter);
+        }
+
+    }
+
+    /**
+     * <p>
+     * This is locking the group file, is reading all of the group details, is providing the list that can be updated, is saving the file and releasing the lock.
+     * </p>
+     * <p>
+     * This is useful when the "--root" argument is not working. E.g https://bugs.launchpad.net/ubuntu/+source/shadow/+bug/1785389
+     * </p>
+     *
+     * @param unixGroupDetailsConsumer
+     *            the consumer that will modify the list
+     */
+    protected void groupUpdateGroupFile(Consumer<List<UnixGroupDetail>> unixGroupDetailsConsumer) {
+
+        File file = new File(hostFs + groupFile);
+        RandomAccessFile randomAccessFile = null;
+        try {
+            randomAccessFile = new RandomAccessFile(file, "rw");
+
+            try (FileLock fileLock = randomAccessFile.getChannel().lock()) {
+
+                // Load
+                List<UnixGroupDetail> unixgroupDetails = new ArrayList<>();
+                String line;
+                while ((line = randomAccessFile.readLine()) != null) {
+                    String parts[] = line.split(":");
+                    if (parts.length != 3 && parts.length != 4) {
+                        throw new UtilsException("[GROUP UPDATE] The entry [" + line + "] is invalid in the group file");
+                    }
+
+                    UnixGroupDetail unixGroupDetail = parseGroup(parts);
+
+                    unixgroupDetails.add(unixGroupDetail);
+                }
+
+                // Request update
+                unixGroupDetailsConsumer.accept(unixgroupDetails);
+
+                // Save
+                groupSaveGroup(unixgroupDetails);
+            }
+
+        } catch (Exception e) {
+            throw new UtilsException("[GROUP UPDATE] Got an exception", e);
+        } finally {
+            CloseableTools.close(randomAccessFile);
+        }
+
+    }
+
+    private UnixGroupDetail parseGroup(String[] parts) {
+        UnixGroupDetail unixGroupDetail = new UnixGroupDetail();
+        int i = 0;
+        unixGroupDetail.setName(parts[i++]);
+        ++i;
+        unixGroupDetail.setGid(Long.valueOf(parts[i++]));
+        if (parts.length > 3) {
+            unixGroupDetail.setMembers(parts[i++].split(","));
+        }
+        return unixGroupDetail;
+    }
+
     private void parseUserPasswd(String[] parts, UnixUserDetail unixUserDetail) {
         int i = 0;
         unixUserDetail.setName(parts[i++]);
@@ -218,6 +331,10 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
     public UnixUsersAndGroupsUtilsImpl setEtcDirectory(String etcDirectory) {
         this.etcDirectory = DirectoryTools.pathTrailingSlash(etcDirectory);
         return this;
+    }
+
+    public void setGroupFile(String groupFile) {
+        this.groupFile = groupFile;
     }
 
     public UnixUsersAndGroupsUtilsImpl setPasswdFile(String passwdFile) {
@@ -332,43 +449,13 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
         if (currentUserDetail.getGid().longValue() != id.longValue()) {
 
             logger.info("[USER] Updating primary group of {} to gid {}", username, id);
-            File file = new File(hostFs + passwdFile);
-            RandomAccessFile randomAccessFile = null;
-            try {
-                randomAccessFile = new RandomAccessFile(file, "rw");
-
-                try (FileLock fileLock = randomAccessFile.getChannel().lock()) {
-
-                    // Load
-                    List<UnixUserDetail> unixUserDetails = new ArrayList<>();
-                    String line;
-                    while ((line = randomAccessFile.readLine()) != null) {
-                        String parts[] = line.split(":");
-                        if (parts.length < 6) {
-                            continue;
-                        }
-
-                        UnixUserDetail unixUserDetail = new UnixUserDetail();
-                        parseUserPasswd(parts, unixUserDetail);
-                        unixUserDetails.add(unixUserDetail);
+            userUpdatePasswdFile(unixUserDetails -> {
+                for (UnixUserDetail unixUserDetail : unixUserDetails) {
+                    if (unixUserDetail.getId().longValue() == id.longValue()) {
+                        unixUserDetail.setGid(id);
                     }
-
-                    // Change
-                    for (UnixUserDetail unixUserDetail : unixUserDetails) {
-                        if (unixUserDetail.getId().longValue() == id.longValue()) {
-                            unixUserDetail.setGid(id);
-                        }
-                    }
-
-                    // Save
-                    userSavePasswd(unixUserDetails);
                 }
-
-            } catch (Exception e) {
-                throw new UtilsException("[USER GROUP] User [" + username + "] cannot have its gid updated", e);
-            } finally {
-                CloseableTools.close(randomAccessFile);
-            }
+            });
 
         }
 
@@ -420,7 +507,7 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
         for (String line : FileTools.readFileLinesIteration(hostFs + passwdFile)) {
             String parts[] = line.split(":");
             if (parts.length < 6) {
-                continue;
+                throw new UtilsException("[USER PASSWD GET] The entry [" + line + "] is invalid in the passwd file");
             }
             UnixUserDetail unixUserDetails = CollectionsTools.getOrCreateEmpty(detailsByUsername, parts[0], UnixUserDetail.class);
             parseUserPasswd(parts, unixUserDetails);
@@ -518,25 +605,27 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
     }
 
     @Override
-    public boolean userRemove(String username) {
-        logger.info("[USER] Deleting {}", username);
+    public boolean userRemove(String username, String homePath) {
+
+        if (Strings.isNullOrEmpty(homePath)) {
+            homePath = "/home/" + username;
+        }
+
+        logger.info("[USER] Deleting {} with home path {}", username, homePath);
         if (userExists(username)) {
 
-            // Delete
-            ConsoleRunner consoleRunner = new ConsoleRunner();
-            consoleRunner.setCommand("userdel");
-            consoleRunner.addArguments("--root", hostFs + rootDirectory);
-            consoleRunner.addArguments("--remove");
-            consoleRunner.addArguments(username);
-            boolean deleted = consoleRunner.execute() == 0;
-            if (deleted) {
-                logger.info("[USER] {} was deleted", username);
-                groupDelete(username);
-            } else {
-                logger.error("[USER] {} failed to be deleted", username);
-                throw new UtilsException("[USER] [" + username + "] failed to be deleted");
-            }
-            return deleted;
+            // Group delete
+            groupDelete(username);
+
+            // Home Folder delete
+            unixShellAndFsUtils.folderDelete(hostFs + homePath);
+
+            // Delete in passwd
+            userUpdatePasswdFile(unixUserDetails -> {
+                unixUserDetails.removeIf(it -> username.equals(it.getName()));
+            });
+
+            return true;
         } else {
             logger.info("[USER] {} already deleted", username);
         }
@@ -546,8 +635,7 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
         return true;
     }
 
-    @Override
-    public synchronized void userSavePasswd(List<UnixUserDetail> unixUserDetails) {
+    protected synchronized void userSavePasswd(List<UnixUserDetail> unixUserDetails) {
 
         PrintWriter printWriter = null;
 
@@ -584,6 +672,55 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
                 "--root", hostFs + rootDirectory, //
                 "--shell", newShell, //
                 username);
+    }
+
+    /**
+     * <p>
+     * This is locking the passwd file, is reading all of the user details, is providing the list that can be updated, is saving the file and releasing the lock.
+     * </p>
+     * <p>
+     * This is useful when the "--root" argument is not working. E.g https://bugs.launchpad.net/ubuntu/+source/shadow/+bug/1785389
+     * </p>
+     *
+     * @param unixUserDetailsConsumer
+     *            the consumer that will modify the list
+     */
+    protected void userUpdatePasswdFile(Consumer<List<UnixUserDetail>> unixUserDetailsConsumer) {
+
+        File file = new File(hostFs + passwdFile);
+        RandomAccessFile randomAccessFile = null;
+        try {
+            randomAccessFile = new RandomAccessFile(file, "rw");
+
+            try (FileLock fileLock = randomAccessFile.getChannel().lock()) {
+
+                // Load
+                List<UnixUserDetail> unixUserDetails = new ArrayList<>();
+                String line;
+                while ((line = randomAccessFile.readLine()) != null) {
+                    String parts[] = line.split(":");
+                    if (parts.length < 6) {
+                        throw new UtilsException("[USER PASSWD UPDATE] The entry [" + line + "] is invalid in the passwd file");
+                    }
+
+                    UnixUserDetail unixUserDetail = new UnixUserDetail();
+                    parseUserPasswd(parts, unixUserDetail);
+                    unixUserDetails.add(unixUserDetail);
+                }
+
+                // Request update
+                unixUserDetailsConsumer.accept(unixUserDetails);
+
+                // Save
+                userSavePasswd(unixUserDetails);
+            }
+
+        } catch (Exception e) {
+            throw new UtilsException("[USER PASSWD UPDATE] Got an exception", e);
+        } finally {
+            CloseableTools.close(randomAccessFile);
+        }
+
     }
 
 }

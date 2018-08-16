@@ -197,6 +197,15 @@ public interface UnixShellAndFsUtils {
     void folderCreate(String[] directoryPathParts, Long owner, Long group, String permission);
 
     /**
+     * Delete a folder and all its subfolders.
+     *
+     * @param directoryPath
+     *            the full path of the folder to delete
+     * @return true if the root folder existed and was removed
+     */
+    boolean folderDelete(String directoryPath);
+
+    /**
      * Tells if the folder exists
      *
      * @param directoryPath

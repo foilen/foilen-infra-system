@@ -90,6 +90,12 @@ public class UnixShellAndFsUtilsMock extends AbstractBasics implements UnixShell
     }
 
     @Override
+    public boolean folderDelete(String directoryPath) {
+        logger.debug("folderDelete: {}", directoryPath);
+        return true;
+    }
+
+    @Override
     public boolean folderExists(String directoryPath) {
         logger.debug("folderExists: {}", directoryPath);
         return true;

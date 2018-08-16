@@ -192,6 +192,17 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
+    public boolean folderDelete(String directoryPath) {
+        logger.info("[FOLDER] Deleting {}", directoryPath);
+        if (FileTools.exists(directoryPath)) {
+            DirectoryTools.deleteFolder(directoryPath);
+            return !FileTools.exists(directoryPath);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public boolean folderExists(String directoryPath) {
         File file = new File(directoryPath);
         logger.debug("[FOLDER] Folder exists. Exists {}; is a folder {}", file.exists(), file.isDirectory());

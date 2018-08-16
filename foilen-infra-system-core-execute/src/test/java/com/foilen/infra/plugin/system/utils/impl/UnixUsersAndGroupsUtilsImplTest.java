@@ -11,16 +11,20 @@ package com.foilen.infra.plugin.system.utils.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.foilen.infra.plugin.system.utils.model.UnixGroupDetail;
 import com.foilen.infra.plugin.system.utils.model.UnixUserDetail;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.ResourceTools;
+import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 
 public class UnixUsersAndGroupsUtilsImplTest {
@@ -30,6 +34,11 @@ public class UnixUsersAndGroupsUtilsImplTest {
     @Before
     public void init() throws Exception {
         unixUsersAndGroupsUtils = new UnixUsersAndGroupsUtilsImpl();
+
+        // Group file
+        File groupFile = File.createTempFile("group", null);
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-group.txt", this.getClass(), groupFile);
+        unixUsersAndGroupsUtils.setGroupFile(groupFile.getAbsolutePath());
 
         // Passwd file
         File passwdFile = File.createTempFile("passwd", null);
@@ -90,6 +99,31 @@ public class UnixUsersAndGroupsUtilsImplTest {
         Assert.assertTrue(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "postfix", "dovecot"));
         Assert.assertFalse(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "postfix", "www-data"));
 
+    }
+
+    @Test
+    public void testGroupSaveGroup() throws IOException {
+
+        List<UnixGroupDetail> unixGroupDetails = unixUsersAndGroupsUtils.groupGetAll();
+
+        Assert.assertEquals(22, unixGroupDetails.size());
+
+        // Group file
+        File groupFile = File.createTempFile("group", null);
+        unixUsersAndGroupsUtils.setGroupFile(groupFile.getAbsolutePath());
+
+        // Save
+        unixUsersAndGroupsUtils.groupSaveGroup(unixGroupDetails);
+
+        // Assert
+        String expected = ResourceTools.getResourceAsString("UnixUsersAndGroupsUtilsImplTest-group.txt", this.getClass());
+        expected = expected.replaceAll("\r", "");
+        List<String> expectedLines = Arrays.asList(expected.split("\n")).stream().sorted().collect(Collectors.toList());
+        expected = Joiner.on('\n').join(expectedLines);
+        expected += "\n";
+
+        String actual = FileTools.getFileAsString(groupFile);
+        AssertTools.assertIgnoreLineFeed(expected, actual);
     }
 
     @Test

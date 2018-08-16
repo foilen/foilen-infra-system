@@ -11,6 +11,7 @@ package com.foilen.infra.plugin.system.utils;
 
 import java.util.List;
 
+import com.foilen.infra.plugin.system.utils.model.UnixGroupDetail;
 import com.foilen.infra.plugin.system.utils.model.UnixUserDetail;
 
 public interface UnixUsersAndGroupsUtils {
@@ -54,6 +55,13 @@ public interface UnixUsersAndGroupsUtils {
      * @return true if the group exists
      */
     boolean groupExists(String groupName);
+
+    /**
+     * Get all the current groups.
+     *
+     * @return the groups in sorted by name
+     */
+    List<UnixGroupDetail> groupGetAll();
 
     /**
      * Tells if the user is already part of the unix group.
@@ -173,11 +181,11 @@ public interface UnixUsersAndGroupsUtils {
      *
      * @param username
      *            the name of the user
+     * @param homePath
+     *            (optional) the path of the home folder (default: /home/USERNAME)
      * @return true if was removed
      */
-    boolean userRemove(String username);
-
-    void userSavePasswd(List<UnixUserDetail> unixUserDetails);
+    boolean userRemove(String username, String homePath);
 
     /**
      * Update a unix user shell.

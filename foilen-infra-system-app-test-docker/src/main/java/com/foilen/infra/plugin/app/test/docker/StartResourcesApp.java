@@ -228,7 +228,7 @@ public class StartResourcesApp {
         // Install applications (docker)
         DockerUtils dockerUtils = new DockerUtilsImpl();
         File tmpDirectory = Files.createTempDir();
-        System.out.println("\n---[ Install application (docker) ]---");
+        System.out.println("\n---[ Install applications (docker) ]---");
         List<Application> applications = resourceService.resourceFindAll(resourceService.createResourceQuery(Application.class));
         DockerState dockerState = stateGetOrCreate();
         List<ApplicationBuildDetails> alwaysRunningApplications = applications.stream() //
@@ -255,21 +255,31 @@ public class StartResourcesApp {
         });
 
         // Wait, stop and clean
-        System.out.println("\nPress enter to stop and remove all the Docker containers or press ctrl-c to quit");
+        System.out.println("\nPress enter to stop and remove all the Docker containers and unix users or press ctrl-c to quit");
         BufferedReader stdInReader = new BufferedReader(new InputStreamReader(System.in));
         try {
             stdInReader.readLine();
         } catch (IOException e) {
         }
 
-        System.out.println("\n---[ Stop and remove all application (docker) ]---");
+        System.out.println("\n---[ Stop and remove all applications (docker) ]---");
         dockerState.getRunningContainersByName().keySet().forEach(applicationName -> {
             System.out.println("\t" + applicationName);
             dockerUtils.containerStopAndRemove(applicationName);
         });
 
+        System.out.println("\n---[ Remove all unix users ]---");
+        resourceService.resourceFindAll(resourceService.createResourceQuery(UnixUser.class)).forEach(unixUser -> {
+            System.out.println("\t" + unixUser.getName() + " (" + unixUser.getId() + ")");
+            unixUsersAndGroupsUtils.userRemove(unixUser.getName(), unixUser.getHomeFolder());
+        });
+
+        System.out.println("\n-------------------------------");
+
         // End
         applicationContext.close();
+
+        System.exit(0);
 
     }
 
