@@ -459,6 +459,10 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     transformedApplicationDefinition.toImageUniqueId(), //
                     transformedApplicationDefinition.toContainerRunUniqueId(), //
                     transformedApplicationDefinition.toContainerStartUniqueId());
+            containersManageContext.getTransformedApplicationDefinitionCallback().handler(applicationNameToStart, transformedApplicationDefinition);
+
+            logger.debug("[MANAGER] [{}] The transformed application definition has ids {}", //
+                    applicationNameToStart, currentTransformedDockerStateIds);
 
             // Check the steps to execute
             DockerStep startStep = DockerStep.COMPLETED;
@@ -466,11 +470,16 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 logger.debug("[MANAGER] [{}] is not currently running. Will build and start", applicationNameToStart);
                 startStep = DockerStep.BUILD_IMAGE;
             } else {
-                if ((dependsOnRedirectorEntry && existingRedirectorEntryPortOrHostChanged) || !lastRunningContainerIds.getImageUniqueId().equals(transformedApplicationDefinition.toImageUniqueId())) {
-                    logger.debug("[MANAGER] [{}] has a different image. Will build and start", applicationNameToStart);
+                if (dependsOnRedirectorEntry && existingRedirectorEntryPortOrHostChanged) {
+                    logger.debug("[MANAGER] [{}] needs the redirector entry and its port or host changed. Will build and start", applicationNameToStart);
+                    startStep = DockerStep.BUILD_IMAGE;
+                } else if (!lastRunningContainerIds.getImageUniqueId().equals(transformedApplicationDefinition.toImageUniqueId())) {
+                    logger.debug("[MANAGER] [{}] has a different image {} -> {}. Will build and start", applicationNameToStart, //
+                            lastRunningContainerIds.getImageUniqueId(), transformedApplicationDefinition.toImageUniqueId());
                     startStep = DockerStep.BUILD_IMAGE;
                 } else if (!lastRunningContainerIds.getContainerRunUniqueId().equals(transformedApplicationDefinition.toContainerRunUniqueId())) {
-                    logger.debug("[MANAGER] [{}] has a different run command. Will restart", applicationNameToStart);
+                    logger.debug("[MANAGER] [{}] has a different run command {} -> {}. Will restart", applicationNameToStart, //
+                            lastRunningContainerIds.getContainerRunUniqueId(), transformedApplicationDefinition.toContainerRunUniqueId());
                     startStep = DockerStep.RESTART_CONTAINER;
                 } else if (needStart) {
                     logger.debug("[MANAGER] [{}] is not running. Will restart", applicationNameToStart);

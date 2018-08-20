@@ -14,15 +14,20 @@ import java.util.List;
 
 import com.foilen.infra.plugin.system.utils.callback.DockerContainerManagementCallback;
 import com.foilen.infra.plugin.system.utils.callback.NoOpDockerContainerManagementCallback;
+import com.foilen.infra.plugin.system.utils.callback.NoOpTransformedApplicationDefinitionCallback;
+import com.foilen.infra.plugin.system.utils.callback.TransformedApplicationDefinitionCallback;
 
 public class ContainersManageContext {
 
     private static final NoOpDockerContainerManagementCallback NO_OP_DOCKER_CONTAINER_MANAGEMENT_CALLBACK = new NoOpDockerContainerManagementCallback();
+    private static final NoOpTransformedApplicationDefinitionCallback NO_OP_TRANSFORMED_APPLICATION_DEFINITION_CALLBACK = new NoOpTransformedApplicationDefinitionCallback();
 
     private DockerState dockerState;
     private List<ApplicationBuildDetails> alwaysRunningApplications = new ArrayList<>();
     private List<CronApplicationBuildDetails> cronApplications = new ArrayList<>();
+
     private DockerContainerManagementCallback containerManagementCallback = NO_OP_DOCKER_CONTAINER_MANAGEMENT_CALLBACK;
+    private TransformedApplicationDefinitionCallback transformedApplicationDefinitionCallback = NO_OP_TRANSFORMED_APPLICATION_DEFINITION_CALLBACK;
 
     public List<ApplicationBuildDetails> getAlwaysRunningApplications() {
         return alwaysRunningApplications;
@@ -38,6 +43,10 @@ public class ContainersManageContext {
 
     public DockerState getDockerState() {
         return dockerState;
+    }
+
+    public TransformedApplicationDefinitionCallback getTransformedApplicationDefinitionCallback() {
+        return transformedApplicationDefinitionCallback;
     }
 
     public ContainersManageContext setAlwaysRunningApplications(List<ApplicationBuildDetails> alwaysRunningApplications) {
@@ -58,6 +67,10 @@ public class ContainersManageContext {
     public ContainersManageContext setDockerState(DockerState dockerState) {
         this.dockerState = dockerState;
         return this;
+    }
+
+    public void setTransformedApplicationDefinitionCallback(TransformedApplicationDefinitionCallback transformedApplicationDefinitionCallback) {
+        this.transformedApplicationDefinitionCallback = transformedApplicationDefinitionCallback;
     }
 
 }
