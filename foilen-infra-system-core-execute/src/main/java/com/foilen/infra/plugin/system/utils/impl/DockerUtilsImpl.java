@@ -200,18 +200,6 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
         List<DockerPs> containers = convertToDockerPs(output);
 
-        // Get IP
-        for (DockerPs container : containers) {
-            output = unixShellAndFsUtils.executeCommandQuietAndGetOutput("Docker", "get ip", //
-                    "/usr/bin/docker", //
-                    "inspect", "--format", "{{ .NetworkSettings.IPAddress }}", container.getName());
-            output = output.replaceAll("\r", "");
-            output = output.replaceAll("\n", "");
-            if (!Strings.isNullOrEmpty(output)) {
-                container.setIp(output);
-            }
-        }
-
         // Sort
         Collections.sort(containers, (a, b) -> a.getName().compareTo(b.getName()));
         return containers;
@@ -426,6 +414,33 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         List<String> startOrder = dependenciesResolver.getExecution();
         logger.debug("[MANAGER] Starting order: {}", startOrder);
 
+        // Update IPs
+        logger.debug("[MANAGER] Retrieving current IPs");
+        startOrder.forEach(appName -> {
+            String ip = getIp(appName);
+            logger.debug("[MANAGER] IP of {} is {}", appName, ip);
+
+            if (Strings.isNullOrEmpty(ip)) {
+                dockerState.getIpByName().remove(appName);
+            } else {
+                dockerState.getIpByName().put(appName, ip);
+            }
+
+            String appNameSlash = appName + "/";
+            for (String containerEndpoint : dockerState.getRedirectIpByMachineContainerEndpoint().keySet().stream().sorted().collect(Collectors.toList())) {
+                if (containerEndpoint.startsWith(appNameSlash)) {
+                    if (Strings.isNullOrEmpty(ip)) {
+                        logger.debug("[MANAGER] Removing IP of {}", containerEndpoint);
+                        dockerState.getRedirectIpByMachineContainerEndpoint().remove(containerEndpoint);
+                    } else {
+                        logger.debug("[MANAGER] Updating IP of {}", containerEndpoint);
+                        dockerState.getRedirectIpByMachineContainerEndpoint().put(containerEndpoint, ip);
+                    }
+                }
+            }
+
+        });
+
         dockerState.getFailedContainersByName().clear();
         boolean existingRedirectorEntryPortOrHostChanged = false;
         for (String applicationNameToStart : startOrder) {
@@ -572,7 +587,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 Optional<DockerPs> containerOptional = containerPsFindByContainerNameOrId(applicationNameToStart);
                 if (containerOptional.isPresent()) {
                     DockerPs container = containerOptional.get();
-                    ip = container.getIp();
+                    ip = getIp(container.getName());
                     dockerState.getIpByName().put(applicationNameToStart, ip);
 
                     // Special case for Redirection Entry
@@ -864,6 +879,16 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         }
 
         return results;
+    }
+
+    @Override
+    public String getIp(String containerNameOrId) {
+        String output = unixShellAndFsUtils.executeCommandQuietAndGetOutput("Docker", "get ip", //
+                "/usr/bin/docker", //
+                "inspect", "--format", "{{ .NetworkSettings.IPAddress }}", containerNameOrId);
+        output = output.replaceAll("\r", "");
+        output = output.replaceAll("\n", "");
+        return output;
     }
 
     @Override

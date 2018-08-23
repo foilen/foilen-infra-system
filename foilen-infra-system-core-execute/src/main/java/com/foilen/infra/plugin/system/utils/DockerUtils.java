@@ -62,6 +62,8 @@ public interface DockerUtils {
 
     boolean containerStopAndRemove(String containerNameOrId);
 
+    String getIp(String containerNameOrId);
+
     boolean imageBuild(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx);
 
     void volumeHostCreate(IPApplicationDefinition applicationDefinition);

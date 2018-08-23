@@ -11,8 +11,10 @@ package com.foilen.infra.plugin.system.utils.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.foilen.smalltools.tools.AbstractBasics;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DockerPs extends AbstractBasics {
 
     private String id;
@@ -22,7 +24,6 @@ public class DockerPs extends AbstractBasics {
     private DockerPsStatus status;
     private long size;
     private long totalSize;
-    private String ip;
 
     public DockerPs() {
     }
@@ -33,10 +34,6 @@ public class DockerPs extends AbstractBasics {
 
     public String getId() {
         return id;
-    }
-
-    public String getIp() {
-        return ip;
     }
 
     public String getName() {
@@ -65,10 +62,6 @@ public class DockerPs extends AbstractBasics {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
     }
 
     public void setName(String name) {
