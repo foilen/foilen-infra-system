@@ -883,12 +883,17 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
     @Override
     public String getIp(String containerNameOrId) {
-        String output = unixShellAndFsUtils.executeCommandQuietAndGetOutput("Docker", "get ip", //
-                "/usr/bin/docker", //
-                "inspect", "--format", "{{ .NetworkSettings.IPAddress }}", containerNameOrId);
-        output = output.replaceAll("\r", "");
-        output = output.replaceAll("\n", "");
-        return output;
+        try {
+            String output = unixShellAndFsUtils.executeCommandQuietAndGetOutput("Docker", "get ip", //
+                    "/usr/bin/docker", //
+                    "inspect", "--format", "{{ .NetworkSettings.IPAddress }}", containerNameOrId);
+            output = output.replaceAll("\r", "");
+            output = output.replaceAll("\n", "");
+            return output;
+        } catch (UtilsException e) {
+            logger.warn("Could not get the IP of {}", containerNameOrId);
+            return null;
+        }
     }
 
     @Override
