@@ -138,14 +138,12 @@ function updateResourceEditor(form, config) {
         // When it is an existing resource
         form.load(baseUrl + '/editPageDefinition/' + editorName + '/' + resourceId, function() {
           updateResourceFieldPageItems(form);
-          updateListInputTextFieldPageItems(form);
           addButton();
         });
       } else {
         // When it is a new resource
         form.load(baseUrl + '/createPageDefinition/' + editorName, function() {
           updateResourceFieldPageItems(form);
-          updateListInputTextFieldPageItems(form);
           addButton();
         });
       }
@@ -154,7 +152,6 @@ function updateResourceEditor(form, config) {
       // When there is no selected editor
       form.load(baseUrl + '/createPageDefinitionByType/' + resourceType, function() {
         updateResourceFieldPageItems(form);
-        updateListInputTextFieldPageItems(form);
         addButton();
       });
     }
@@ -175,12 +172,6 @@ jQuery(document).ready(function(){
 });
 
 //Create/Edit ListInputTextFieldPageItem
-function updateListInputTextFieldPageItems(context) {
-  jQuery('.ListInputTextFieldPageItem', context).each(function() {
-    updateListInputTextFieldPageItem(jQuery(this));
-  });
-}
-
 function updateListInputTextFieldPageItem(listBlock) {
   var fieldName = listBlock.data('fieldName');
   
