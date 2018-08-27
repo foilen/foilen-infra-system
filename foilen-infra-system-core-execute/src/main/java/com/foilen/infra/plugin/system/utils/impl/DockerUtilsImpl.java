@@ -358,6 +358,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
             applicationDefinition.setFrom("foilen/redirectport-registry:1.1.0");
             applicationDefinition.setRunAs(65534L); // Nobody
+            applicationDefinition.addPortExposed(dockerState.getRedirectorBridgePort(), dockerState.getRedirectorBridgePort());
 
             IPApplicationDefinitionAssetsBundle assetBundle = applicationDefinition.addAssetsBundle();
             boolean isRedirectorSsl = CollectionsTools.isAllItemNotNullOrEmpty(dockerState.getRedirectorNodeCert(), dockerState.getRedirectorNodeKey());
