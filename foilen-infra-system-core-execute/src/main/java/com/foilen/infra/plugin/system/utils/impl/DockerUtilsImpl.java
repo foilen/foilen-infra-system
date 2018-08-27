@@ -335,7 +335,8 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                                     dockerState.getRedirectPortByMachineContainerEndpoint().put(machineContainerEndpoint, port);
 
                                     // Add to redirectPortRegistryEntries
-                                    redirectPortRegistryEntries.getEntries().add(new RedirectPortRegistryEntry(port, pr.getToMachine(), pr.getToContainerName(), pr.getToEndpoint()));
+                                    redirectPortRegistryEntries.getEntries()
+                                            .add(new RedirectPortRegistryEntry(port, pr.getToMachine(), dockerState.getRedirectorBridgePort(), pr.getToContainerName(), pr.getToEndpoint()));
                                 });
 
                     });
