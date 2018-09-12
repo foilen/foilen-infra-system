@@ -12,7 +12,7 @@ dependencies {
   compileOnly "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
   compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.2"
   compileOnly "com.foilen:foilen-infra-resource-webcertificate:0.1.0"
-  compileOnly "com.foilen:foilen-infra-resource-website:0.1.2"
+  compileOnly "com.foilen:foilen-infra-resource-website:0.1.4"
   compile "junit:junit"
 
 }

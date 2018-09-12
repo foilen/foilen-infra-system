@@ -14,18 +14,19 @@ dependencies {
   compile "org.webjars:bootstrap:3.3.7-1"
   compile "org.webjars:typeaheadjs:0.11.1"
 
+  testCompile "com.foilen:foilen-infra-resource-application:0.1.1"
+  testCompile "com.foilen:foilen-infra-resource-dns:0.1.2"
   compileOnly "com.foilen:foilen-infra-resource-domain:0.1.0"
   compileOnly "com.foilen:foilen-infra-resource-example:0.1.0"
-  compileOnly "com.foilen:foilen-infra-resource-machine:0.1.1"
-  compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.2"
-  testCompile "com.foilen:foilen-infra-resource-application:0.1.1"
-  testCompile "com.foilen:foilen-infra-resource-dns:0.1.0"
   testCompile "com.foilen:foilen-infra-resource-example-failing:0.1.0"
-  testCompile "com.foilen:foilen-infra-resource-infraconfig:0.3.4"
-  testCompile "com.foilen:foilen-infra-resource-mariadb:0.1.2"
+  testCompile "com.foilen:foilen-infra-resource-infraconfig:0.3.8"
+  compileOnly "com.foilen:foilen-infra-resource-machine:0.1.1"
+  testCompile "com.foilen:foilen-infra-resource-mariadb:0.1.3"
   testCompile "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
+  compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.6"
+  compileOnly "com.foilen:foilen-infra-resource-urlredirection:0.1.5"
   testCompile "com.foilen:foilen-infra-resource-webcertificate:0.1.0"
-  testCompile "com.foilen:foilen-infra-resource-website:0.1.2"
+  testCompile "com.foilen:foilen-infra-resource-website:0.1.4"
 
 }
 

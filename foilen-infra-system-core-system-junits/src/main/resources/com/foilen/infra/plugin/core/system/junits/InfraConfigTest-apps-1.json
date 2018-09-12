@@ -71,7 +71,7 @@
       "step" : "mkdir /plugins/",
       "type" : "COMMAND"
     } ],
-    "command" : "/app/bin/foilen-infra-ui",
+    "command" : "/app/bin/foilen-infra-ui --debug",
     "containerUsersToChangeId" : [ ],
     "copyWhenStartedPathAndContentFiles" : [ ],
     "entrypoint" : [ ],

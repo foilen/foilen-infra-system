@@ -24,5 +24,9 @@
       "to" : "Domain | m1.node.example.com | Domain for m1.node.example.com"
     } ],
     "tags" : [ ]
+  }, {
+    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
+    "links" : [ ],
+    "tags" : [ ]
   } ]
 }

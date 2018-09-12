@@ -118,5 +118,9 @@
     "resource" : "UnixUser | infra_ui | /home/infra_ui",
     "links" : [ ],
     "tags" : [ ]
+  }, {
+    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
+    "links" : [ ],
+    "tags" : [ ]
   } ]
 }

@@ -65,5 +65,9 @@
       "to" : "Domain | m2.example.com | Domain for m2.example.com"
     } ],
     "tags" : [ ]
+  }, {
+    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
+    "links" : [ ],
+    "tags" : [ ]
   } ]
 }

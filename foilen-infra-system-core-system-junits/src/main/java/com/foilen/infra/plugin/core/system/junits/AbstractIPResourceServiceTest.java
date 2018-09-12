@@ -2912,8 +2912,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         String initialHash = unixUser2.getHashedPassword();
         formValues = new HashMap<>();
         formValues.put(UnixUser.PROPERTY_NAME, "user2");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD, "qwerty");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "qwerty");
+        formValues.put(UnixUserEditor.FIELD_PASSWORD, "qwerty2");
+        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "qwerty2");
         assertEditorNoErrors(unixUser2.getInternalId(), unixUserEditor, formValues);
 
         unixUser2 = findByName("user2");
@@ -3035,14 +3035,16 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change to https
         website = resourceService.resourceFindByPk(website).get();
         website.setHttps(true);
+        changes.linkAdd(website, LinkTypeConstants.USES, wc1);
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
+        changes.linkDelete(website, LinkTypeConstants.USES, wc1);
         JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-5.json", AbstractIPResourceServiceTest.class);
 
         // Change to http
         website = resourceService.resourceFindByPk(website).get();
         website.setHttps(false);
+
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
@@ -3051,6 +3053,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Change to https
         website = resourceService.resourceFindByPk(website).get();
         website.setHttps(true);
+        changes.linkAdd(website, LinkTypeConstants.USES, wc1);
         changes.resourceUpdate(website.getInternalId(), website);
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
@@ -3066,31 +3069,11 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-6.json", AbstractIPResourceServiceTest.class);
 
-        // Change to another domain with a cert that does not exists yet
-        website = resourceService.resourceFindByPk(website).get();
-        website.getDomainNames().clear();
-        website.setName("d4.example.com");
-        website.getDomainNames().add("d4.example.com");
-        changes.resourceUpdate(website.getInternalId(), website);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        Optional<WebsiteCertificate> websiteCertificateOptional = resourceService.resourceFind(resourceService.createResourceQuery(WebsiteCertificate.class) //
-                .propertyEquals(WebsiteCertificate.PROPERTY_DOMAIN_NAMES, Arrays.asList("d4.example.com")));
-        Assert.assertTrue(websiteCertificateOptional.isPresent());
-        WebsiteCertificate websiteCertificate = websiteCertificateOptional.get();
-        websiteCertificate.setThumbprint("XXXXXXXXd4XXXXXX");
-        websiteCertificate.setStart(DateTools.parseDateOnly("2001-07-01"));
-        websiteCertificate.setEnd(DateTools.parseDateOnly("2001-08-01"));
-        changes.resourceUpdate(websiteCertificate.getInternalId(), websiteCertificate);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-7.json", AbstractIPResourceServiceTest.class);
-
         // Delete
         changes.resourceDelete(website.getInternalId());
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
 
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-8.json", AbstractIPResourceServiceTest.class);
+        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-7.json", AbstractIPResourceServiceTest.class);
 
     }
 

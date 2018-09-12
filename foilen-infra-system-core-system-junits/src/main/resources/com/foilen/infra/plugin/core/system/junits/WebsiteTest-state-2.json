@@ -75,6 +75,10 @@
     } ],
     "tags" : [ ]
   }, {
+    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
     "resource" : "Website | d1.example.com | d1.example.com",
     "links" : [ {
       "type" : "MANAGES",

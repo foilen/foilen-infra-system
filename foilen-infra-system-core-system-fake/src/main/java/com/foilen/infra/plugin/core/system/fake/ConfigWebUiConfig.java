@@ -64,7 +64,7 @@ public class ConfigWebUiConfig extends WebMvcConfigurerAdapter {
                         .addBundleResource("all.js", "/WEB-INF/webui/resources/js/infra.js") //
                         .primeCache() //
 
-        );
+                );
 
     }
 

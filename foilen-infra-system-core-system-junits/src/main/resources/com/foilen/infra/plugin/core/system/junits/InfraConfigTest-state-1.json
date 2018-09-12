@@ -243,6 +243,10 @@
     "links" : [ ],
     "tags" : [ ]
   }, {
+    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
     "resource" : "UnixUser | infra_web | /home/infra_web",
     "links" : [ ],
     "tags" : [ ]

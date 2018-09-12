@@ -1,26 +1,9 @@
 {
   "resources" : [ {
-    "resource" : "Application | infra_web-m1_example_com | Web HA Proxy for m1.example.com",
-    "links" : [ {
-      "type" : "INSTALLED_ON",
-      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
-    }, {
-      "type" : "RUN_AS",
-      "to" : "UnixUser | infra_web | /home/infra_web"
-    } ],
-    "tags" : [ ]
-  }, {
     "resource" : "Application | my_web_app | null",
     "links" : [ {
       "type" : "INSTALLED_ON",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "DnsEntry | d4.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | d4.example.com | Domain for d4.example.com"
     } ],
     "tags" : [ ]
   }, {
@@ -35,16 +18,6 @@
     "links" : [ {
       "type" : "MANAGES",
       "to" : "Domain | m2.example.com | Domain for m2.example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "DnsPointer | d4.example.com | d4.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "DnsEntry | d4.example.com / A | 199.141.1.101"
-    }, {
-      "type" : "POINTS_TO",
-      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
     } ],
     "tags" : [ ]
   }, {
@@ -63,13 +36,6 @@
     "tags" : [ ]
   }, {
     "resource" : "Domain | d3.example.com | Domain for d3.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | d4.example.com | Domain for d4.example.com",
     "links" : [ {
       "type" : "MANAGES",
       "to" : "Domain | example.com | Domain for example.com"
@@ -108,24 +74,12 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "UnixUser | infra_web | /home/infra_web",
+    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
     "links" : [ ],
     "tags" : [ ]
   }, {
-    "resource" : "Website | d4.example.com | d4.example.com",
-    "links" : [ {
-      "type" : "INSTALLED_ON",
-      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
-    }, {
-      "type" : "MANAGES",
-      "to" : "DnsPointer | d4.example.com | d4.example.com"
-    }, {
-      "type" : "MANAGES",
-      "to" : "WebsiteCertificate | d4.example.com | XXXXXXXXd4XXXXXX, 2001-07-01, 2001-08-01"
-    }, {
-      "type" : "POINTS_TO",
-      "to" : "Application | my_web_app | null"
-    } ],
+    "resource" : "UnixUser | infra_web | /home/infra_web",
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "WebsiteCertificate | d1.example.com, d2.example.com | e7ae5241ec01c2919aa2422624d6df235959368a, 2001-07-01, 2001-08-01",
@@ -142,13 +96,6 @@
     "links" : [ {
       "type" : "MANAGES",
       "to" : "Domain | d3.example.com | Domain for d3.example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "WebsiteCertificate | d4.example.com | XXXXXXXXd4XXXXXX, 2001-07-01, 2001-08-01",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | d4.example.com | Domain for d4.example.com"
     } ],
     "tags" : [ ]
   } ]

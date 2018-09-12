@@ -40,6 +40,16 @@
     } ],
     "tags" : [ ]
   }, {
+    "resource" : "Application | infra_url_redirection_http-m1_example_com | Apache HTTP URL redirections for m1.example.com",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "RUN_AS",
+      "to" : "UnixUser | infra_url_redirection | /home/infra_url_redirection"
+    } ],
+    "tags" : [ ]
+  }, {
     "resource" : "Application | infra_web-m1_example_com | Web HA Proxy for m1.example.com",
     "links" : [ {
       "type" : "INSTALLED_ON",
@@ -143,6 +153,12 @@
       "to" : "Application | infra_ui | UI service"
     }, {
       "type" : "MANAGES",
+      "to" : "UrlRedirection | login.example.com | Redirection to https://login.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "UrlRedirection | ui.example.com | Redirection to https://ui.example.com"
+    }, {
+      "type" : "MANAGES",
       "to" : "Website | infra_login | login.example.com"
     }, {
       "type" : "MANAGES",
@@ -170,6 +186,9 @@
   }, {
     "resource" : "Machine | m1.example.com | m1.example.com (199.141.1.101)",
     "links" : [ {
+      "type" : "MANAGES",
+      "to" : "Application | infra_url_redirection_http-m1_example_com | Apache HTTP URL redirections for m1.example.com"
+    }, {
       "type" : "MANAGES",
       "to" : "DnsEntry | m1.example.com / A | 199.141.1.101"
     } ],
@@ -249,8 +268,58 @@
     "links" : [ ],
     "tags" : [ ]
   }, {
+    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
     "resource" : "UnixUser | infra_web | /home/infra_web",
     "links" : [ ],
+    "tags" : [ ]
+  }, {
+    "resource" : "UrlRedirection | login.example.com | Redirection to https://login.example.com",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "Website | HTTP Redirection of login.example.com | login.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "UrlRedirection | ui.example.com | Redirection to https://ui.example.com",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "Website | HTTP Redirection of ui.example.com | ui.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Website | HTTP Redirection of login.example.com | login.example.com",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "DnsPointer | login.example.com | login.example.com"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Application | infra_url_redirection_http-m1_example_com | Apache HTTP URL redirections for m1.example.com"
+    } ],
+    "tags" : [ ]
+  }, {
+    "resource" : "Website | HTTP Redirection of ui.example.com | ui.example.com",
+    "links" : [ {
+      "type" : "INSTALLED_ON",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "DnsPointer | ui.example.com | ui.example.com"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Application | infra_url_redirection_http-m1_example_com | Apache HTTP URL redirections for m1.example.com"
+    } ],
     "tags" : [ ]
   }, {
     "resource" : "Website | infra_login | login.example.com",
@@ -260,9 +329,6 @@
     }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | login.example.com | login.example.com"
-    }, {
-      "type" : "MANAGES",
-      "to" : "WebsiteCertificate | login.example.com | __login_thumbprint__, 2000-01-01, 2010-01-01"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_login | Login service"
@@ -279,9 +345,6 @@
     }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | ui.example.com | ui.example.com"
-    }, {
-      "type" : "MANAGES",
-      "to" : "WebsiteCertificate | ui.example.com | __ui_thumbprint__, 2000-01-01, 2010-01-01"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_ui | UI service"
