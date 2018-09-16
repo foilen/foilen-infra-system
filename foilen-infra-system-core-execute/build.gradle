@@ -4,8 +4,6 @@ dependencies {
   compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
   testCompile project(":foilen-infra-system-core-system-fake")
 
-  compile 'org.quartz-scheduler:quartz'
-
   // Logging
   compile "org.slf4j:slf4j-api"
 

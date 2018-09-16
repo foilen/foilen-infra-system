@@ -20,22 +20,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.quartz.CronScheduleBuilder;
-import org.quartz.CronTrigger;
-import org.quartz.JobBuilder;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SchedulerFactory;
-import org.quartz.TriggerBuilder;
-import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.event.Level;
 
 import com.foilen.infra.plugin.system.utils.DockerUtils;
@@ -43,7 +33,6 @@ import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
 import com.foilen.infra.plugin.system.utils.UtilsException;
 import com.foilen.infra.plugin.system.utils.model.ApplicationBuildDetails;
 import com.foilen.infra.plugin.system.utils.model.ContainersManageContext;
-import com.foilen.infra.plugin.system.utils.model.CronApplicationBuildDetails;
 import com.foilen.infra.plugin.system.utils.model.DockerPs;
 import com.foilen.infra.plugin.system.utils.model.DockerPsStatus;
 import com.foilen.infra.plugin.system.utils.model.DockerState;
@@ -52,6 +41,7 @@ import com.foilen.infra.plugin.system.utils.model.DockerStep;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionAssetsBundle;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionPortRedirect;
+import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionService;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionVolume;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutput;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutputContext;
@@ -98,19 +88,14 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
     private static final String hostFs = SystemTools.getPropertyOrEnvironment("HOSTFS", "/");
     private static final String machineName = JavaEnvironmentValues.getHostName();
 
-    private Scheduler cronScheduler;
     private UnixShellAndFsUtils unixShellAndFsUtils;
 
     public DockerUtilsImpl() {
         unixShellAndFsUtils = new UnixShellAndFsUtilsImpl();
-
-        initQuartz();
     }
 
     public DockerUtilsImpl(UnixShellAndFsUtils unixShellAndFsUtils) {
         this.unixShellAndFsUtils = unixShellAndFsUtils;
-
-        initQuartz();
     }
 
     @Override
@@ -216,11 +201,38 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         List<String> modifiedContainerNames = new ArrayList<>();
         DockerState dockerState = containersManageContext.getDockerState();
 
-        // Check if needs the ports redirector applications (in and out) and add them if needed
-        MultiDependenciesResolverTools dependenciesResolver = new MultiDependenciesResolverTools();
         List<ApplicationBuildDetails> allApplicationBuildDetails = new ArrayList<>();
         allApplicationBuildDetails.addAll(containersManageContext.getAlwaysRunningApplications());
-        allApplicationBuildDetails.addAll(containersManageContext.getCronApplications());
+
+        // Transform cron applications to normal applications
+        allApplicationBuildDetails.addAll(containersManageContext.getCronApplications().stream() //
+                .map(cronApplicationBuildDetails -> {
+
+                    // Move the main command to a cron entry
+                    IPApplicationDefinition applicationDefinition = cronApplicationBuildDetails.getApplicationDefinition();
+                    String cronEntry = cronApplicationBuildDetails.getCronTime() + " uid_" + applicationDefinition.getRunAs() + " " + applicationDefinition.getCommand();
+                    String containerName = cronApplicationBuildDetails.getOutputContext().getContainerName();
+                    applicationDefinition.setCommand(null);
+                    logger.info("[MANAGER] [{}] Transforming the main command as cron entry: {}", containerName, cronEntry);
+                    applicationDefinition.addAssetContent("/etc/cron.d/main", cronEntry + "\n");
+
+                    // Add the cron service
+                    applicationDefinition.getServices().add(new IPApplicationDefinitionService("_cron", "/startCron.sh", 0L));
+                    applicationDefinition.addAssetResource("/startCron.sh", "/com/foilen/infra/plugin/system/utils/impl/startCron.sh");
+                    applicationDefinition.addBuildStepCommand("chmod +x /startCron.sh && chmod 644 /etc/cron.d/main");
+
+                    // Prepare entries for /etc/passwd
+                    StringBuilder cronUsersToInstall = new StringBuilder();
+                    cronUsersToInstall.append("uid_").append(applicationDefinition.getRunAs()).append(":").append(applicationDefinition.getRunAs()).append("\n");
+                    applicationDefinition.addAssetContent("/cron_users.txt", cronUsersToInstall.toString());
+
+                    return cronApplicationBuildDetails;
+                }) //
+                .collect(Collectors.toList()) //
+        );
+
+        // Check if needs the ports redirector applications (in and out) and add them if needed
+        MultiDependenciesResolverTools dependenciesResolver = new MultiDependenciesResolverTools();
         boolean needsRedirectorEntry = allApplicationBuildDetails.stream() //
                 .filter(it -> it.getApplicationDefinition().getPortsRedirect().stream() //
                         .filter(pr -> !pr.isToLocalMachine())//
@@ -229,7 +241,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         boolean needsRedirectorExit = false;
         Map<String, ApplicationBuildDetails> applicationBuildDetailsByName = new HashMap<>();
         List<String> remoteMachineContainerEndpointsToSet = new ArrayList<>();
-        for (ApplicationBuildDetails applicationBuildDetails : containersManageContext.getAlwaysRunningApplications()) {
+        for (ApplicationBuildDetails applicationBuildDetails : allApplicationBuildDetails) {
 
             // Add the app to the dependencies resolver
             String containerName = applicationBuildDetails.getOutputContext().getContainerName();
@@ -634,127 +646,6 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
         }
 
-        CronJob.dockerUtils = this;
-        for (CronApplicationBuildDetails applicationBuildDetails : containersManageContext.getCronApplications()) {
-            String containerName = applicationBuildDetails.getOutputContext().getContainerName();
-            logger.info("[MANAGER] Processing cron [{}]", containerName);
-
-            // Get all the needed state and status
-            DockerStateIds cronContainerStateId = dockerState.getCronContainersByName().get(containerName);
-            DockerContainerOutputContext ctx = applicationBuildDetails.getOutputContext();
-            IPApplicationDefinition applicationDefinition = applicationBuildDetails.getApplicationDefinition();
-            boolean dependsOnRedirectorEntry = applicationDefinition.getPortsRedirect().stream() //
-                    .filter(pr -> !pr.isToLocalMachine()) //
-                    .findAny().isPresent();
-
-            // Add redirection details on the context
-            ctx.setRedirectIpByMachineContainerEndpoint(dockerState.getRedirectIpByMachineContainerEndpoint());
-            ctx.setRedirectPortByMachineContainerEndpoint(dockerState.getRedirectPortByMachineContainerEndpoint());
-
-            // Check the steps to execute
-            boolean needToBuild = false;
-            boolean needToStop = false;
-            if (cronContainerStateId == null) {
-                logger.debug("[MANAGER] [{}] was never built. Will build", containerName);
-                needToBuild = true;
-            } else {
-                if ((dependsOnRedirectorEntry && existingRedirectorEntryPortOrHostChanged) || !cronContainerStateId.getImageUniqueId().equals(applicationDefinition.toImageUniqueId())) {
-                    logger.debug("[MANAGER] [{}] has a different image. Will build and stop", containerName);
-                    needToBuild = true;
-                    needToStop = true;
-                } else if (!cronContainerStateId.getContainerRunUniqueId().equals(applicationDefinition.toContainerRunUniqueId())) {
-                    logger.debug("[MANAGER] [{}] has a different run command. Will stop", containerName);
-                    needToStop = true;
-                } else if (!cronContainerStateId.getContainerStartedUniqueId().equals(applicationDefinition.toContainerStartUniqueId())) {
-                    logger.debug("[MANAGER] [{}] has a different execute when started commands. Will stop", containerName);
-                    needToStop = true;
-                }
-            }
-
-            // Clear the state
-            dockerState.getCronContainersByName().remove(containerName);
-
-            // If needs any change, stop any running command
-            if (needToStop) {
-                Future<Boolean> executionFuture = dockerState.getExecutionsFutures().get(containerName);
-                if (executionFuture != null && !executionFuture.isDone()) {
-                    logger.debug("[MANAGER] [{}] Has a running execution. Stopping it");
-                    executionFuture.cancel(true);
-                }
-            }
-
-            // Execute the steps
-            IPApplicationDefinition transformedApplicationDefinition = DockerContainerOutput.addInfrastructure(applicationDefinition, ctx);
-            DockerStateIds dockerStateIds = new DockerStateIds( //
-                    transformedApplicationDefinition.toImageUniqueId(), //
-                    transformedApplicationDefinition.toContainerRunUniqueId(), //
-                    transformedApplicationDefinition.toContainerStartUniqueId());
-
-            // Check if should proceed
-            if (!containersManageContext.getContainerManagementCallback().proceedWithTransformedContainer(containerName, dockerStateIds)) {
-                logger.error("[MANAGER] [{}] The callback requested to not proceed with this container", containerName);
-                dockerState.getFailedContainersByName().put(containerName, dockerStateIds);
-                try {
-                    cronScheduler.deleteJob(new JobKey(containerName));
-                } catch (SchedulerException e) {
-                    logger.error("[MANAGER] [{}] Cannot delete the job", containerName);
-                }
-                continue;
-            }
-
-            // Build
-            if (needToBuild) {
-                logger.info("[MANAGER] [{}] Building image", containerName);
-                dockerStateIds.setLastState(DockerStep.BUILD_IMAGE);
-                if (!imageBuild(transformedApplicationDefinition, ctx)) {
-                    logger.error("[MANAGER] [{}] Could not build the image", containerName);
-                    dockerState.getFailedContainersByName().put(containerName, dockerStateIds);
-                    try {
-                        cronScheduler.deleteJob(new JobKey(containerName));
-                    } catch (SchedulerException e) {
-                        logger.error("[MANAGER] [{}] Cannot delete the job", containerName, e);
-                    }
-                    continue;
-                }
-                volumeHostCreate(transformedApplicationDefinition);
-            }
-
-            if (needToStop) {
-                logger.info("[MANAGER] [{}] Stopping container", containerName);
-                dockerStateIds.setLastState(DockerStep.RESTART_CONTAINER);
-                containerStopAndRemove(ctx);
-            }
-
-            logger.info("[MANAGER] [{}] Ready", containerName);
-            dockerStateIds.setLastState(DockerStep.COMPLETED);
-            dockerState.getCronContainersByName().put(containerName, dockerStateIds);
-
-            // If schedule changed, update it
-            try {
-                String cronTime = applicationBuildDetails.getCronTime();
-                if (!Objects.equals(cronTime, dockerState.getCronTimeByName().get(containerName))) {
-                    // Delete
-                    cronScheduler.deleteJob(new JobKey(containerName));
-
-                    // Create
-                    CronTrigger trigger = TriggerBuilder.newTrigger() //
-                            .withIdentity(containerName) //
-                            .withSchedule(CronScheduleBuilder.cronSchedule(cronTime)) //
-                            .build();
-                    cronScheduler.scheduleJob(JobBuilder.newJob(CronJob.class) //
-                            .withIdentity(containerName) //
-                            .usingJobData("applicationDefinition", JsonTools.compactPrintWithoutNulls(transformedApplicationDefinition))//
-                            .usingJobData("dockerContainerOutputContext", JsonTools.compactPrintWithoutNulls(ctx))//
-                            .build(), trigger);
-
-                    dockerState.getCronTimeByName().put(containerName, cronTime);
-                }
-            } catch (SchedulerException e) {
-                logger.error("[MANAGER] [{}] Cannot update the job", containerName, e);
-            }
-
-        }
-
         return modifiedContainerNames;
 
     }
@@ -924,15 +815,6 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         logger.debug("[IMAGE] [{}] BUILD - success: {}", imageName, success);
 
         return success;
-    }
-
-    protected void initQuartz() {
-        try {
-            SchedulerFactory sf = new StdSchedulerFactory();
-            cronScheduler = sf.getScheduler();
-        } catch (SchedulerException e) {
-            throw new UtilsException("Could not initialize Quartz", e);
-        }
     }
 
     @Override
