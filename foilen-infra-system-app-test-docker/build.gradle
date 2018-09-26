@@ -12,7 +12,7 @@ dependencies {
 	compile "org.jsoup:jsoup:1.11.3"
   
   compileOnly "com.foilen:foilen-infra-resource-application:0.1.1"
-  compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.2"
+  compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.6"
 }
 
 apply plugin: 'application'
