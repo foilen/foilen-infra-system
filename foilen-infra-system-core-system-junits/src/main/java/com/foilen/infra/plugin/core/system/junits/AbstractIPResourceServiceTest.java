@@ -623,28 +623,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
         assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
-        // Delete the domain "m2.node.example.com" (must be back)
-        long domain2Id = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
-        changes.resourceDelete(domain2Id);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertResourceCount(2, Machine.class);
-        m1 = assertResourceExists(true, new Machine(machineName1), Machine.class);
-        m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(m1Ip1, m1.getPublicIp());
-        Assert.assertEquals(m2Ip1, m2.getPublicIp());
-        assertResourceCount(2, DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip1), DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip1), DnsEntry.class);
-        assertResourceCount(4, Domain.class);
-        assertResourceExists(true, new Domain("m1.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
-
-        long domain2Id_2 = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
-        Assert.assertNotEquals(domain2Id, domain2Id_2);
-
         // Create extra links and tags
         changes.tagAdd(m2, "extraTag");
         changes.linkAdd(m1, "extraLink", m2);
@@ -657,9 +635,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         allIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(Domain.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
         Collections.sort(allIds);
 
-        // Delete the domain "m2.node.example.com", delete machine m1 and rename the machine m2 (to have a rollback)
+        // Delete the domain "m2.node.example.com" (to get a rollback), delete machine m1
+        long domain2Id = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
+        changes.resourceDelete(domain2Id);
         changes.resourceDelete(m1.getInternalId());
-        changes.resourceUpdate(m2.getInternalId(), new Machine("m3.node.example.com", m2Ip1));
         try {
             getInternalServicesContext().getInternalChangeService().changesExecute(changes);
             Assert.fail("Expecting exception");
@@ -680,8 +659,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
         assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
-        long domain2Id_3 = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
-        Assert.assertEquals(domain2Id_2, domain2Id_3);
+        long domain2Id_2 = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
+        Assert.assertEquals(domain2Id, domain2Id_2);
 
         Set<String> tags = resourceService.tagFindAllByResource(m2);
         Assert.assertEquals(1, tags.size());
