@@ -61,24 +61,15 @@
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | login.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | login.example.com | Domain for login.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | m1.example.com | Domain for m1.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | ui.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | ui.example.com | Domain for ui.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsPointer | login.example.com | login.example.com",
@@ -98,31 +89,6 @@
     }, {
       "type" : "POINTS_TO",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | example.com | Domain for example.com",
-    "links" : [ ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | login.example.com | Domain for login.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | ui.example.com | Domain for ui.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
     } ],
     "tags" : [ ]
   }, {
@@ -355,17 +321,11 @@
     "tags" : [ ]
   }, {
     "resource" : "WebsiteCertificate | login.example.com | __login_thumbprint__, 2000-01-01, 2010-01-01",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | login.example.com | Domain for login.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "WebsiteCertificate | ui.example.com | __ui_thumbprint__, 2000-01-01, 2010-01-01",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | ui.example.com | Domain for ui.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   } ]
 }

@@ -44,28 +44,6 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "Domain | example.com | Domain for example.com",
-    "links" : [ ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m2.example.com | Domain for m2.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | redir.example.com | Domain for redir.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
     } ],
     "tags" : [ ]
   }, {

@@ -1,24 +1,15 @@
 {
   "resources" : [ {
     "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | m1.example.com | Domain for m1.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | m2.example.com / A | 199.141.1.201",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | m2.example.com | Domain for m2.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | pointer.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | pointer.example.com | Domain for pointer.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsPointer | pointer.example.com | pointer.example.com",
@@ -28,31 +19,6 @@
     }, {
       "type" : "POINTS_TO",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | example.com | Domain for example.com",
-    "links" : [ ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m2.example.com | Domain for m2.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | pointer.example.com | Domain for pointer.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
     } ],
     "tags" : [ ]
   }, {

@@ -48,7 +48,6 @@ import com.foilen.infra.resource.application.Application;
 import com.foilen.infra.resource.dns.DnsEntry;
 import com.foilen.infra.resource.dns.DnsPointer;
 import com.foilen.infra.resource.dns.model.DnsEntryType;
-import com.foilen.infra.resource.domain.Domain;
 import com.foilen.infra.resource.example.AbstractParent;
 import com.foilen.infra.resource.example.ConcreteLevel1;
 import com.foilen.infra.resource.example.ConcreteLevel2;
@@ -601,7 +600,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(false, new Machine(machineName1), Machine.class);
         assertResourceExists(false, new Machine(machineName2), Machine.class);
         assertResourceCount(0, DnsEntry.class);
-        assertResourceCount(0, Domain.class);
 
         // Create both machines
         ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
@@ -617,11 +615,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceCount(2, DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip1), DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip1), DnsEntry.class);
-        assertResourceCount(4, Domain.class);
-        assertResourceExists(true, new Domain("m1.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Create extra links and tags
         changes.tagAdd(m2, "extraTag");
@@ -632,17 +625,15 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         List<Long> allIds = new ArrayList<>();
         allIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(Machine.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
         allIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(DnsEntry.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
-        allIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(Domain.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
         Collections.sort(allIds);
 
-        // Delete the domain "m2.node.example.com" (to get a rollback), delete machine m1
-        long domain2Id = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
-        changes.resourceDelete(domain2Id);
+        // Create a duplicate machine "m2.node.example.com" (to get a rollback), delete machine m1
         changes.resourceDelete(m1.getInternalId());
+        changes.resourceAdd(new Machine("m2.node.example.com"));
         try {
             getInternalServicesContext().getInternalChangeService().changesExecute(changes);
             Assert.fail("Expecting exception");
-        } catch (IllegalUpdateException e) {
+        } catch (ResourcePrimaryKeyCollisionException e) {
         }
 
         assertResourceCount(2, Machine.class);
@@ -653,14 +644,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceCount(2, DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip1), DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip1), DnsEntry.class);
-        assertResourceCount(4, Domain.class);
-        assertResourceExists(true, new Domain("m1.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
-
-        long domain2Id_2 = resourceService.resourceFindByPk(new Domain("m2.node.example.com", null)).get().getInternalId();
-        Assert.assertEquals(domain2Id, domain2Id_2);
 
         Set<String> tags = resourceService.tagFindAllByResource(m2);
         Assert.assertEquals(1, tags.size());
@@ -674,7 +657,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         List<Long> allActualIds = new ArrayList<>();
         allActualIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(Machine.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
         allActualIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(DnsEntry.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
-        allActualIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(Domain.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
         Collections.sort(allActualIds);
         Assert.assertEquals(allIds, allActualIds);
     }
@@ -844,7 +826,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceExists(false, new Machine(machineName1), Machine.class);
         assertResourceExists(false, new Machine(machineName2), Machine.class);
         assertResourceCount(0, DnsEntry.class);
-        assertResourceCount(0, Domain.class);
 
         // Create both machines: m1 without ip and m2 with ip
         ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
@@ -859,11 +840,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals(m2Ip1, m2.getPublicIp());
         assertResourceCount(1, DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip1), DnsEntry.class);
-        assertResourceCount(4, Domain.class);
-        assertResourceExists(true, new Domain("m1.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Update both machines: m1 with ip and m2 with a different ip
         changes.resourceUpdate(m1.getInternalId(), new Machine(machineName1, m1Ip2));
@@ -878,11 +854,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         assertResourceCount(2, DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip2), DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip2), DnsEntry.class);
-        assertResourceCount(4, Domain.class);
-        assertResourceExists(true, new Domain("m1.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Remove ip of m2
         changes.resourceUpdate(m2.getInternalId(), new Machine(machineName2, null));
@@ -895,11 +866,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals(null, m2.getPublicIp());
         assertResourceCount(1, DnsEntry.class);
         assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip2), DnsEntry.class);
-        assertResourceCount(4, Domain.class);
-        assertResourceExists(true, new Domain("m1.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Delete m1
         changes.resourceDelete(m1.getInternalId());
@@ -909,10 +875,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
         Assert.assertEquals(null, m2.getPublicIp());
         assertResourceCount(0, DnsEntry.class);
-        assertResourceCount(3, Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
         // Update name (fails)
         try {
@@ -928,10 +890,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
         Assert.assertEquals(null, m2.getPublicIp());
         assertResourceCount(0, DnsEntry.class);
-        assertResourceCount(3, Domain.class);
-        assertResourceExists(true, new Domain("m2.node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("node.example.com", null), Domain.class);
-        assertResourceExists(true, new Domain("example.com", null), Domain.class);
 
     }
 

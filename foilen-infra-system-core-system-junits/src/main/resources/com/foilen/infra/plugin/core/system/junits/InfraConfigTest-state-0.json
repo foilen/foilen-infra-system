@@ -21,21 +21,7 @@
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | m1.example.com | Domain for m1.example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | example.com | Domain for example.com",
     "links" : [ ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
     "tags" : [ ]
   }, {
     "resource" : "Machine | m1.example.com | m1.example.com (199.141.1.101)",

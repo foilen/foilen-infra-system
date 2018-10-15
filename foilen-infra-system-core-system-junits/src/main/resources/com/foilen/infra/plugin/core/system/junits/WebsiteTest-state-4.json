@@ -18,24 +18,15 @@
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | d2.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | d2.example.com | Domain for d2.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | m1.example.com | Domain for m1.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsEntry | m2.example.com / A | 199.141.1.201",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | m2.example.com | Domain for m2.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "DnsPointer | d2.example.com | d2.example.com",
@@ -45,45 +36,6 @@
     }, {
       "type" : "POINTS_TO",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | d1.example.com | Domain for d1.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | d2.example.com | Domain for d2.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | d3.example.com | Domain for d3.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | example.com | Domain for example.com",
-    "links" : [ ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m1.example.com | Domain for m1.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
-    } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "Domain | m2.example.com | Domain for m2.example.com",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | example.com | Domain for example.com"
     } ],
     "tags" : [ ]
   }, {
@@ -123,20 +75,11 @@
     "tags" : [ ]
   }, {
     "resource" : "WebsiteCertificate | d1.example.com, d2.example.com | e7ae5241ec01c2919aa2422624d6df235959368a, 2001-07-01, 2001-08-01",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | d1.example.com | Domain for d1.example.com"
-    }, {
-      "type" : "MANAGES",
-      "to" : "Domain | d2.example.com | Domain for d2.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "WebsiteCertificate | d3.example.com | 920022e3b036bfdd9ead5fd4c4e600611554cd42, 2001-07-01, 2001-08-01",
-    "links" : [ {
-      "type" : "MANAGES",
-      "to" : "Domain | d3.example.com | Domain for d3.example.com"
-    } ],
+    "links" : [ ],
     "tags" : [ ]
   } ]
 }
