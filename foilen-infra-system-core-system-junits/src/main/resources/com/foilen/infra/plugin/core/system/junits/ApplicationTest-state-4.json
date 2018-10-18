@@ -25,7 +25,7 @@
     "links" : [ ],
     "tags" : [ ]
   }, {
-    "resource" : "DnsEntry | m3.example.com / A | 199.141.1.301",
+    "resource" : "DnsEntry | m3.example.com / A | 199.141.1.202",
     "links" : [ ],
     "tags" : [ ]
   }, {
@@ -53,10 +53,10 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "Machine | m3.example.com | m3.example.com (199.141.1.301)",
+    "resource" : "Machine | m3.example.com | m3.example.com (199.141.1.202)",
     "links" : [ {
       "type" : "MANAGES",
-      "to" : "DnsEntry | m3.example.com / A | 199.141.1.301"
+      "to" : "DnsEntry | m3.example.com / A | 199.141.1.202"
     } ],
     "tags" : [ ]
   }, {

@@ -2451,7 +2451,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         // Create initial data
         Machine m1 = new Machine("m1.example.com", "199.141.1.101");
         Machine m2 = new Machine("m2.example.com", "199.141.1.201");
-        Machine m3 = new Machine("m3.example.com", "199.141.1.301");
+        Machine m3 = new Machine("m3.example.com", "199.141.1.202");
         UnixUser uu1 = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "user1", "/home/user1", null, null);
         UnixUser uu2 = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "user2", "/home/user2", null, null);
         ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
