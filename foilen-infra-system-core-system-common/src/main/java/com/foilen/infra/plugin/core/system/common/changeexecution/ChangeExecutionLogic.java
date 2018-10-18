@@ -104,13 +104,19 @@ public class ChangeExecutionLogic extends AbstractBasics {
             applyChangesContext.getDeletedResources().add(resource);
             applyChangesContext.getResourcesNeedRefresh().remove(id);
             deletedResourcePreviousLinks.addAll(ipResourceService.linkFindAllRelatedByResource(id));
-            Set<Long> idsToUpdate = new HashSet<>();
-            idsToUpdate.addAll(ipResourceService.linkFindAllByFromResource(resource).stream().map(it -> it.getB().getInternalId()).collect(Collectors.toList()));
-            idsToUpdate.addAll(ipResourceService.linkFindAllByToResource(resource).stream().map(it -> it.getA().getInternalId()).collect(Collectors.toList()));
+            Set<Long> idsToUpdate = deletedResourcePreviousLinks.stream().map(link -> {
+                if (link.getA().getInternalId() != id) {
+                    return link.getA().getInternalId();
+                } else {
+                    return link.getC().getInternalId();
+                }
+            }).collect(Collectors.toSet());
             markAllTransientLinkedResourcesToUpdate(toRefreshIds, idsToUpdate);
             internalChangeService.resourceDelete(id);
         }
-        for (Tuple3<IPResource, String, IPResource> link : changes.getLinksToDelete()) {
+        for (
+
+        Tuple3<IPResource, String, IPResource> link : changes.getLinksToDelete()) {
             logger.debug("[APPLY] Delete link {}", link);
             Optional<IPResource> fromResource = ipResourceService.resourceFindByPk(link.getA());
             Optional<IPResource> toResource = ipResourceService.resourceFindByPk(link.getC());
@@ -157,9 +163,13 @@ public class ChangeExecutionLogic extends AbstractBasics {
             applyChangesContext.getResourcesNeedRefresh().remove(resource.getInternalId());
 
             // Add the direct links for update notification
-            Set<Long> idsToUpdate = new HashSet<>();
-            idsToUpdate.addAll(ipResourceService.linkFindAllByFromResource(resource).stream().map(it -> it.getB().getInternalId()).collect(Collectors.toList()));
-            idsToUpdate.addAll(ipResourceService.linkFindAllByToResource(resource).stream().map(it -> it.getA().getInternalId()).collect(Collectors.toList()));
+            Set<Long> idsToUpdate = ipResourceService.linkFindAllRelatedByResource(resource).stream().map(link -> {
+                if (link.getA().getInternalId() != resource.getInternalId()) {
+                    return link.getA().getInternalId();
+                } else {
+                    return link.getC().getInternalId();
+                }
+            }).collect(Collectors.toSet());
             markAllTransientLinkedResourcesToUpdate(toRefreshIds, idsToUpdate);
 
         }
@@ -253,8 +263,14 @@ public class ChangeExecutionLogic extends AbstractBasics {
             hooks.forEach(h -> h.resourceUpdated(applyChangesContext, previousResource, updatedResource));
 
             // Add the direct links for update notification
-            applyChangesContext.getUpdatedResourcesPrevious().addAll(ipResourceService.linkFindAllByFromResource(updatedResource).stream().map(it -> it.getB()).collect(Collectors.toList()));
-            applyChangesContext.getUpdatedResourcesPrevious().addAll(ipResourceService.linkFindAllByToResource(updatedResource).stream().map(it -> it.getA()).collect(Collectors.toList()));
+            ipResourceService.linkFindAllRelatedByResource(updatedResource).forEach(link -> {
+                if (link.getA().getInternalId() != updatedResource.getInternalId()) {
+                    toRefreshIdsSeconds.add(link.getA().getInternalId());
+                }
+                if (link.getC().getInternalId() != updatedResource.getInternalId()) {
+                    toRefreshIdsSeconds.add(link.getC().getInternalId());
+                }
+            });
             // Add all the transient managed resources links for update notification
             markAllTransientLinkedResourcesToUpdate(toRefreshIdsSeconds, Arrays.asList(updatedResource.getInternalId()));
         }
@@ -473,10 +489,15 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 continue;
             }
 
-            List<Tuple2<String, ? extends IPResource>> resourcesTo = ipResourceService.linkFindAllByFromResource(id);
-            markAllTransientLinkedResourcesToUpdate(updatedIds, transientProcessedIds, resourcesTo.stream().map(it -> it.getB().getInternalId()).collect(Collectors.toSet()));
-            List<Tuple2<? extends IPResource, String>> resourcesFrom = ipResourceService.linkFindAllByToResource(id);
-            markAllTransientLinkedResourcesToUpdate(updatedIds, transientProcessedIds, resourcesFrom.stream().map(it -> it.getA().getInternalId()).collect(Collectors.toSet()));
+            Set<Long> linkedIds = ipResourceService.linkFindAllRelatedByResource(id).stream().map(link -> {
+                if (link.getA().getInternalId() != id) {
+                    return link.getA().getInternalId();
+                } else {
+                    return link.getC().getInternalId();
+                }
+            }).collect(Collectors.toSet());
+
+            markAllTransientLinkedResourcesToUpdate(updatedIds, transientProcessedIds, linkedIds);
         }
 
     }
