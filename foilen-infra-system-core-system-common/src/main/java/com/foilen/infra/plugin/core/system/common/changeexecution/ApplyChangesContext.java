@@ -42,40 +42,78 @@ public class ApplyChangesContext extends AbstractBasics {
     private Queue<IPResource> updatedResourcesPrevious = new LinkedBlockingQueue<>();
     private Queue<IPResource> deletedResources = new LinkedBlockingQueue<>();
     private Queue<Long> resourcesNeedRefresh = new LinkedBlockingQueue<>();
+    private Queue<Long> updatedDirectCheck = new LinkedBlockingQueue<>();
+    private Queue<Long> updatedFarCheck = new LinkedBlockingQueue<>();
 
     // Removed resources
     private Map<Long, List<Tuple3<IPResource, String, IPResource>>> deletedResourcePreviousLinksByResourceId = new HashMap<>();
     private Set<Long> removedResourcesInThisTransaction = new LinkedHashSet<>();
 
     // Reporting
-    private Map<String, AtomicInteger> updateCoundByResourceId = new HashMap<>();
+    private Map<String, AtomicInteger> updateCountByResourceId = new HashMap<>();
     private Map<String, AtomicLong> executionTimeInMsByUpdateHandler = new HashMap<>();
+    private Map<String, AtomicLong> updateDirectCheckByUpdateHandler = new HashMap<>();
+    private Map<String, AtomicLong> updateFarCheckByUpdateHandler = new HashMap<>();
 
     public void addExecutionTime(UpdateEventHandler<?> updateEventHandler, long time) {
         CollectionsTools.getOrCreateEmpty(executionTimeInMsByUpdateHandler, updateEventHandler.getClass().getSimpleName(), AtomicLong.class).addAndGet(time);
     }
 
-    public List<String> generateUpdateCountReport() {
-        List<String> report = updateCoundByResourceId.entrySet().stream() //
+    public void addUpdateDirectCheck(UpdateEventHandler<?> updateEventHandler) {
+        CollectionsTools.getOrCreateEmpty(updateDirectCheckByUpdateHandler, updateEventHandler.getClass().getSimpleName(), AtomicLong.class).incrementAndGet();
+    }
+
+    public void addUpdateFarCheck(UpdateEventHandler<?> updateEventHandler) {
+        CollectionsTools.getOrCreateEmpty(updateFarCheckByUpdateHandler, updateEventHandler.getClass().getSimpleName(), AtomicLong.class).incrementAndGet();
+    }
+
+    public List<String> generateTop10UpdateCountReport() {
+        List<String> report = updateCountByResourceId.entrySet().stream() //
                 .map(entry -> new Tuple2<>(entry.getKey(), entry.getValue().get())) //
                 .sorted((a, b) -> a.getB().compareTo(b.getB()) * -1) //
                 .limit(10) //
                 .map(it -> it.getA() + " : " + it.getB()) //
                 .collect(Collectors.toCollection(() -> new ArrayList<>()));
-        if (updateCoundByResourceId.size() > 10) {
+        if (updateCountByResourceId.size() > 10) {
             report.add("...");
         }
         return report;
     }
 
-    public List<String> generateUpdateEventHandlerExecutionTimeReport() {
+    public List<String> generateTop10UpdateDirectCheckByUpdateHandlerReport() {
+        List<String> report = updateDirectCheckByUpdateHandler.entrySet().stream() //
+                .map(entry -> new Tuple2<>(entry.getKey(), entry.getValue().get())) //
+                .sorted((a, b) -> a.getB().compareTo(b.getB()) * -1) //
+                .limit(10) //
+                .map(it -> it.getA() + " : " + it.getB()) //
+                .collect(Collectors.toCollection(() -> new ArrayList<>()));
+        if (updateCountByResourceId.size() > 10) {
+            report.add("...");
+        }
+        return report;
+    }
+
+    public List<String> generateTop10UpdateEventHandlerExecutionTimeReport() {
         List<String> report = executionTimeInMsByUpdateHandler.entrySet().stream() //
                 .map(entry -> new Tuple2<>(entry.getKey(), entry.getValue().get())) //
                 .sorted((a, b) -> a.getB().compareTo(b.getB()) * -1) //
                 .limit(10) //
                 .map(it -> it.getA() + " : " + it.getB() + " ms") //
                 .collect(Collectors.toCollection(() -> new ArrayList<>()));
-        if (updateCoundByResourceId.size() > 10) {
+        if (updateCountByResourceId.size() > 10) {
+            report.add("...");
+        }
+        return report;
+    }
+
+    public List<String> generateTop10UpdateFarCheckByUpdateHandlerReport() {
+        List<String> report = updateFarCheckByUpdateHandler.entrySet().stream() //
+                .map(entry -> new Tuple2<>(entry.getKey(), entry.getValue().get())) //
+                .sorted((a, b) -> a.getB().compareTo(b.getB()) * -1) //
+                .limit(10) //
+                .map(it -> it.getA() + " : " + it.getB()) //
+                .collect(Collectors.toCollection(() -> new ArrayList<>()));
+        if (updateCountByResourceId.size() > 10) {
             report.add("...");
         }
         return report;
@@ -109,12 +147,28 @@ public class ApplyChangesContext extends AbstractBasics {
         return txId;
     }
 
-    public Map<String, AtomicInteger> getUpdateCoundByResourceId() {
-        return updateCoundByResourceId;
+    public Map<String, AtomicInteger> getUpdateCountByResourceId() {
+        return updateCountByResourceId;
+    }
+
+    public Queue<Long> getUpdatedDirectCheck() {
+        return updatedDirectCheck;
+    }
+
+    public Queue<Long> getUpdatedFarCheck() {
+        return updatedFarCheck;
+    }
+
+    public Map<String, AtomicLong> getUpdateDirectCheckByUpdateHandler() {
+        return updateDirectCheckByUpdateHandler;
     }
 
     public Queue<IPResource> getUpdatedResourcesPrevious() {
         return updatedResourcesPrevious;
+    }
+
+    public Map<String, AtomicLong> getUpdateFarCheckByUpdateHandler() {
+        return updateFarCheckByUpdateHandler;
     }
 
     public String getUserName() {
@@ -126,7 +180,9 @@ public class ApplyChangesContext extends AbstractBasics {
     }
 
     public boolean hasChangesInQueues() {
-        return !addedResources.isEmpty() || !updatedResourcesPrevious.isEmpty() || !deletedResources.isEmpty() || !resourcesNeedRefresh.isEmpty();
+        return !addedResources.isEmpty() || !updatedResourcesPrevious.isEmpty() || !deletedResources.isEmpty() //
+                || !resourcesNeedRefresh.isEmpty() //
+                || !updatedDirectCheck.isEmpty() || !updatedFarCheck.isEmpty();
     }
 
     public boolean isExplicitChange() {
@@ -165,12 +221,28 @@ public class ApplyChangesContext extends AbstractBasics {
         this.txId = txId;
     }
 
-    public void setUpdateCoundByResourceId(Map<String, AtomicInteger> updateCoundByResourceId) {
-        this.updateCoundByResourceId = updateCoundByResourceId;
+    public void setUpdateCountByResourceId(Map<String, AtomicInteger> updateCountByResourceId) {
+        this.updateCountByResourceId = updateCountByResourceId;
+    }
+
+    public void setUpdatedDirectCheck(Queue<Long> updatedDirectCheck) {
+        this.updatedDirectCheck = updatedDirectCheck;
+    }
+
+    public void setUpdatedFarCheck(Queue<Long> updatedFarCheck) {
+        this.updatedFarCheck = updatedFarCheck;
+    }
+
+    public void setUpdateDirectCheckByUpdateHandler(Map<String, AtomicLong> updateDirectCheckByUpdateHandler) {
+        this.updateDirectCheckByUpdateHandler = updateDirectCheckByUpdateHandler;
     }
 
     public void setUpdatedResourcesPrevious(Queue<IPResource> updatedResourcesPrevious) {
         this.updatedResourcesPrevious = updatedResourcesPrevious;
+    }
+
+    public void setUpdateFarCheckByUpdateHandler(Map<String, AtomicLong> updateFarCheckByUpdateHandler) {
+        this.updateFarCheckByUpdateHandler = updateFarCheckByUpdateHandler;
     }
 
     public void setUserName(String userName) {
@@ -179,6 +251,15 @@ public class ApplyChangesContext extends AbstractBasics {
 
     public void setUserType(AuditUserType userType) {
         this.userType = userType;
+    }
+
+    public String toQueueInformation() {
+        return updatedResourcesPrevious.size() + " updates, " //
+                + deletedResources.size() + " deletions, " //
+                + addedResources.size() + " addition, " //
+                + resourcesNeedRefresh.size() + " refreshes, " //
+                + updatedDirectCheck.size() + " updated direct, " //
+                + updatedFarCheck.size() + " updated far";
     }
 
 }

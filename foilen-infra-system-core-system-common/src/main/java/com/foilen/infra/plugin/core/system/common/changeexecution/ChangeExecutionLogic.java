@@ -74,9 +74,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
 
     private void applyChanges(ApplyChangesContext applyChangesContext, ChangesContext changes) {
 
-        logger.debug("State before applying changes. Has {} updates, {} deletions, {} addition, {} refreshes", //
-                applyChangesContext.getUpdatedResourcesPrevious().size(), applyChangesContext.getDeletedResources().size(), applyChangesContext.getAddedResources().size(),
-                applyChangesContext.getResourcesNeedRefresh().size());
+        logger.debug("State before applying changes. Has {}", applyChangesContext.toQueueInformation());
         logger.debug("[APPLY] Resources: has {} updates, {} deletions, {} addition, {} refreshes ; Links: has {} deletions, {} addition ; Tags: has {} deletions, {} addition", //
                 changes.getResourcesToUpdate().size(), changes.getResourcesToDelete().size(), changes.getResourcesToAdd().size(), changes.getResourcesToRefresh().size(), //
                 changes.getLinksToDelete().size(), changes.getLinksToAdd().size(), //
@@ -84,7 +82,8 @@ public class ChangeExecutionLogic extends AbstractBasics {
         );
 
         // Delete
-        Set<Long> toRefreshIds = new HashSet<>();
+        Set<Long> toRefreshDirectIds = new HashSet<>();
+        Set<Long> toRefreshFarIds = new HashSet<>();
         for (Long id : changes.getResourcesToDelete()) {
 
             if (applyChangesContext.getRemovedResourcesInThisTransaction().add(id)) {
@@ -99,10 +98,14 @@ public class ChangeExecutionLogic extends AbstractBasics {
             applyChangesContext.getDeletedResourcePreviousLinksByResourceId().put(id, deletedResourcePreviousLinks);
 
             IPResource resource = ipResourceService.resourceFind(id).get();
+            CollectionsTools.getOrCreateEmpty(applyChangesContext.getUpdateCountByResourceId(), resource.getClass().getSimpleName() + " / " + resource.getResourceName(), AtomicInteger.class)
+                    .incrementAndGet();
             hooks.forEach(h -> h.resourceDeleted(applyChangesContext, resource));
 
             applyChangesContext.getDeletedResources().add(resource);
             applyChangesContext.getResourcesNeedRefresh().remove(id);
+            applyChangesContext.getUpdatedDirectCheck().remove(id);
+            applyChangesContext.getUpdatedFarCheck().remove(id);
             deletedResourcePreviousLinks.addAll(ipResourceService.linkFindAllRelatedByResource(id));
             Set<Long> idsToUpdate = deletedResourcePreviousLinks.stream().map(link -> {
                 if (link.getA().getInternalId() != id) {
@@ -111,7 +114,8 @@ public class ChangeExecutionLogic extends AbstractBasics {
                     return link.getC().getInternalId();
                 }
             }).collect(Collectors.toSet());
-            markAllTransientLinkedResourcesToUpdate(toRefreshIds, idsToUpdate);
+            toRefreshDirectIds.addAll(idsToUpdate);
+            markAllTransientLinkedResourcesToUpdate(toRefreshFarIds, idsToUpdate);
             internalChangeService.resourceDelete(id);
         }
         for (
@@ -126,7 +130,9 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 String linkType = link.getB();
                 if (internalChangeService.linkDelete(fromId, linkType, toId)) {
                     hooks.forEach(h -> h.linkDeleted(applyChangesContext, fromResource.get(), linkType, toResource.get()));
-                    markAllTransientLinkedResourcesToUpdate(toRefreshIds, Arrays.asList(fromId, toId));
+                    toRefreshDirectIds.add(fromId);
+                    toRefreshDirectIds.add(toId);
+                    markAllTransientLinkedResourcesToUpdate(toRefreshFarIds, Arrays.asList(fromId, toId));
                 } else {
                     logger.debug("[APPLY-SKIP] Delete link {}. Skipped since does not exists", link);
                 }
@@ -140,7 +146,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 String tagName = tag.getB();
                 if (internalChangeService.tagDelete(internalId, tagName)) {
                     hooks.forEach(h -> h.tagDeleted(applyChangesContext, resource.get(), tagName));
-                    toRefreshIds.add(internalId);
+                    toRefreshDirectIds.add(internalId);
                 } else {
                     logger.debug("[APPLY-SKIP] Delete tag {}. Skipped since does not exists", tag);
                 }
@@ -155,12 +161,17 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 throw new ResourcePrimaryKeyCollisionException(resource);
             }
 
+            CollectionsTools.getOrCreateEmpty(applyChangesContext.getUpdateCountByResourceId(), resource.getClass().getSimpleName() + " / " + resource.getResourceName(), AtomicInteger.class)
+                    .incrementAndGet();
+
             hooks.forEach(h -> h.resourceAdded(applyChangesContext, resource));
 
             IPResource addedResource = internalChangeService.resourceAdd(resource);
             applyChangesContext.getAddedResources().add(addedResource);
             resource.setInternalId(addedResource.getInternalId());
             applyChangesContext.getResourcesNeedRefresh().remove(resource.getInternalId());
+            applyChangesContext.getUpdatedDirectCheck().remove(resource.getInternalId());
+            applyChangesContext.getUpdatedFarCheck().remove(resource.getInternalId());
 
             // Add the direct links for update notification
             Set<Long> idsToUpdate = ipResourceService.linkFindAllRelatedByResource(resource).stream().map(link -> {
@@ -170,7 +181,8 @@ public class ChangeExecutionLogic extends AbstractBasics {
                     return link.getC().getInternalId();
                 }
             }).collect(Collectors.toSet());
-            markAllTransientLinkedResourcesToUpdate(toRefreshIds, idsToUpdate);
+            toRefreshDirectIds.addAll(idsToUpdate);
+            markAllTransientLinkedResourcesToUpdate(toRefreshFarIds, idsToUpdate);
 
         }
         for (Tuple3<IPResource, String, IPResource> link : changes.getLinksToAdd()) {
@@ -192,7 +204,9 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 // Add
                 internalChangeService.linkAdd(fromId, linkType, toId);
                 hooks.forEach(h -> h.linkAdded(applyChangesContext, fromResource.get(), linkType, toResource.get()));
-                markAllTransientLinkedResourcesToUpdate(toRefreshIds, Arrays.asList(fromId, toId));
+                toRefreshDirectIds.add(fromId);
+                toRefreshDirectIds.add(toId);
+                markAllTransientLinkedResourcesToUpdate(toRefreshFarIds, Arrays.asList(fromId, toId));
             } else {
                 logger.debug("[APPLY-SKIP] Add link {}. Skipped since does not exists", link);
             }
@@ -212,20 +226,26 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 // Add
                 internalChangeService.tagAdd(pluginResourceId, tagName);
                 hooks.forEach(h -> h.tagAdded(applyChangesContext, resource.get(), tagName));
-                toRefreshIds.add(pluginResourceId);
+                toRefreshDirectIds.add(pluginResourceId);
             } else {
                 logger.debug("[APPLY-SKIP] Add tag {}. Skipped since does not exists", tag);
             }
         }
-        toRefreshIds.removeAll(applyChangesContext.getRemovedResourcesInThisTransaction());
-        toRefreshIds.forEach(toRefreshId -> {
-            if (idNotInAnyQueues(toRefreshId, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources(),
-                    applyChangesContext.getResourcesNeedRefresh())) {
-                applyChangesContext.getResourcesNeedRefresh().add(toRefreshId);
+        toRefreshDirectIds.removeAll(applyChangesContext.getRemovedResourcesInThisTransaction());
+        toRefreshFarIds.removeAll(applyChangesContext.getRemovedResourcesInThisTransaction());
+        toRefreshDirectIds.forEach(toRefreshId -> {
+            if (idNotInAnyQueues(toRefreshId, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources())) {
+                applyChangesContext.getUpdatedDirectCheck().add(toRefreshId);
+            }
+        });
+        toRefreshFarIds.forEach(toRefreshId -> {
+            if (idNotInAnyQueues(toRefreshId, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources())) {
+                applyChangesContext.getUpdatedFarCheck().add(toRefreshId);
             }
         });
 
-        Set<Long> toRefreshIdsSeconds = new HashSet<>();
+        Set<Long> toRefreshDirectIdsSeconds = new HashSet<>();
+        Set<Long> toRefreshFarIdsSeconds = new HashSet<>();
         // Update
         for (Tuple2<Long, IPResource> update : changes.getResourcesToUpdate()) {
 
@@ -241,6 +261,8 @@ public class ChangeExecutionLogic extends AbstractBasics {
             if (!applyChangesContext.getUpdatedResourcesPrevious().stream().filter(it -> previousResource.getInternalId().equals(it.getInternalId())).findAny().isPresent()) {
                 applyChangesContext.getUpdatedResourcesPrevious().add(previousResource);
                 applyChangesContext.getResourcesNeedRefresh().remove(previousResource.getInternalId());
+                applyChangesContext.getUpdatedDirectCheck().remove(previousResource.getInternalId());
+                applyChangesContext.getUpdatedFarCheck().remove(previousResource.getInternalId());
             }
 
             // Get the next resource (might not exists)
@@ -256,51 +278,57 @@ public class ChangeExecutionLogic extends AbstractBasics {
 
             // Update the resource
             CollectionsTools
-                    .getOrCreateEmpty(applyChangesContext.getUpdateCoundByResourceId(), previousResource.getClass().getSimpleName() + " / " + previousResource.getResourceName(), AtomicInteger.class)
+                    .getOrCreateEmpty(applyChangesContext.getUpdateCountByResourceId(), previousResource.getClass().getSimpleName() + " / " + previousResource.getResourceName(), AtomicInteger.class)
                     .incrementAndGet();
             updatedResource.setInternalId(update.getA());
             internalChangeService.resourceUpdate(previousResource, updatedResource);
             hooks.forEach(h -> h.resourceUpdated(applyChangesContext, previousResource, updatedResource));
 
             // Add the direct links for update notification
-            ipResourceService.linkFindAllRelatedByResource(updatedResource).forEach(link -> {
+            Set<Long> idsToUpdate = ipResourceService.linkFindAllRelatedByResource(updatedResource).stream().map(link -> {
                 if (link.getA().getInternalId() != updatedResource.getInternalId()) {
-                    toRefreshIdsSeconds.add(link.getA().getInternalId());
+                    return link.getA().getInternalId();
+                } else {
+                    return link.getC().getInternalId();
                 }
-                if (link.getC().getInternalId() != updatedResource.getInternalId()) {
-                    toRefreshIdsSeconds.add(link.getC().getInternalId());
-                }
-            });
+            }).collect(Collectors.toSet());
+            toRefreshDirectIds.addAll(idsToUpdate);
+            markAllTransientLinkedResourcesToUpdate(toRefreshFarIds, idsToUpdate);
+
             // Add all the transient managed resources links for update notification
-            markAllTransientLinkedResourcesToUpdate(toRefreshIdsSeconds, Arrays.asList(updatedResource.getInternalId()));
+            markAllTransientLinkedResourcesToUpdate(toRefreshFarIdsSeconds, Arrays.asList(updatedResource.getInternalId()));
         }
 
         // Refreshes
         for (Long id : changes.getResourcesToRefresh()) {
             logger.debug("[APPLY] Refresh resource {}", id);
-            if (idNotInAnyQueues(id, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources(),
-                    applyChangesContext.getResourcesNeedRefresh())) {
+            if (idNotInAnyQueues(id, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources())) {
                 applyChangesContext.getResourcesNeedRefresh().add(id);
             } else {
                 logger.debug("[APPLY-SKIP] Refresh resource {}. Already waiting for a refresh in any category", id);
             }
         }
 
-        toRefreshIdsSeconds.removeAll(toRefreshIds);
-        toRefreshIdsSeconds.forEach(toRefreshId -> {
-            if (idNotInAnyQueues(toRefreshId, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources(),
-                    applyChangesContext.getResourcesNeedRefresh())) {
-                applyChangesContext.getResourcesNeedRefresh().add(toRefreshId);
+        toRefreshDirectIdsSeconds.removeAll(toRefreshDirectIds);
+        toRefreshFarIdsSeconds.removeAll(toRefreshFarIds);
+        toRefreshDirectIdsSeconds.forEach(toRefreshId -> {
+            if (idNotInAnyQueues(toRefreshId, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources())) {
+                applyChangesContext.getUpdatedDirectCheck().add(toRefreshId);
+            }
+        });
+        toRefreshFarIdsSeconds.forEach(toRefreshId -> {
+            if (idNotInAnyQueues(toRefreshId, applyChangesContext.getAddedResources(), applyChangesContext.getUpdatedResourcesPrevious(), applyChangesContext.getDeletedResources())) {
+                applyChangesContext.getUpdatedFarCheck().add(toRefreshId);
             }
         });
 
         // Cleanup lists
         applyChangesContext.getRemovedResourcesInThisTransaction().addAll(applyChangesContext.getDeletedResources().stream().map(IPResource::getInternalId).collect(Collectors.toSet()));
         applyChangesContext.getUpdatedResourcesPrevious().removeIf(it -> applyChangesContext.getRemovedResourcesInThisTransaction().contains(it.getInternalId()));
+        applyChangesContext.getUpdatedFarCheck().removeAll(applyChangesContext.getUpdatedDirectCheck());
 
         changes.clear();
-        logger.debug("State after applying changes. Has {} updates, {} deletions, {} addition, {} refreshes", applyChangesContext.getUpdatedResourcesPrevious().size(),
-                applyChangesContext.getDeletedResources().size(), applyChangesContext.getAddedResources().size(), applyChangesContext.getResourcesNeedRefresh().size());
+        logger.debug("State after applying changes. Has {} ", applyChangesContext.toQueueInformation());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -341,8 +369,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
 
             while (System.currentTimeMillis() < maxTime && (applyChangesContext.hasChangesInQueues())) {
 
-                logger.debug("Update events loop. Has {} updates, {} deletions, {} addition, {} refreshes", applyChangesContext.getUpdatedResourcesPrevious().size(),
-                        applyChangesContext.getUpdatedResourcesPrevious().size(), applyChangesContext.getAddedResources().size(), applyChangesContext.getResourcesNeedRefresh().size());
+                logger.debug("Update events loop. Has {}", applyChangesContext.toQueueInformation());
 
                 // Process all updates
                 IPResource itemPrevious;
@@ -430,6 +457,52 @@ public class ChangeExecutionLogic extends AbstractBasics {
                     }
                 }
 
+                // Refresh for direct
+                while (System.currentTimeMillis() < maxTime && (id = applyChangesContext.getUpdatedDirectCheck().poll()) != null) {
+                    Optional<IPResource> optionalResource = ipResourceService.resourceFind(id);
+                    if (optionalResource.isPresent()) {
+                        item = optionalResource.get();
+                        List<UpdateEventContext> eventContexts = updateEventContextsByResourceType.get(item.getClass());
+                        if (eventContexts != null) {
+                            logger.debug("[UPDATE EVENT] Processing {} updated direct check handlers", eventContexts.size());
+                            for (UpdateEventContext eventContext : eventContexts) {
+                                logger.debug("[UPDATE EVENT] Processing {} updated direct check handlers", eventContext.getUpdateHandlerName());
+                                UpdateEventHandler updateEventHandler = eventContext.getUpdateEventHandler();
+                                IPResource finalItem = item;
+                                long time = TimeExecutionTools.measureInMs(() -> {
+                                    updateEventHandler.checkDirectLinkChanged(commonServicesContext, changes, finalItem);
+                                    applyChanges(applyChangesContext, changes);
+                                });
+                                applyChangesContext.addUpdateDirectCheck(updateEventHandler);
+                                applyChangesContext.addExecutionTime(updateEventHandler, time);
+                            }
+                        }
+                    }
+                }
+
+                // Refresh for far
+                while (System.currentTimeMillis() < maxTime && (id = applyChangesContext.getUpdatedFarCheck().poll()) != null) {
+                    Optional<IPResource> optionalResource = ipResourceService.resourceFind(id);
+                    if (optionalResource.isPresent()) {
+                        item = optionalResource.get();
+                        List<UpdateEventContext> eventContexts = updateEventContextsByResourceType.get(item.getClass());
+                        if (eventContexts != null) {
+                            logger.debug("[UPDATE EVENT] Processing {} updated direct check handlers", eventContexts.size());
+                            for (UpdateEventContext eventContext : eventContexts) {
+                                logger.debug("[UPDATE EVENT] Processing {} updated direct check handlers", eventContext.getUpdateHandlerName());
+                                UpdateEventHandler updateEventHandler = eventContext.getUpdateEventHandler();
+                                IPResource finalItem = item;
+                                long time = TimeExecutionTools.measureInMs(() -> {
+                                    updateEventHandler.checkFarLinkChanged(commonServicesContext, changes, finalItem);
+                                    applyChanges(applyChangesContext, changes);
+                                });
+                                applyChangesContext.addUpdateFarCheck(updateEventHandler);
+                                applyChangesContext.addExecutionTime(updateEventHandler, time);
+                            }
+                        }
+                    }
+                }
+
                 // Apply any pending changes
                 if (System.currentTimeMillis() < maxTime) {
                     applyChanges(applyChangesContext, changes);
@@ -441,15 +514,19 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 // InfiniteUpdateLoop Display report
                 logger.error("Iterated for too long and there are always changes");
                 hooks.forEach(h -> h.failureInfinite(applyChangesContext));
-                logger.info("Report Update count: {}", Joiner.on(", ").join(applyChangesContext.generateUpdateCountReport()));
-                logger.info("Report Event Handler execution time: {}", Joiner.on(", ").join(applyChangesContext.generateUpdateEventHandlerExecutionTimeReport()));
+                logger.info("Report Update count: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateCountReport()));
+                logger.info("Report Event Handler execution time: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateEventHandlerExecutionTimeReport()));
+                logger.info("Report Event Handler update direct count: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateDirectCheckByUpdateHandlerReport()));
+                logger.info("Report Event Handler update far count: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateFarCheckByUpdateHandlerReport()));
                 throw new InfiniteUpdateLoop("Iterated for too long and there are always changes");
             }
 
             // Show reports
             hooks.forEach(h -> h.success(applyChangesContext));
-            logger.info("Report Update count: {}", Joiner.on(", ").join(applyChangesContext.generateUpdateCountReport()));
-            logger.info("Report Event Handler execution time: {}", Joiner.on(", ").join(applyChangesContext.generateUpdateEventHandlerExecutionTimeReport()));
+            logger.info("Report Update count: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateCountReport()));
+            logger.info("Report Event Handler execution time: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateEventHandlerExecutionTimeReport()));
+            logger.info("Report Event Handler update direct count: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateDirectCheckByUpdateHandlerReport()));
+            logger.info("Report Event Handler update far count: {}", Joiner.on(", ").join(applyChangesContext.generateTop10UpdateFarCheckByUpdateHandlerReport()));
 
             // Complete the transaction
             logger.info("===== [changesExecute] Completed =====");
@@ -468,9 +545,8 @@ public class ChangeExecutionLogic extends AbstractBasics {
         return infiniteLoopTimeoutInMs;
     }
 
-    private boolean idNotInAnyQueues(Long id, Queue<IPResource> addedResources, Queue<IPResource> updatedResourcesPrevious, Queue<IPResource> deletedResources, Queue<Long> resourcesNeedRefresh) {
-        return !resourcesNeedRefresh.contains(id) //
-                && !addedResources.stream().filter(it -> id.equals(it.getInternalId())).findAny().isPresent() //
+    private boolean idNotInAnyQueues(Long id, Queue<IPResource> addedResources, Queue<IPResource> updatedResourcesPrevious, Queue<IPResource> deletedResources) {
+        return !addedResources.stream().filter(it -> id.equals(it.getInternalId())).findAny().isPresent() //
                 && !updatedResourcesPrevious.stream().filter(it -> id.equals(it.getInternalId())).findAny().isPresent() //
                 && !deletedResources.stream().filter(it -> id.equals(it.getInternalId())).findAny().isPresent();
     }

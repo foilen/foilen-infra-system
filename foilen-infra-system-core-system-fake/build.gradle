@@ -25,7 +25,7 @@ dependencies {
   compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.6"
   compileOnly "com.foilen:foilen-infra-resource-urlredirection:0.1.8"
   testCompile "com.foilen:foilen-infra-resource-webcertificate:0.1.2"
-  testCompile "com.foilen:foilen-infra-resource-website:0.1.8"
+  testCompile "com.foilen:foilen-infra-resource-website:0.1.9"
 
 }
 
