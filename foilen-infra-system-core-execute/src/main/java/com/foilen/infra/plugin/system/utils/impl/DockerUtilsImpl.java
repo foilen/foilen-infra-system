@@ -183,6 +183,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         String output = unixShellAndFsUtils.executeCommandQuietAndGetOutput("Docker", "ps", //
                 "/usr/bin/docker", //
                 "ps", "-a", "--no-trunc", "-s", "--format", "{{.ID}}\t{{.Names}}\t{{.CreatedAt}}\t{{.RunningFor}}\t{{.Status}}\t{{.Size}}");
+        logger.debug("Docker ps output: {}", output);
 
         List<DockerPs> containers = convertToDockerPs(output);
 
