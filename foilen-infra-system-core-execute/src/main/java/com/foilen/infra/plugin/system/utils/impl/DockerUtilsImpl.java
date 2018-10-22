@@ -66,6 +66,7 @@ import com.foilen.smalltools.tools.StringTools;
 import com.foilen.smalltools.tools.SystemTools;
 import com.foilen.smalltools.tools.ThreadTools;
 import com.foilen.smalltools.tuple.Tuple2;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
@@ -359,7 +360,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             arguments.add(String.valueOf(dockerState.getRedirectorBridgePort()));
             arguments.add("--entryBridgeRegistryFile");
             arguments.add("/data/entry.json");
-            applicationDefinition.setCommand(JsonTools.compactPrint(arguments));
+            applicationDefinition.setCommand(Joiner.on(" ").join(arguments));
 
             // Add to the list
             applicationBuildDetailsByName.put(DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME, new ApplicationBuildDetails() //
@@ -396,7 +397,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             arguments.add(String.valueOf(dockerState.getRedirectorBridgePort()));
             arguments.add("--exitBridgeRegistryFile");
             arguments.add("/data/exit.json");
-            applicationDefinition.setCommand(JsonTools.compactPrint(arguments));
+            applicationDefinition.setCommand(Joiner.on(" ").join(arguments));
 
             // Add to the list
             applicationBuildDetailsByName.put(DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME, new ApplicationBuildDetails() //
