@@ -487,9 +487,9 @@ public class ChangeExecutionLogic extends AbstractBasics {
                         item = optionalResource.get();
                         List<UpdateEventContext> eventContexts = updateEventContextsByResourceType.get(item.getClass());
                         if (eventContexts != null) {
-                            logger.debug("[UPDATE EVENT] Processing {} updated direct check handlers", eventContexts.size());
+                            logger.debug("[UPDATE EVENT] Processing {} updated far check handlers", eventContexts.size());
                             for (UpdateEventContext eventContext : eventContexts) {
-                                logger.debug("[UPDATE EVENT] Processing {} updated direct check handlers", eventContext.getUpdateHandlerName());
+                                logger.debug("[UPDATE EVENT] Processing {} updated far check handlers", eventContext.getUpdateHandlerName());
                                 UpdateEventHandler updateEventHandler = eventContext.getUpdateEventHandler();
                                 IPResource finalItem = item;
                                 long time = TimeExecutionTools.measureInMs(() -> {
