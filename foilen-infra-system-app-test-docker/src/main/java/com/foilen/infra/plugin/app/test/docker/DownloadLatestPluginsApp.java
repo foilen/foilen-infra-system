@@ -10,14 +10,15 @@
 package com.foilen.infra.plugin.app.test.docker;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
+import com.foilen.smalltools.tools.AssertTools;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.LogbackTools;
 import com.google.common.collect.ComparisonChain;
@@ -57,36 +58,44 @@ public class DownloadLatestPluginsApp {
             System.out.println("Plugin: " + nextPlugin);
 
             try {
-                String packageName = "foilen-infra-resource-" + nextPlugin;
-                String jarDestination = outDir + packageName + ".jar";
-                if (FileTools.exists(jarDestination)) {
+                if (FileTools.exists(outDir + "foilen-infra-plugins-" + nextPlugin + ".jar") || FileTools.exists(outDir + "foilen-infra-resource-" + nextPlugin + ".jar")) {
                     System.out.println("\tAlready got it. Skipping");
                     continue;
                 }
 
                 // Get the version
-                Document doc = Jsoup.connect("https://dl.bintray.com/foilen/maven/com/foilen/" + packageName).get();
-                Elements links = doc.select("a");
-                String version = links.stream() //
-                        .map(it -> it.text().replace("/", "")) //
-                        .map(it -> it.split("\\.")) //
-                        .filter(it -> it.length == 3) //
-                        .map(it -> new int[] { Integer.valueOf(it[0]), Integer.valueOf(it[1]), Integer.valueOf(it[2]) }) //
-                        .sorted((a, b) -> ComparisonChain.start() //
-                                .compare(b[0], a[0]) //
-                                .compare(b[1], a[1]) //
-                                .compare(b[2], a[2]) //
-                                .result()) //
-                        .map(it -> "" + it[0] + "." + it[1] + "." + it[2]) //
-                        .findFirst().get(); //
+                boolean foundOne = false;
+                for (String packageName : Arrays.asList("foilen-infra-plugins-" + nextPlugin, "foilen-infra-resource-" + nextPlugin)) {
+                    try {
+                        String jarDestination = outDir + packageName + ".jar";
+                        Document doc = Jsoup.connect("https://dl.bintray.com/foilen/maven/com/foilen/" + packageName).get();
+                        Elements links = doc.select("a");
+                        String version = links.stream() //
+                                .map(it -> it.text().replace("/", "")) //
+                                .map(it -> it.split("\\.")) //
+                                .filter(it -> it.length == 3) //
+                                .map(it -> new int[] { Integer.valueOf(it[0]), Integer.valueOf(it[1]), Integer.valueOf(it[2]) }) //
+                                .sorted((a, b) -> ComparisonChain.start() //
+                                        .compare(b[0], a[0]) //
+                                        .compare(b[1], a[1]) //
+                                        .compare(b[2], a[2]) //
+                                        .result()) //
+                                .map(it -> "" + it[0] + "." + it[1] + "." + it[2]) //
+                                .findFirst().get(); //
 
-                // Get the jar
-                String jarUrl = "https://dl.bintray.com/foilen/maven/com/foilen/" + packageName + "/" + version + "/" + packageName + "-" + version + ".jar";
-                System.out.println("\tDownloading: " + jarUrl);
+                        // Get the jar
+                        String jarUrl = "https://dl.bintray.com/foilen/maven/com/foilen/" + packageName + "/" + version + "/" + packageName + "-" + version + ".jar";
+                        System.out.println("\tDownloading: " + jarUrl);
 
-                FileUtils.copyURLToFile(new URL(jarUrl), new File(jarDestination), 5000, 20000);
-            } catch (IOException e) {
-                System.err.println("Problem getting the folder");
+                        FileUtils.copyURLToFile(new URL(jarUrl), new File(jarDestination), 5000, 20000);
+                        foundOne = true;
+                    } catch (Exception e) {
+                    }
+                }
+
+                AssertTools.assertTrue(foundOne, "Could not find plugin " + nextPlugin);
+            } catch (Exception e) {
+                System.err.println("Problem getting the plugin");
                 e.printStackTrace();
                 System.exit(1);
             }

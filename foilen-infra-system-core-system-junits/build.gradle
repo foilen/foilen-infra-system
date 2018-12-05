@@ -1,18 +1,12 @@
 dependencies {
 
   compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
-  compileOnly "com.foilen:foilen-infra-resource-application:0.1.2"
-  compileOnly "com.foilen:foilen-infra-resource-dns:0.1.7"
+  compile "junit:junit"
+  
+  compile 'com.foilen:foilen-infra-plugins-core:0.1.0'
+  compileOnly "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
   compileOnly "com.foilen:foilen-infra-resource-example:0.1.0"
   compileOnly "com.foilen:foilen-infra-resource-example-failing:0.1.0"
-  compileOnly "com.foilen:foilen-infra-resource-infraconfig:0.3.10"
-  compileOnly "com.foilen:foilen-infra-resource-machine:0.1.1"
-  compileOnly "com.foilen:foilen-infra-resource-mariadb:0.1.4"
-  compileOnly "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
-  compileOnly "com.foilen:foilen-infra-resource-unixuser:0.1.6"
-  compileOnly "com.foilen:foilen-infra-resource-webcertificate:0.1.2"
-  compileOnly "com.foilen:foilen-infra-resource-website:0.1.9"
-  compile "junit:junit"
 
 }
 
