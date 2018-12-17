@@ -3,7 +3,7 @@ dependencies {
   compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
   compile "junit:junit"
   
-  compile 'com.foilen:foilen-infra-plugins-core:0.1.0'
+  compile "com.foilen:foilen-infra-plugins-core:$foilenInfraPluginsCoreVersion"
   compileOnly "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
   compileOnly "com.foilen:foilen-infra-resource-example:0.1.0"
   compileOnly "com.foilen:foilen-infra-resource-example-failing:0.1.0"

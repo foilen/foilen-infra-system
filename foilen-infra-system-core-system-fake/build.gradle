@@ -14,7 +14,7 @@ dependencies {
   compile "org.webjars:bootstrap:3.3.7-1"
   compile "org.webjars:typeaheadjs:0.11.1"
   
-  compileOnly "com.foilen:foilen-infra-resource-example:0.1.0"
+  testCompile "com.foilen:foilen-infra-resource-example:0.1.0"
   testCompile "com.foilen:foilen-infra-resource-example-failing:0.1.0"
   testCompile "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
 
