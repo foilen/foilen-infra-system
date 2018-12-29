@@ -749,6 +749,9 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         fileLinesIterable.openString(output);
         for (String line : fileLinesIterable) {
             String[] parts = line.split("\t");
+            if (parts.length < 6) {
+                continue;
+            }
             DockerPs dockerPs = new DockerPs();
             int i = 0;
             dockerPs.setId(parts[i++]);

@@ -36,8 +36,8 @@ public class DockerUtilsImplTest {
     private static final Joiner JOINER_NEW_LINE = Joiner.on("\n");
 
     private void assertDockerPs(String expectedList, String actualOutput) {
-        List<DockerPs> expected = JsonTools.readFromResourceAsList(expectedList, DockerPs.class, this.getClass());
         List<DockerPs> actual = new DockerUtilsImpl().convertToDockerPs(ResourceTools.getResourceAsString(actualOutput, this.getClass()));
+        List<DockerPs> expected = JsonTools.readFromResourceAsList(expectedList, DockerPs.class, this.getClass());
 
         AssertTools.assertJsonComparison(expected, actual);
     }
@@ -244,6 +244,7 @@ public class DockerUtilsImplTest {
     public void testConvertToDockerPs() {
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-nothing-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-nothing.txt");
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-some-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-some.txt");
+        assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-incompleteStream-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-incompleteStream.txt");
     }
 
 }
