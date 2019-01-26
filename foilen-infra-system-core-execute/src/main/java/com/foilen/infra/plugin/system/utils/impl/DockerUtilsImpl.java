@@ -202,8 +202,6 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
     @Override
     public List<String> containersManage(ContainersManageContext containersManageContext) {
 
-        // TODO + TEST - Remove the logic to fail on a non-started dependency
-
         List<String> modifiedContainerNames = new ArrayList<>();
         DockerState dockerState = containersManageContext.getDockerState();
 
