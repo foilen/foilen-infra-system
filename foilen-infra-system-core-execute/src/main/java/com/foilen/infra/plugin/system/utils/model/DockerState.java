@@ -17,14 +17,15 @@ import java.util.concurrent.Future;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.foilen.smalltools.tools.AbstractBasics;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DockerState {
+public class DockerState extends AbstractBasics {
 
     // Running state
     private Map<String, DockerStateIds> runningContainersByName = new HashMap<>();
     private Map<String, DockerStateIds> failedContainersByName = new HashMap<>();
-    private Map<String, String> ipByName = new HashMap<>();
+    private Map<String, DockerStateIp> ipStateByName = new HashMap<>();
 
     // Cron
     private Map<String, DockerStateIds> cronContainersByName = new HashMap<>();
@@ -58,8 +59,8 @@ public class DockerState {
         return failedContainersByName;
     }
 
-    public Map<String, String> getIpByName() {
-        return ipByName;
+    public Map<String, DockerStateIp> getIpStateByName() {
+        return ipStateByName;
     }
 
     public Map<String, String> getRedirectIpByMachineContainerEndpoint() {
@@ -106,8 +107,8 @@ public class DockerState {
         this.failedContainersByName = failedContainersByName;
     }
 
-    public void setIpByName(Map<String, String> ipByName) {
-        this.ipByName = ipByName;
+    public void setIpStateByName(Map<String, DockerStateIp> ipStateByName) {
+        this.ipStateByName = ipStateByName;
     }
 
     public void setRedirectIpByMachineContainerEndpoint(Map<String, String> redirectIpByMachineContainerEndpoint) {

@@ -62,9 +62,19 @@ public interface DockerUtils {
 
     boolean containerStopAndRemove(String containerNameOrId);
 
-    String getIp(String containerNameOrId);
-
     boolean imageBuild(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx);
+
+    /**
+     * Create a new network if it does not exists.
+     *
+     * @param name
+     *            the network name
+     * @param subnet
+     *            the sub net (e.g 172.20.0.0/16)
+     */
+    void networkCreateIfNotExists(String name, String subnet);
+
+    List<String> networkListNames();
 
     void volumeHostCreate(IPApplicationDefinition applicationDefinition);
 

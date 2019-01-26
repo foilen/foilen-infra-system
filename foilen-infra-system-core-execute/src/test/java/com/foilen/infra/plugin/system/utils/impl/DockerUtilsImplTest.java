@@ -63,9 +63,6 @@ public class DockerUtilsImplTest {
                         + "\n333333333\tinfra_redirector_exit\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)" //
                         + "\n444444\tinfra_redirector_entry\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)";
             }
-            if ("get ip".equals(actionDetails)) {
-                return ipByContainer.get(arguments[arguments.length - 1]);
-            }
 
             throw new RuntimeException("Mock: Not implemented");
         });
@@ -74,6 +71,7 @@ public class DockerUtilsImplTest {
         DockerState dockerState = new DockerState();
         ContainersManageContext containersManageContext = new ContainersManageContext().setDockerState(dockerState);
 
+        // Add initial applications: app1 and app1_mysql
         {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
@@ -101,82 +99,6 @@ public class DockerUtilsImplTest {
         assertList(Arrays.asList("app1_mysql", "app1", "infra_redirector_exit"), updatedInstanceNames);
 
         // Executing a second time (should not change anything)
-        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
-
-        {
-            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
-            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
-            applicationDefinition.addPortEndpoint(8080, DockerContainerEndpoints.HTTP_TCP);
-            applicationDefinition.addPortRedirect(3306, "localhost", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
-            applicationDefinition.setRunAs(65000L);
-            applicationDefinition.setCommand("/app1.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
-                    .setOutputContext(outputContext) //
-                    .setApplicationDefinition(applicationDefinition));
-        }
-        {
-            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1_mysql", "app1_mysql");
-            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
-            applicationDefinition.addPortEndpoint(3306, DockerContainerEndpoints.MYSQL_TCP);
-            applicationDefinition.setRunAs(65000L);
-            applicationDefinition.setCommand("/mysql-start.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
-                    .setOutputContext(outputContext) //
-                    .setApplicationDefinition(applicationDefinition));
-        }
-
-        updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
-        assertList(Arrays.asList(), updatedInstanceNames);
-
-        // app1_mysql ip change -> update app1 and infra_redirector_exit
-        unixShellAndFsUtils.setExecuteCommandQuietAndGetOutputCallback((actionName, actionDetails, command, arguments) -> { //
-
-            Map<String, String> ipByContainer = new HashMap<>();
-            ipByContainer.put("app1_mysql", "172.17.0.10");
-            ipByContainer.put("app1", "172.17.0.3");
-            ipByContainer.put("infra_redirector_exit", "172.17.0.4");
-            ipByContainer.put("infra_redirector_entry", "172.17.0.5");
-            if ("ps".equals(actionDetails)) {
-                return "11111111111111\tapp1_mysql\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)" //
-                        + "\n222222222222\tapp1\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)" //
-                        + "\n333333333\tinfra_redirector_exit\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)" //
-                        + "\n444444\tinfra_redirector_entry\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)";
-            }
-            if ("get ip".equals(actionDetails)) {
-                return ipByContainer.get(arguments[arguments.length - 1]);
-            }
-
-            throw new RuntimeException("Mock: Not implemented");
-        });
-
-        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
-
-        {
-            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
-            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
-            applicationDefinition.addPortEndpoint(8080, DockerContainerEndpoints.HTTP_TCP);
-            applicationDefinition.addPortRedirect(3306, "localhost", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
-            applicationDefinition.setRunAs(65000L);
-            applicationDefinition.setCommand("/app1.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
-                    .setOutputContext(outputContext) //
-                    .setApplicationDefinition(applicationDefinition));
-        }
-        {
-            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1_mysql", "app1_mysql");
-            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
-            applicationDefinition.addPortEndpoint(3306, DockerContainerEndpoints.MYSQL_TCP);
-            applicationDefinition.setRunAs(65000L);
-            applicationDefinition.setCommand("/mysql-start.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
-                    .setOutputContext(outputContext) //
-                    .setApplicationDefinition(applicationDefinition));
-        }
-
-        updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
-        assertList(Arrays.asList("app1", "infra_redirector_exit"), updatedInstanceNames);
-
-        // Another time without changing ip (should not change)
         containersManageContext = new ContainersManageContext().setDockerState(dockerState);
 
         {

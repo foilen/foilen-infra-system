@@ -247,7 +247,7 @@ public class StartResourcesApp {
             applicationStatuses.add(it + " [FAILED]");
         });
         dockerState.getRunningContainersByName().keySet().forEach(it -> {
-            String ip = dockerState.getIpByName().get(it);
+            String ip = dockerState.getIpStateByName().get(it).getIp();
             applicationStatuses.add(it + " [OK:" + ip + "]");
         });
         applicationStatuses.stream().sorted().forEach(it -> {
