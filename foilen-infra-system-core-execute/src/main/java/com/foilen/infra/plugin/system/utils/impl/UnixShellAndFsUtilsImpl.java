@@ -192,6 +192,14 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
+    public void folderCreateWithParentOwnerAndGroup(String directoryPath) {
+        logger.info("[FOLDER] Creating directory {}", directoryPath);
+        if (!DirectoryTools.createPathAndCopyOwnerAndGroupFromParent(directoryPath)) {
+            throw new UtilsException("[FOLDER] [" + directoryPath + "] Could not be created");
+        }
+    }
+
+    @Override
     public boolean folderDelete(String directoryPath) {
         logger.info("[FOLDER] Deleting {}", directoryPath);
         if (FileTools.exists(directoryPath)) {

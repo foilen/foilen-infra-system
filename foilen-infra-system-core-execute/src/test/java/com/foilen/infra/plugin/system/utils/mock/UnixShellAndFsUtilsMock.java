@@ -90,6 +90,12 @@ public class UnixShellAndFsUtilsMock extends AbstractBasics implements UnixShell
     }
 
     @Override
+    public void folderCreateWithParentOwnerAndGroup(String directoryPath) {
+        logger.debug("folderCreateWithParentOwnerAndGroup: {}", directoryPath);
+
+    }
+
+    @Override
     public boolean folderDelete(String directoryPath) {
         logger.debug("folderDelete: {}", directoryPath);
         return true;

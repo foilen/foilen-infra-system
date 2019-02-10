@@ -197,6 +197,14 @@ public interface UnixShellAndFsUtils {
     void folderCreate(String[] directoryPathParts, Long owner, Long group, String permission);
 
     /**
+     * Create a folder and copy the parent's owner and group.
+     *
+     * @param directoryPath
+     *            the full path of the folder to create
+     */
+    void folderCreateWithParentOwnerAndGroup(String directoryPath);
+
+    /**
      * Delete a folder and all its subfolders.
      *
      * @param directoryPath

@@ -31,7 +31,6 @@ import org.slf4j.event.Level;
 
 import com.foilen.infra.plugin.system.utils.DockerUtils;
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
-import com.foilen.infra.plugin.system.utils.UtilsException;
 import com.foilen.infra.plugin.system.utils.model.ApplicationBuildDetails;
 import com.foilen.infra.plugin.system.utils.model.ContainersManageContext;
 import com.foilen.infra.plugin.system.utils.model.DockerPs;
@@ -848,7 +847,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                         unixShellAndFsUtils.folderCreate(hostFs + volume.getHostFolder(), volume.getOwnerId(), volume.getGroupId(), volume.getPermissions());
                     } else {
                         if (!unixShellAndFsUtils.folderExists(hostFs + volume.getHostFolder())) {
-                            throw new UtilsException("The folder " + volume.getHostFolder() + " does not exists. Cannot create since there is no specified owner/group/permissions");
+                            unixShellAndFsUtils.folderCreateWithParentOwnerAndGroup(hostFs + volume.getHostFolder());
                         }
                     }
                 } else {
