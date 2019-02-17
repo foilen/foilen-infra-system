@@ -225,8 +225,12 @@ public class StartResourcesApp {
             unixUsersAndGroupsUtils.userCreate(unixUser.getName(), unixUser.getId(), unixUser.getHomeFolder(), null, null);
         });
 
-        // Install applications (docker)
+        // Install docker network
         DockerUtils dockerUtils = new DockerUtilsImpl();
+        System.out.println("\n---[ Install docker network ]---");
+        dockerUtils.networkCreateIfNotExists(DockerUtilsImpl.NETWORK_NAME, "172.20.0.0/16");
+
+        // Install applications (docker)
         File tmpDirectory = Files.createTempDir();
         System.out.println("\n---[ Install applications (docker) ]---");
         List<Application> applications = resourceService.resourceFindAll(resourceService.createResourceQuery(Application.class));
