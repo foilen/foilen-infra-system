@@ -11,6 +11,7 @@ package com.foilen.infra.plugin.system.utils.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.foilen.smalltools.tools.AbstractBasics;
+import com.foilen.smalltools.tools.StringTools;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DockerStateIds extends AbstractBasics {
@@ -44,6 +45,13 @@ public class DockerStateIds extends AbstractBasics {
 
     public DockerStep getLastState() {
         return lastState;
+    }
+
+    public boolean idsEquals(DockerStateIds o) {
+        return StringTools.safeEquals(o.imageUniqueId, imageUniqueId) && //
+                StringTools.safeEquals(o.containerRunUniqueId, containerRunUniqueId) && //
+                StringTools.safeEquals(o.containerStartedUniqueId, containerStartedUniqueId);
+
     }
 
     public void setContainerRunUniqueId(String containerRunUniqueId) {

@@ -24,7 +24,7 @@ public class DockerState extends AbstractBasics {
 
     // Running state
     private Map<String, DockerStateIds> runningContainersByName = new HashMap<>();
-    private Map<String, DockerStateIds> failedContainersByName = new HashMap<>();
+    private Map<String, DockerStateFailed> failedContainersByName = new HashMap<>();
     private Map<String, DockerStateIp> ipStateByName = new HashMap<>();
 
     // Cron
@@ -55,7 +55,7 @@ public class DockerState extends AbstractBasics {
         return executionsFutures;
     }
 
-    public Map<String, DockerStateIds> getFailedContainersByName() {
+    public Map<String, DockerStateFailed> getFailedContainersByName() {
         return failedContainersByName;
     }
 
@@ -103,7 +103,7 @@ public class DockerState extends AbstractBasics {
         this.executionsFutures = executionsFutures;
     }
 
-    public void setFailedContainersByName(Map<String, DockerStateIds> failedContainersByName) {
+    public void setFailedContainersByName(Map<String, DockerStateFailed> failedContainersByName) {
         this.failedContainersByName = failedContainersByName;
     }
 

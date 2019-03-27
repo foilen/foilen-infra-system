@@ -36,6 +36,7 @@ import com.foilen.infra.plugin.system.utils.model.ContainersManageContext;
 import com.foilen.infra.plugin.system.utils.model.DockerPs;
 import com.foilen.infra.plugin.system.utils.model.DockerPsStatus;
 import com.foilen.infra.plugin.system.utils.model.DockerState;
+import com.foilen.infra.plugin.system.utils.model.DockerStateFailed;
 import com.foilen.infra.plugin.system.utils.model.DockerStateIds;
 import com.foilen.infra.plugin.system.utils.model.DockerStateIp;
 import com.foilen.infra.plugin.system.utils.model.DockerStep;
@@ -564,7 +565,16 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             // Check if should proceed
             if (!containersManageContext.getContainerManagementCallback().proceedWithTransformedContainer(applicationNameToStart, currentTransformedDockerStateIds)) {
                 logger.error("[MANAGER] [{}] The callback requested to not proceed with this container", applicationNameToStart);
-                dockerState.getFailedContainersByName().put(applicationNameToStart, currentTransformedDockerStateIds);
+                DockerStateFailed dockerStateFailed = dockerState.getFailedContainersByName().get(applicationNameToStart);
+                boolean saveFailedState = true;
+                if (dockerStateFailed != null) {
+                    if (currentTransformedDockerStateIds.idsEquals(dockerStateFailed.getDockerStateIds())) {
+                        saveFailedState = false;
+                    }
+                }
+                if (saveFailedState) {
+                    dockerState.getFailedContainersByName().put(applicationNameToStart, new DockerStateFailed(currentTransformedDockerStateIds, new Date()));
+                }
 
                 // Keep previous success in running if still running
                 if (lastRunningContainerIds != null && containerIsRunningByContainerNameOrId(applicationNameToStart)) {
@@ -579,7 +589,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 currentTransformedDockerStateIds.setLastState(DockerStep.BUILD_IMAGE);
                 if (!imageBuild(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not build the image", applicationNameToStart);
-                    dockerState.getFailedContainersByName().put(applicationNameToStart, currentTransformedDockerStateIds);
+                    dockerState.getFailedContainersByName().put(applicationNameToStart, new DockerStateFailed(currentTransformedDockerStateIds, new Date()));
 
                     // Keep previous success in running if still running
                     if (lastRunningContainerIds != null && containerIsRunningByContainerNameOrId(applicationNameToStart)) {
@@ -596,7 +606,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 ctx.setNetworkIp(dockerState.getIpStateByName().get(applicationNameToStart).getIp());
                 if (!containerStartWithRestart(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not start the container", applicationNameToStart);
-                    dockerState.getFailedContainersByName().put(applicationNameToStart, currentTransformedDockerStateIds);
+                    dockerState.getFailedContainersByName().put(applicationNameToStart, new DockerStateFailed(currentTransformedDockerStateIds, new Date()));
                     continue;
                 }
             case COPY_AND_EXECUTE_IN_RUNNING_CONTAINER:
