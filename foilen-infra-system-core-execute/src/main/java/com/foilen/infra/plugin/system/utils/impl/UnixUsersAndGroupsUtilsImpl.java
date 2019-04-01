@@ -433,6 +433,9 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
 
             // shell changed
             if (!StringTools.safeEquals(currentUserDetail.getShell(), shell)) {
+                if (shell == null) {
+                    shell = "";
+                }
                 userShellUpdate(username, shell);
                 createdOrUpdated = true;
             }
