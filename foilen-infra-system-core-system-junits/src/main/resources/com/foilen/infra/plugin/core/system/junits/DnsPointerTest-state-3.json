@@ -45,9 +45,5 @@
       "to" : "DnsEntry | m2.example.com / A | 199.141.1.201"
     } ],
     "tags" : [ ]
-  }, {
-    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
-    "links" : [ ],
-    "tags" : [ ]
   } ]
 }

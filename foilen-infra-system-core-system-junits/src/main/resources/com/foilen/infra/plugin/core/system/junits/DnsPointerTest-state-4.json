@@ -31,9 +31,5 @@
     "resource" : "Machine | m2.example.com | m2.example.com",
     "links" : [ ],
     "tags" : [ ]
-  }, {
-    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
-    "links" : [ ],
-    "tags" : [ ]
   } ]
 }

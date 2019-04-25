@@ -279,6 +279,82 @@ public class JunitsHelper {
         internalChangeService.changesExecute(changes);
     }
 
+    public static void dumpImportDirect(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext, ResourcesDump resourcesDump) {
+        dumpImportDirect(commonServicesContext.getResourceService(), internalServicesContext.getInternalChangeService(), resourcesDump);
+    }
+
+    public static void dumpImportDirect(IPResourceService resourceService, InternalChangeService internalChangeService, ResourcesDump resourcesDump) {
+        // Import all the resources
+        Map<String, IPResource> resourcesByTypeAndName = new HashMap<>();
+        logger.info("Importing Resources");
+        for (ResourcesDumpResource dumpResource : resourcesDump.getResources()) {
+            String resourceType = dumpResource.getResourceType();
+            logger.info("Type: {}", resourceType);
+            Class<? extends IPResource> resourceClass = resourceService.getResourceDefinition(resourceType).getResourceClass();
+
+            String resourceName = dumpResource.getResourceName();
+
+            IPResource resource = JsonTools.readFromString(dumpResource.getResourceJson(), resourceClass);
+            resourcesByTypeAndName.put(resourceType + "/" + resourceName, resource);
+
+            internalChangeService.resourceAdd(resource);
+        }
+
+        // Import all the tags
+        logger.info("Importing Tags");
+        for (ResourcesDumpTag dumpTag : resourcesDump.getTags()) {
+
+            String resourceTypeAndName = dumpTag.getResourceTypeAndName();
+            String tagName = dumpTag.getTag();
+
+            IPResource resource = resourcesByTypeAndName.get(resourceTypeAndName);
+            if (resource == null) {
+                logger.error("The resource {} does not exit", resourceTypeAndName);
+                throw new ResourceNotFoundException(resourceTypeAndName);
+            }
+            if (Strings.isNullOrEmpty(tagName)) {
+                logger.error("The tag name cannot be empty for resource {}", resourceTypeAndName);
+                throw new IllegalUpdateException("The tag name cannot be empty for resource " + resourceTypeAndName);
+            }
+
+            resource = resourceService.resourceFindByPk(resource).get();
+
+            internalChangeService.tagAdd(resource.getInternalId(), tagName);
+
+        }
+
+        // Import all the links
+        logger.info("Importing Links");
+        for (ResourcesDumpLink dumpLink : resourcesDump.getLinks()) {
+
+            String fromResourceTypeAndName = dumpLink.getFromResourceTypeAndName();
+            String linkType = dumpLink.getLinkType();
+            String toResourceTypeAndName = dumpLink.getToResourceTypeAndName();
+
+            IPResource fromResource = resourcesByTypeAndName.get(fromResourceTypeAndName);
+            if (fromResource == null) {
+                logger.error("The resource {} does not exit", fromResourceTypeAndName);
+                throw new ResourceNotFoundException(fromResourceTypeAndName);
+            }
+            if (Strings.isNullOrEmpty(linkType)) {
+                logger.error("The link type cannot be empty");
+                throw new IllegalUpdateException("The link type cannot be em");
+            }
+            IPResource toResource = resourcesByTypeAndName.get(toResourceTypeAndName);
+            if (toResource == null) {
+                logger.error("The resource {} does not exit", toResourceTypeAndName);
+                throw new ResourceNotFoundException(toResourceTypeAndName);
+            }
+
+            fromResource = resourceService.resourceFindByPk(fromResource).get();
+            toResource = resourceService.resourceFindByPk(toResource).get();
+
+            internalChangeService.linkAdd(fromResource.getInternalId(), linkType, toResource.getInternalId());
+
+        }
+
+    }
+
     protected static String getResourceDetails(IPResource resource) {
         return resource.getClass().getSimpleName() + " | " + resource.getResourceName() + " | " + resource.getResourceDescription();
     }

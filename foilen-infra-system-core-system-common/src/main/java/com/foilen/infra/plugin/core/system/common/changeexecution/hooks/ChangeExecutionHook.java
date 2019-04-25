@@ -9,39 +9,39 @@
  */
 package com.foilen.infra.plugin.core.system.common.changeexecution.hooks;
 
-import com.foilen.infra.plugin.core.system.common.changeexecution.ApplyChangesContext;
+import com.foilen.infra.plugin.v1.core.eventhandler.changes.ChangesInTransactionContext;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 
 public interface ChangeExecutionHook {
 
-    default void failureInfinite(ApplyChangesContext applyChangesContext) {
+    default void failureInfinite(ChangesInTransactionContext changesInTransactionContext) {
     }
 
-    default void fillApplyChangesContext(ApplyChangesContext applyChangesContext) {
+    default void fillApplyChangesContext(ChangesInTransactionContext changesInTransactionContext) {
     }
 
-    default void linkAdded(ApplyChangesContext applyChangesContext, IPResource fromResource, String linkType, IPResource toResource) {
+    default void linkAdded(ChangesInTransactionContext changesInTransactionContext, IPResource fromResource, String linkType, IPResource toResource) {
     }
 
-    default void linkDeleted(ApplyChangesContext applyChangesContext, IPResource fromResource, String linkType, IPResource toResource) {
+    default void linkDeleted(ChangesInTransactionContext changesInTransactionContext, IPResource fromResource, String linkType, IPResource toResource) {
     }
 
-    default void resourceAdded(ApplyChangesContext applyChangesContext, IPResource resource) {
+    default void resourceAdded(ChangesInTransactionContext changesInTransactionContext, IPResource resource) {
     }
 
-    default void resourceDeleted(ApplyChangesContext applyChangesContext, IPResource resource) {
+    default void resourceDeleted(ChangesInTransactionContext changesInTransactionContext, IPResource resource) {
     }
 
-    default void resourceUpdated(ApplyChangesContext applyChangesContext, IPResource previousResource, IPResource updatedResource) {
+    default void resourceUpdated(ChangesInTransactionContext changesInTransactionContext, IPResource previousResource, IPResource updatedResource) {
     }
 
-    default void success(ApplyChangesContext applyChangesContext) {
+    default void success(ChangesInTransactionContext changesInTransactionContext) {
     }
 
-    default void tagAdded(ApplyChangesContext applyChangesContext, IPResource resource, String tagName) {
+    default void tagAdded(ChangesInTransactionContext changesInTransactionContext, IPResource resource, String tagName) {
     }
 
-    default void tagDeleted(ApplyChangesContext applyChangesContext, IPResource resource, String tagName) {
+    default void tagDeleted(ChangesInTransactionContext changesInTransactionContext, IPResource resource, String tagName) {
     }
 
 }

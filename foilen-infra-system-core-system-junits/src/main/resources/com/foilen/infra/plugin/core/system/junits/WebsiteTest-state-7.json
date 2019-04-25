@@ -29,14 +29,6 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
-    "links" : [ ],
-    "tags" : [ ]
-  }, {
-    "resource" : "UnixUser | infra_web | /home/infra_web",
-    "links" : [ ],
-    "tags" : [ ]
-  }, {
     "resource" : "WebsiteCertificate | d1.example.com, d2.example.com | e7ae5241ec01c2919aa2422624d6df235959368a, 2001-07-01, 2001-08-01",
     "links" : [ ],
     "tags" : [ ]

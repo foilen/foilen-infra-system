@@ -156,6 +156,9 @@
       "to" : "Application | infra_url_redirection_http-m1_example_com | Apache HTTP URL redirections for m1.example.com"
     }, {
       "type" : "MANAGES",
+      "to" : "Application | infra_web-m1_example_com | Web HA Proxy for m1.example.com"
+    }, {
+      "type" : "MANAGES",
       "to" : "DnsEntry | m1.example.com / A | 199.141.1.101"
     } ],
     "tags" : [ ]
@@ -248,6 +251,9 @@
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
     }, {
       "type" : "MANAGES",
+      "to" : "UnixUser | infra_url_redirection | /home/infra_url_redirection"
+    }, {
+      "type" : "MANAGES",
       "to" : "Website | HTTP Redirection of login.example.com | login.example.com"
     } ],
     "tags" : [ ]
@@ -256,6 +262,9 @@
     "links" : [ {
       "type" : "INSTALLED_ON",
       "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_url_redirection | /home/infra_url_redirection"
     }, {
       "type" : "MANAGES",
       "to" : "Website | HTTP Redirection of ui.example.com | ui.example.com"
@@ -270,6 +279,9 @@
       "type" : "MANAGES",
       "to" : "DnsPointer | login.example.com | login.example.com"
     }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_web | /home/infra_web"
+    }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_url_redirection_http-m1_example_com | Apache HTTP URL redirections for m1.example.com"
     } ],
@@ -283,6 +295,9 @@
       "type" : "MANAGES",
       "to" : "DnsPointer | ui.example.com | ui.example.com"
     }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_web | /home/infra_web"
+    }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_url_redirection_http-m1_example_com | Apache HTTP URL redirections for m1.example.com"
     } ],
@@ -295,6 +310,9 @@
     }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | login.example.com | login.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_web | /home/infra_web"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_login | Login service"
@@ -311,6 +329,9 @@
     }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | ui.example.com | ui.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_web | /home/infra_web"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_ui | UI service"

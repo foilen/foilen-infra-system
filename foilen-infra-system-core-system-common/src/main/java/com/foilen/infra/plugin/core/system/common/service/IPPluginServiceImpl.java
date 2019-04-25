@@ -20,10 +20,10 @@ import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 
+import com.foilen.infra.plugin.v1.core.context.ChangesEventContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.ResourceEditorContext;
 import com.foilen.infra.plugin.v1.core.context.TimerEventContext;
-import com.foilen.infra.plugin.v1.core.context.UpdateEventContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionV1;
@@ -52,9 +52,10 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
         skipUpdateEvents = Boolean.valueOf(SystemTools.getPropertyOrEnvironment("FOILEN_PLUGIN_SKIP_UPDATE_EVENTS", "false"));
     }
 
-    private List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> brokenPlugins;
-    private List<IPPluginDefinitionV1> availablePlugins;
-    private List<UpdateEventContext> updateEvents;
+    private List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> brokenPlugins = Collections.emptyList();
+    private List<IPPluginDefinitionV1> availablePlugins = Collections.emptyList();
+    private List<ChangesEventContext> changesEvents = Collections.emptyList();
+    private boolean pluginsLoaded = false;
 
     @Override
     public List<IPPluginDefinitionV1> getAvailablePlugins() {
@@ -64,6 +65,11 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
     @Override
     public List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> getBrokenPlugins() {
         return brokenPlugins;
+    }
+
+    @Override
+    public List<ChangesEventContext> getChangesEvents() {
+        return changesEvents;
     }
 
     private String getErrorMessage(Exception e) {
@@ -117,14 +123,10 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
     }
 
     @Override
-    public List<UpdateEventContext> getUpdateEvents() {
-        return updateEvents;
-    }
-
-    @Override
     public void loadPlugins(CommonServicesContext commonServicesContext, InternalServicesContext internalServicesContext) {
 
-        AssertTools.assertNull(availablePlugins, "Plugin service already loaded");
+        AssertTools.assertFalse(pluginsLoaded, "Plugin service already loaded");
+        pluginsLoaded = true;
 
         // Prepare the list of plugins
         List<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionV1, String>> brokenPlugins = new ArrayList<>();
@@ -169,7 +171,7 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
             Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1> next = availablePluginsIt.next();
             IPPluginDefinitionProvider provider = next.getB();
             try {
-                provider.initialize(commonServicesContext);
+                provider.initialize(commonServicesContext, internalServicesContext);
             } catch (Exception e) {
                 logger.error("[{}] Problem initializing the plugin", next.getA().getName(), e);
                 availablePluginsIt.remove();
@@ -180,7 +182,7 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
         updateResourcesColumnSearch(commonServicesContext.getResourceService().getResourceDefinitions());
 
         // Enable the events
-        List<UpdateEventContext> updateEvents = new ArrayList<>();
+        List<ChangesEventContext> changesEvents = new ArrayList<>();
         Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1>> it = availablePlugins.iterator();
         while (it.hasNext()) {
             Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1> entry = it.next();
@@ -199,10 +201,10 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
                     commonServicesContext.getTranslationService().translationAdd(basename);
                 }
 
-                // Set update events
-                for (UpdateEventContext updateEventContext : pluginDefinition.getUpdateHandlers()) {
-                    logger.info("Found update event [{}] of type [{}]", updateEventContext.getUpdateHandlerName(), updateEventContext.getUpdateEventHandler().getClass());
-                    updateEvents.add(updateEventContext);
+                // Set changes events
+                for (ChangesEventContext changesEventContext : pluginDefinition.getChangesHandlers()) {
+                    logger.info("Found changes event [{}] of type [{}]", changesEventContext.getChangesHandlerName(), changesEventContext.getChangesEventHandler().getClass());
+                    changesEvents.add(changesEventContext);
                 }
 
             } catch (Exception e) {
@@ -218,10 +220,10 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
         // Save the lists as immutable lists
         this.brokenPlugins = Collections.unmodifiableList(brokenPlugins);
         this.availablePlugins = Collections.unmodifiableList(availablePlugins.stream().map(Tuple3::getC).collect(Collectors.toList()));
-        this.updateEvents = Collections.unmodifiableList(updateEvents);
+        this.changesEvents = Collections.unmodifiableList(changesEvents);
         if (skipUpdateEvents) {
             logger.warn("Skipping all update events: FOILEN_PLUGIN_SKIP_UPDATE_EVENTS=true");
-            this.updateEvents = Collections.emptyList();
+            this.changesEvents = Collections.emptyList();
         }
     }
 

@@ -131,6 +131,9 @@
     "resource" : "Machine | m1.example.com | m1.example.com (199.141.1.101)",
     "links" : [ {
       "type" : "MANAGES",
+      "to" : "Application | infra_web-m1_example_com | Web HA Proxy for m1.example.com"
+    }, {
+      "type" : "MANAGES",
       "to" : "DnsEntry | m1.example.com / A | 199.141.1.101"
     } ],
     "tags" : [ ]
@@ -209,10 +212,6 @@
     "links" : [ ],
     "tags" : [ ]
   }, {
-    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
-    "links" : [ ],
-    "tags" : [ ]
-  }, {
     "resource" : "UnixUser | infra_web | /home/infra_web",
     "links" : [ ],
     "tags" : [ ]
@@ -224,6 +223,9 @@
     }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | login.example.com | login.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_web | /home/infra_web"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_login | Login service"
@@ -237,6 +239,9 @@
     }, {
       "type" : "MANAGES",
       "to" : "DnsPointer | ui.example.com | ui.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_web | /home/infra_web"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | infra_ui | UI service"

@@ -59,7 +59,6 @@ import com.foilen.infra.resource.machine.Machine;
 import com.foilen.infra.resource.mariadb.MariaDBDatabase;
 import com.foilen.infra.resource.mariadb.MariaDBServer;
 import com.foilen.infra.resource.mariadb.MariaDBUser;
-import com.foilen.infra.resource.testing.controller.TestingControllerMockUpdateHander;
 import com.foilen.infra.resource.testing.controller.TestingControllerPluginDefinitionProvider;
 import com.foilen.infra.resource.unixuser.UnixUser;
 import com.foilen.infra.resource.unixuser.UnixUserEditor;
@@ -299,7 +298,11 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
     @Before
     public void beforeEach() {
-        TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerInfiniteLoopUpdateHander().setAlwaysUpdate(false);
+
+        List<? extends IPResource> all = getInternalServicesContext().getInternalIPResourceService().resourceFindAll();
+        AssertTools.assertJsonComparison(Collections.emptyList(), all);
+
+        TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerInfiniteLoopChangesEventHandler().setAlwaysUpdate(false);
 
         JunitsHelper.createFakeData(getCommonServicesContext(), getInternalServicesContext());
     }
@@ -565,27 +568,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
-    public void testChanges_refresh() {
-        // Create resource
-        JunitResource junitResource = new JunitResource("testChanges_refresh");
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(junitResource);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        // Reset
-        TestingControllerMockUpdateHander testingControllerMockUpdateHander = TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerMockUpdateHander();
-        testingControllerMockUpdateHander.clear();
-        Assert.assertEquals(0, testingControllerMockUpdateHander.getChecked().size());
-
-        // Refresh resource
-        changes.resourceRefresh(junitResource);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        // Assert
-        Assert.assertEquals(1, testingControllerMockUpdateHander.getChecked().size());
-    }
-
-    @Test
     public void testChanges_rollback() {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
@@ -803,7 +785,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
         thrown.expect(InfiniteUpdateLoop.class);
 
-        TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerInfiniteLoopUpdateHander().setAlwaysUpdate(true);
+        TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerInfiniteLoopChangesEventHandler().setAlwaysUpdate(true);
 
         ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         JunitResource resource = new JunitResource("OneToGetStarted");

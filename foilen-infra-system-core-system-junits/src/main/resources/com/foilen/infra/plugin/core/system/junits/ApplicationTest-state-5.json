@@ -7,6 +7,10 @@
     } ],
     "tags" : [ ]
   }, {
+    "resource" : "DnsEntry | a1.example.com / A | 199.141.1.101",
+    "links" : [ ],
+    "tags" : [ ]
+  }, {
     "resource" : "DnsEntry | m1.example.com / A | 199.141.1.101",
     "links" : [ ],
     "tags" : [ ]
@@ -20,7 +24,13 @@
     "tags" : [ ]
   }, {
     "resource" : "DnsPointer | a1.example.com | a1.example.com",
-    "links" : [ ],
+    "links" : [ {
+      "type" : "MANAGES",
+      "to" : "DnsEntry | a1.example.com / A | 199.141.1.101"
+    }, {
+      "type" : "POINTS_TO",
+      "to" : "Machine | m1.example.com | m1.example.com (199.141.1.101)"
+    } ],
     "tags" : [ ]
   }, {
     "resource" : "Machine | m1.example.com | m1.example.com (199.141.1.101)",
@@ -42,10 +52,6 @@
       "type" : "MANAGES",
       "to" : "DnsEntry | m3.example.com / A | 199.141.1.202"
     } ],
-    "tags" : [ ]
-  }, {
-    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
-    "links" : [ ],
     "tags" : [ ]
   }, {
     "resource" : "UnixUser | user1 | /home/user1",

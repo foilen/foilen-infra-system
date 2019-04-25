@@ -31,7 +31,6 @@ import com.foilen.infra.plugin.core.system.common.changeexecution.ChangeExecutio
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
-import com.foilen.infra.plugin.v1.core.exception.ResourceNotFromRepositoryException;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceQuery;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
@@ -214,28 +213,31 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     @Override
     public boolean linkExistsByFromResourceAndLinkTypeAndToResource(IPResource fromResource, String linkType, IPResource toResource) {
-        if (fromResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(fromResource);
+        Long fromInternalId = resourceFindIdByPk(fromResource);
+        if (fromInternalId == null) {
+            return false;
         }
-        if (toResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(toResource);
+        Long toInternalId = resourceFindIdByPk(toResource);
+        if (toInternalId == null) {
+            return false;
         }
         return links.stream().filter( //
                 it -> {
-                    return fromResource.getInternalId().equals(it.getA()) && //
+                    return fromInternalId.equals(it.getA()) && //
                     linkType.equals(it.getB()) && //
-                    toResource.getInternalId().equals(it.getC());
+                    toInternalId.equals(it.getC());
                 }) //
                 .findAny().isPresent();
     }
 
     @Override
     public List<Tuple2<String, ? extends IPResource>> linkFindAllByFromResource(IPResource fromResource) {
-        if (fromResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(fromResource);
+        Long fromInternalId = resourceFindIdByPk(fromResource);
+        if (fromInternalId == null) {
+            return Collections.emptyList();
         }
         return links.stream().filter( //
-                it -> fromResource.getInternalId().equals(it.getA())) //
+                it -> fromInternalId.equals(it.getA())) //
                 .map(it -> new Tuple2<>(it.getB(), resourceFind(it.getC()).get())) //
                 .collect(Collectors.toList());
     }
@@ -250,11 +252,12 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     @Override
     public List<? extends IPResource> linkFindAllByFromResourceAndLinkType(IPResource fromResource, String linkType) {
-        if (fromResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(fromResource);
+        Long fromInternalId = resourceFindIdByPk(fromResource);
+        if (fromInternalId == null) {
+            return Collections.emptyList();
         }
         return links.stream().filter( //
-                it -> fromResource.getInternalId().equals(it.getA()) && //
+                it -> fromInternalId.equals(it.getA()) && //
                         linkType.equals(it.getB())) //
                 .map(it -> resourceFind(it.getC()).get()) //
                 .collect(Collectors.toList());
@@ -271,14 +274,15 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     @SuppressWarnings("unchecked")
     @Override
     public <R extends IPResource> List<R> linkFindAllByFromResourceAndLinkTypeAndToResourceClass(IPResource fromResource, String linkType, Class<R> toResourceType) {
-        if (fromResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(fromResource);
+        Long fromInternalId = resourceFindIdByPk(fromResource);
+        if (fromInternalId == null) {
+            return Collections.emptyList();
         }
 
         return links.stream().filter( //
                 it -> {
                     IPResource toResource = resourceFind(it.getC()).get();
-                    return fromResource.getInternalId().equals(it.getA()) && //
+                    return fromInternalId.equals(it.getA()) && //
                     linkType.equals(it.getB()) && //
                     toResourceType.isInstance(toResource);
                 }) //
@@ -289,15 +293,16 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     @SuppressWarnings("unchecked")
     @Override
     public <R extends IPResource> List<R> linkFindAllByFromResourceClassAndLinkTypeAndToResource(Class<R> fromResourceClass, String linkType, IPResource toResource) {
-        if (toResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(toResource);
+        Long toInternalId = resourceFindIdByPk(toResource);
+        if (toInternalId == null) {
+            return Collections.emptyList();
         }
         return links.stream().filter( //
                 it -> {
                     IPResource fromResource = resourceFind(it.getA()).get();
                     return fromResourceClass.isInstance(fromResource) && //
                     linkType.equals(it.getB()) && //
-                    toResource.getInternalId().equals(it.getC()); //
+                    toInternalId.equals(it.getC()); //
                 }) //
                 .map(it -> (R) resourceFind(it.getA()).get()) //
                 .collect(Collectors.toList());
@@ -305,13 +310,14 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     @Override
     public List<? extends IPResource> linkFindAllByLinkTypeAndToResource(String linkType, IPResource toResource) {
-        if (toResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(toResource);
+        Long toInternalId = resourceFindIdByPk(toResource);
+        if (toInternalId == null) {
+            return Collections.emptyList();
         }
         return links.stream().filter( //
                 it -> {
                     return linkType.equals(it.getB()) && //
-                    toResource.getInternalId().equals(it.getC()); //
+                    toInternalId.equals(it.getC()); //
                 }) //
                 .map(it -> resourceFind(it.getA()).get()) //
                 .collect(Collectors.toList());
@@ -329,11 +335,12 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     @Override
     public List<Tuple2<? extends IPResource, String>> linkFindAllByToResource(IPResource toResource) {
-        if (toResource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(toResource);
+        Long toInternalId = resourceFindIdByPk(toResource);
+        if (toInternalId == null) {
+            return Collections.emptyList();
         }
         return links.stream().filter( //
-                it -> toResource.getInternalId().equals(it.getC())) //
+                it -> toInternalId.equals(it.getC())) //
                 .map(it -> new Tuple2<>(resourceFind(it.getA()).get(), it.getB())) //
                 .collect(Collectors.toList());
     }
@@ -348,11 +355,12 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     @Override
     public List<Tuple3<IPResource, String, IPResource>> linkFindAllRelatedByResource(IPResource resource) {
-        if (resource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(resource);
+        Long internalId = resourceFindIdByPk(resource);
+        if (internalId == null) {
+            return Collections.emptyList();
         }
         return links.stream().filter( //
-                it -> resource.getInternalId().equals(it.getA()) || resource.getInternalId().equals(it.getC())) //
+                it -> internalId.equals(it.getA()) || internalId.equals(it.getC())) //
                 .map(it -> new Tuple3<>(resourceFind(it.getA()).get(), it.getB(), resourceFind(it.getC()).get())) //
                 .collect(Collectors.toList());
     }
@@ -798,6 +806,22 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
         return resources.stream().filter(it -> resourceEqualsPk(it, resource)).map(it -> clone((R) it)).findAny();
     }
 
+    private Long resourceFindIdByPk(IPResource resource) {
+        // Id already there
+        if (resource.getInternalId() != null) {
+            return resource.getInternalId();
+        }
+
+        // Search by PK
+        Optional<IPResource> o = resourceFindByPk(resource);
+        if (o.isPresent()) {
+            return o.get().getInternalId();
+        }
+
+        // Does not exist
+        return null;
+    }
+
     @Override
     public void resourceUpdate(IPResource previousResource, IPResource updatedResource) {
         AssertTools.assertTrue(resources.removeIf(resource -> resource.getInternalId() == previousResource.getInternalId()), "Cannot update a resource that does not exist");
@@ -831,11 +855,13 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
     @Override
     public Set<String> tagFindAllByResource(IPResource resource) {
-        if (resource.getInternalId() == null) {
-            throw new ResourceNotFromRepositoryException(resource);
+        Long resourceId = resourceFindIdByPk(resource);
+        if (resourceId == null) {
+            return Collections.emptySet();
         }
+
         return tags.stream() //
-                .filter(it -> resource.getInternalId().equals(it.getA())) //
+                .filter(it -> resourceId.equals(it.getA())) //
                 .map(it -> it.getB()) //
                 .collect(Collectors.toSet());
     }

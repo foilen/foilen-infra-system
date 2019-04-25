@@ -3,9 +3,5 @@
     "resource" : "Machine | m1.node.example.com | m1.node.example.com",
     "links" : [ ],
     "tags" : [ ]
-  }, {
-    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
-    "links" : [ ],
-    "tags" : [ ]
   } ]
 }

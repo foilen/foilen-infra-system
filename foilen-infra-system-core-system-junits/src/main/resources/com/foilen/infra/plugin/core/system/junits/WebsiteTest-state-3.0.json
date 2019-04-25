@@ -33,7 +33,7 @@
     } ],
     "tags" : [ ]
   }, {
-    "resource" : "UnixUser | infra_url_redirection | /home/infra_url_redirection",
+    "resource" : "UnixUser | infra_web | /home/infra_web",
     "links" : [ ],
     "tags" : [ ]
   }, {
@@ -41,6 +41,9 @@
     "links" : [ {
       "type" : "MANAGES",
       "to" : "DnsPointer | d1.example.com | d1.example.com"
+    }, {
+      "type" : "MANAGES",
+      "to" : "UnixUser | infra_web | /home/infra_web"
     }, {
       "type" : "POINTS_TO",
       "to" : "Application | my_web_app | null"
