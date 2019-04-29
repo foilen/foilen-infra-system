@@ -14,10 +14,17 @@ dependencies {
   compile "org.webjars:bootstrap:3.3.7-1"
   compile "org.webjars:typeaheadjs:0.11.1"
   
-  testCompile "com.foilen:foilen-infra-resource-example:0.1.0"
-  testCompile "com.foilen:foilen-infra-resource-example-failing:0.1.0"
-  testCompile "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
+  testCompile "com.foilen:foilen-infra-resource-example:master-SNAPSHOT"
+  testCompile "com.foilen:foilen-infra-resource-example-failing:master-SNAPSHOT"
+  testCompile "com.foilen:foilen-infra-resource-testing-controller:master-SNAPSHOT"
+  testCompileOnly 'junit:junit:4.12'
+  testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+  testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junitVersion"
 
+}
+
+test {
+  useJUnitPlatform()
 }
 
 bintray {

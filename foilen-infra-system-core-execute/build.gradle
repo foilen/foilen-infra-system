@@ -8,8 +8,14 @@ dependencies {
   compile "org.slf4j:slf4j-api"
 
   // Tests
-  testCompile "junit:junit"
+  testCompileOnly 'junit:junit:4.12'
+  testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+  testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junitVersion"
 
+}
+
+test {
+  useJUnitPlatform()
 }
 
 bintray {

@@ -1,12 +1,14 @@
 dependencies {
 
   compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
-  compile "junit:junit"
+  compileOnly 'junit:junit:4.12'
+  implementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+  runtimeOnly "org.junit.vintage:junit-vintage-engine:$junitVersion"
   
   compile "com.foilen:foilen-infra-plugins-core:$foilenInfraPluginsCoreVersion"
-  compileOnly "com.foilen:foilen-infra-resource-testing-controller:0.1.0"
-  compileOnly "com.foilen:foilen-infra-resource-example:0.1.0"
-  compileOnly "com.foilen:foilen-infra-resource-example-failing:0.1.0"
+  compileOnly "com.foilen:foilen-infra-resource-testing-controller:master-SNAPSHOT"
+  compileOnly "com.foilen:foilen-infra-resource-example:master-SNAPSHOT"
+  compileOnly "com.foilen:foilen-infra-resource-example-failing:master-SNAPSHOT"
 
 }
 

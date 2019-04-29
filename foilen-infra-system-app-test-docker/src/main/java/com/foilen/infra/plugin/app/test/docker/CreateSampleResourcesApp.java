@@ -10,6 +10,7 @@
 package com.foilen.infra.plugin.app.test.docker;
 
 import java.io.File;
+import java.lang.reflect.Modifier;
 
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -69,9 +70,13 @@ public class CreateSampleResourcesApp {
         // Export a sample of all the resource types
         IPResourceService resourceService = applicationContext.getBean(IPResourceService.class);
         for (IPResourceDefinition resourceDefinition : resourceService.getResourceDefinitions()) {
+            Class<? extends IPResource> resourceClass = resourceDefinition.getResourceClass();
+            if (Modifier.isAbstract(resourceClass.getModifiers()) || resourceClass.isInterface()) {
+                continue;
+            }
             String resourceType = resourceDefinition.getResourceType();
             System.out.println("Exporting " + resourceType);
-            IPResource resource = ReflectionTools.instantiate(resourceDefinition.getResourceClass());
+            IPResource resource = ReflectionTools.instantiate(resourceClass);
             String resourceDirectory = outputDirectoryName + "/" + resourceType;
             DirectoryTools.createPath(resourceDirectory);
             JsonTools.writeToFile(resourceDirectory + "/_template.json", resource);

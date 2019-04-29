@@ -74,7 +74,7 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
             // Create or get
             T resource;
             if (internalId == null) {
-                resource = resourceEditor.getForResourceType().newInstance();
+                resource = resourceEditor.getForResourceType().getConstructor().newInstance();
             } else {
                 resource = (T) getCommonServicesContext().getResourceService().resourceFind(internalId).get();
             }

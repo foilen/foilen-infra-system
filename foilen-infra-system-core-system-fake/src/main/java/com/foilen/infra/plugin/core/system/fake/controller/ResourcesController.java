@@ -325,7 +325,7 @@ public class ResourcesController extends ResourcesControllerExtra {
             if (resource == null) {
                 Class<?> resourceType = resourceEditor.getForResourceType();
                 try {
-                    resource = (IPResource) resourceType.newInstance();
+                    resource = (IPResource) resourceType.getConstructor().newInstance();
                 } catch (Exception e) {
                     logger.error("Could not create an empty resource of type {}", resourceType, e);
                     resourceUpdateResponse.setTopError(messageSource.getMessage("error.internalError", new Object[] { e.getMessage() }, locale));

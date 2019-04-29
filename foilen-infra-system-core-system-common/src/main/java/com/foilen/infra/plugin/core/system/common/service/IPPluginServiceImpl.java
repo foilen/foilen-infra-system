@@ -45,7 +45,7 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
 
     static {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.forPackages("");
+        configurationBuilder.forPackages("com", "org", "net");
         configurationBuilder.addUrls(ClasspathHelper.forManifest());
         reflections = new Reflections(configurationBuilder);
 
@@ -143,7 +143,7 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
             IPPluginDefinitionV1 pluginDefinition = null;
             try {
                 // Load the definition
-                IPPluginDefinitionProvider pluginDefinitionProvider = provider.newInstance();
+                IPPluginDefinitionProvider pluginDefinitionProvider = provider.getConstructor().newInstance();
                 pluginDefinition = pluginDefinitionProvider.getIPPluginDefinition();
 
                 logger.info("[{}] {}", provider.getName(), pluginDefinition);

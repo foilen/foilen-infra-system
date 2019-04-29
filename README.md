@@ -72,7 +72,7 @@ docker run -ti \
   --volume $FOLDER_PLUGINS_JARS:/plugins \
   foilen-infra-system-app-test-docker:master-SNAPSHOT \
   download-latest-plugins \
-  /plugins application domain dns infraconfig machine mariadb unixuser webcertificate website
+  /plugins core
 
 # Create sample data
 docker run -ti \
