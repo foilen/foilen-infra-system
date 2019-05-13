@@ -10,6 +10,7 @@
 package com.foilen.infra.plugin.system.utils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.foilen.infra.plugin.system.utils.model.ContainersManageContext;
@@ -73,6 +74,8 @@ public interface DockerUtils {
      *            the sub net (e.g 172.20.0.0/16)
      */
     void networkCreateIfNotExists(String name, String subnet);
+
+    Map<String, String> networkListIpByContainerName(String name);
 
     List<String> networkListNames();
 

@@ -1,0 +1,66 @@
+[
+    {
+        "Name": "fcloud",
+        "Id": "2626672763d659be9d636fd6cdca121a1f3a26c26335372c57e185d486a5e75a",
+        "Created": "2019-01-26T19:41:37.637014451Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "172.20.0.0/16",
+                    "Gateway": "172.20.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "03d3425449bdc62b33091bd6f7c0c962e4df4a37fc7b0137fb6b127abf2b6996": {
+                "Name": "backup_sftp-l3_m_foilen-lab_com",
+                "EndpointID": "b8325a9a62390ac34c4cc95154bf0dfae14445eaf69dfe1f8eb6e2871004ae5f",
+                "MacAddress": "02:42:ac:14:05:01",
+                "IPv4Address": "172.20.5.1/16",
+                "IPv6Address": ""
+            },
+            "03dd98504db950449c41f74ba32d345f44fc07055233326d873361db3dc515df": {
+                "Name": "test_mariadb",
+                "EndpointID": "58a676159a9eb586515a97f5889693eae4020a66494bfc611118ba8d212a2a3f",
+                "MacAddress": "02:42:ac:14:05:07",
+                "IPv4Address": "172.20.5.7/16",
+                "IPv6Address": ""
+            },
+            "3026190ea85bc20bde5a8272aaf065215ceb2843c24c04ca78c3f26c15055357": {
+                "Name": "infra_web-l3_m_foilen-lab_com",
+                "EndpointID": "f4e32919c13ebf4b253257b3f83c9d4db4fe4722a6a7b6b85383779b4a7acc3a",
+                "MacAddress": "02:42:ac:14:05:11",
+                "IPv4Address": "172.20.5.17/16",
+                "IPv6Address": ""
+            },
+            "7eafb46ca3e2efd7d01ccad255a34c54173077f5463b6f099bc6ae4e4e871f5b": {
+                "Name": "testing_www",
+                "EndpointID": "2c031f5563d3527ab83292913eddb5bc7da17d7e129027cc134c276309557c98",
+                "MacAddress": "02:42:ac:14:05:0f",
+                "IPv4Address": "172.20.5.15/16",
+                "IPv6Address": ""
+            },
+            "9c2bff5c04c59b8355378c9437563a66be8242e6a629099c318d8afdf49e3b0b": {
+                "Name": "infra_redirector_exit",
+                "EndpointID": "f7279ffb122bdc7dfa042c04d1186644e53909a373c7f2bf4ab8eacf1b5753c1",
+                "MacAddress": "02:42:ac:14:05:10",
+                "IPv4Address": "172.20.5.16/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {},
+        "Labels": {}
+    }
+]

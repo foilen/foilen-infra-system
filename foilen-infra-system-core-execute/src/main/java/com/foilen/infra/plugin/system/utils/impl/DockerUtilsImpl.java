@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ import com.foilen.infra.plugin.system.utils.DockerUtils;
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
 import com.foilen.infra.plugin.system.utils.model.ApplicationBuildDetails;
 import com.foilen.infra.plugin.system.utils.model.ContainersManageContext;
+import com.foilen.infra.plugin.system.utils.model.DockerNetworkInspect;
 import com.foilen.infra.plugin.system.utils.model.DockerPs;
 import com.foilen.infra.plugin.system.utils.model.DockerPsStatus;
 import com.foilen.infra.plugin.system.utils.model.DockerState;
@@ -836,6 +838,33 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     "create", "--subnet", subnet, name);
         }
 
+    }
+
+    @Override
+    public Map<String, String> networkListIpByContainerName(String name) {
+
+        // Get details
+        String output = unixShellAndFsUtils.executeCommandQuietAndGetOutput("NETWORK", "inspect", "/usr/bin/docker", "network", //
+                "inspect", name);
+        logger.debug("Docker network inspect output: {}", output);
+
+        Map<String, String> ipByContainerName = networkListIpByContainerNameConvert(output);
+
+        return ipByContainerName;
+    }
+
+    protected Map<String, String> networkListIpByContainerNameConvert(String output) {
+        Map<String, String> ipByContainerName = new TreeMap<String, String>();
+
+        List<DockerNetworkInspect> inspects = JsonTools.readFromStringAsList(output, DockerNetworkInspect.class);
+        inspects.forEach(inspect -> {
+            inspect.getContainers().values().forEach(container -> {
+                String ipv4 = container.getIpv4().split("/")[0];
+                ipByContainerName.put(container.getName(), ipv4);
+            });
+        });
+
+        return ipByContainerName;
     }
 
     @Override

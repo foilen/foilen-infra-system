@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -167,6 +168,20 @@ public class DockerUtilsImplTest {
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-nothing-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-nothing.txt");
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-some-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-some.txt");
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-incompleteStream-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-incompleteStream.txt");
+    }
+
+    @Test
+    public void testNetworkListIpByContainerName() {
+        Map<String, String> actual = new DockerUtilsImpl()
+                .networkListIpByContainerNameConvert(ResourceTools.getResourceAsString("DockerUtilsImplTest-testNetworkListIpByContainerName.txt", getClass()));
+        Map<String, String> expected = new TreeMap<>();
+        expected.put("backup_sftp-l3_m_foilen-lab_com", "172.20.5.1");
+        expected.put("test_mariadb", "172.20.5.7");
+        expected.put("infra_web-l3_m_foilen-lab_com", "172.20.5.17");
+        expected.put("testing_www", "172.20.5.15");
+        expected.put("infra_redirector_exit", "172.20.5.16");
+
+        AssertTools.assertJsonComparison(expected, actual);
     }
 
 }
