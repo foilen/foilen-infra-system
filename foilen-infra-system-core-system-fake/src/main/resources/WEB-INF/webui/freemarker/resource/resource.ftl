@@ -87,7 +87,7 @@
           data-resource-type="${pageItem.resourceType.name}" 
           data-resource-id="${pageItem.value.internalId}" 
           data-resource-name="${pageItem.value.resourceName}" 
-          data-resource-description="${pageItem.value.resourceDescription}" 
+          data-resource-description="${pageItem.value.resourceDescription!''}" 
           >
         </div>
       <#else>
@@ -120,7 +120,7 @@
           <div class="ResourcesFieldPageItem_resource"
             data-resource-id="${resource.internalId}" 
             data-resource-name="${resource.resourceName}" 
-            data-resource-description="${resource.resourceDescription}"
+            data-resource-description="${resource.resourceDescription!''}"
             ></div>
         </#list>
       </div>
