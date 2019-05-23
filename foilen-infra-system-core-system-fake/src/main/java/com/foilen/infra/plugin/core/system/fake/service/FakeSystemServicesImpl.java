@@ -66,6 +66,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     private Map<Class<? extends IPResource>, List<Class<?>>> allClassesByResourceClass = new HashMap<>();
     private Map<Class<? extends IPResource>, IPResourceDefinition> resourceDefinitionByResourceClass = new HashMap<>();
     private Map<String, IPResourceDefinition> resourceDefinitionByResourceType = new HashMap<>();
+    private long infiniteLoopTimeoutInMs = 15000;
 
     @Override
     public void alertingError(String shortDescription, String longDescription) {
@@ -86,6 +87,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     public void changesExecute(ChangesContext changes) {
 
         ChangeExecutionLogic changeExecutionLogic = new ChangeExecutionLogic(commonServicesContext, internalServicesContext);
+        changeExecutionLogic.setInfiniteLoopTimeoutInMs(infiniteLoopTimeoutInMs);
 
         // Create a transaction
         List<IPResource> beforeTxResources = resources.stream().map(it -> it.deepClone()).collect(Collectors.toList());
@@ -147,6 +149,10 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     @Override
     public String getCsrfValue(Object request) {
         return "fake";
+    }
+
+    public long getInfiniteLoopTimeoutInMs() {
+        return infiniteLoopTimeoutInMs;
     }
 
     public InternalServicesContext getInternalServicesContext() {
@@ -798,6 +804,10 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
         IPResource storedResource = JsonTools.clone(updatedResource);
         storedResource.setInternalId(previousResource.getInternalId());
         resources.add(storedResource);
+    }
+
+    public void setInfiniteLoopTimeoutInMs(long infiniteLoopTimeoutInMs) {
+        this.infiniteLoopTimeoutInMs = infiniteLoopTimeoutInMs;
     }
 
     @Override
