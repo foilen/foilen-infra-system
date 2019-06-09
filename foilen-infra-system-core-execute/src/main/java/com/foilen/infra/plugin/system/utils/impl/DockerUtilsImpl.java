@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -472,7 +473,17 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
         });
 
-        dockerState.getFailedContainersByName().clear();
+        // Remove the failed containers details of no more existing applications
+        Iterator<String> previousFailedContainersNamesIt = dockerState.getFailedContainersByName().keySet().iterator();
+        while (previousFailedContainersNamesIt.hasNext()) {
+            String next = previousFailedContainersNamesIt.next();
+            if (!startOrder.contains(next)) {
+                logger.info("[MANAGER] Remove failed container details for [{}] because it is no more present", next);
+                previousFailedContainersNamesIt.remove();
+            }
+        }
+
+        // Process the applications
         for (String applicationNameToStart : startOrder) {
             logger.info("[MANAGER] Processing application [{}]", applicationNameToStart);
 
@@ -575,6 +586,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     }
                 }
                 if (saveFailedState) {
+                    logger.error("[MANAGER] [{}] Updating the last failure date", applicationNameToStart);
                     dockerState.getFailedContainersByName().put(applicationNameToStart, new DockerStateFailed(currentTransformedDockerStateIds, new Date()));
                 }
 
@@ -628,6 +640,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             case COMPLETED:
                 logger.info("[MANAGER] [{}] Ready", applicationNameToStart);
                 currentTransformedDockerStateIds.setLastState(DockerStep.COMPLETED);
+                dockerState.getFailedContainersByName().remove(applicationNameToStart);
                 break;
             }
 
