@@ -107,6 +107,16 @@ public class JunitsHelper {
         ChangesContext changes = new ChangesContext(commonCtx.getResourceService());
 
         changes.resourceAdd(createWithSets( //
+                "sets_0.null", //
+                null, //
+                null, //
+                null, //
+                null, //
+                null, //
+                null, //
+                null //
+        ));
+        changes.resourceAdd(createWithSets( //
                 "sets_0.0", //
                 Sets.newHashSet(), //
                 Sets.newHashSet(), //

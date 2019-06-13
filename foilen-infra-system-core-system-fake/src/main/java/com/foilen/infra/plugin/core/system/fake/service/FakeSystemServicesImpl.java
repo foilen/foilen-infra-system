@@ -263,14 +263,6 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                 .collect(Collectors.toList());
     }
 
-    public List<? extends IPResource> linkFindAllByFromResourceAndLinkType(long fromResourceId, String linkType) {
-        return links.stream().filter( //
-                it -> it.getA().equals(fromResourceId) && //
-                        linkType.equals(it.getB())) //
-                .map(it -> resourceFind(it.getC()).get()) //
-                .collect(Collectors.toList());
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public <R extends IPResource> List<R> linkFindAllByFromResourceAndLinkTypeAndToResourceClass(IPResource fromResource, String linkType, Class<R> toResourceType) {
@@ -318,16 +310,6 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                 it -> {
                     return linkType.equals(it.getB()) && //
                     toInternalId.equals(it.getC()); //
-                }) //
-                .map(it -> resourceFind(it.getA()).get()) //
-                .collect(Collectors.toList());
-    }
-
-    public List<? extends IPResource> linkFindAllByLinkTypeAndToResource(String linkType, long toResourceId) {
-        return links.stream().filter( //
-                it -> {
-                    return linkType.equals(it.getB()) && //
-                    it.getC().equals(toResourceId); //
                 }) //
                 .map(it -> resourceFind(it.getA()).get()) //
                 .collect(Collectors.toList());
@@ -481,7 +463,7 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public <R extends IPResource> List<R> resourceFindAllNoCloning(IPResourceQuery<R> query) {
+    private <R extends IPResource> List<R> resourceFindAllNoCloning(IPResourceQuery<R> query) {
         List<R> results = resources.stream() //
                 .filter(resource -> {
 
@@ -532,19 +514,21 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                                             return false;
                                         }
                                     }
-                                    for (Object it : propertyValueCollection) {
-                                        if (!currentValueSet.contains(it)) {
-                                            return false;
-                                        }
-                                    }
                                     return true;
                                 } else {
                                     return false;
                                 }
                             } else {
-                                if (!propertyValue.equals(currentValue)) {
-                                    // Wrong value
-                                    return false;
+                                if (currentValue == null && propertyValue instanceof Collection) {
+                                    Collection<?> propertyValueCollection = (Collection<?>) propertyValue;
+                                    if (!propertyValueCollection.isEmpty()) {
+                                        return false;
+                                    }
+                                } else {
+                                    if (!propertyValue.equals(currentValue)) {
+                                        // Wrong value
+                                        return false;
+                                    }
                                 }
                             }
                         } catch (Exception e) {
@@ -560,15 +544,6 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
 
                         try {
                             Object currentValue = currentResourceDefinition.getPropertyGetterMethod(propertyName).invoke(resource);
-                            if (propertyValue == null) {
-                                if (currentValue == null) {
-                                    // Good value
-                                    continue;
-                                } else {
-                                    // Wrong value
-                                    return false;
-                                }
-                            }
                             if (currentValue instanceof Set) {
                                 Set currentValueSet = (Set) currentValue;
                                 if (propertyValue instanceof Collection) {
@@ -604,22 +579,9 @@ public class FakeSystemServicesImpl extends AbstractBasics implements MessagingS
                                 return false;
                             }
 
-                            if (currentValue instanceof Collection) {
-                                boolean found = false;
-                                for (String t : (Collection<String>) currentValue) {
-                                    if (matchingLike(propertyValue, t)) {
-                                        found = true;
-                                    }
-                                }
-                                if (!found) {
-                                    // Wrong value
-                                    return false;
-                                }
-                            } else {
-                                if (!matchingLike(propertyValue, (String) currentValue)) {
-                                    // Wrong value
-                                    return false;
-                                }
+                            if (!matchingLike(propertyValue, (String) currentValue)) {
+                                // Wrong value
+                                return false;
                             }
                         } catch (Exception e) {
                             return false;
