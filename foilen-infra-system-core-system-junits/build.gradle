@@ -5,7 +5,6 @@ dependencies {
   implementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
   runtimeOnly "org.junit.vintage:junit-vintage-engine:$junitVersion"
   
-  compile "com.foilen:foilen-infra-plugins-core:$foilenInfraPluginsCoreVersion"
   compileOnly "com.foilen:foilen-infra-resource-testing-controller:0.3.0"
   compileOnly "com.foilen:foilen-infra-resource-example:0.3.0"
   compileOnly "com.foilen:foilen-infra-resource-example-failing:0.3.0"

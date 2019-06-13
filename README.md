@@ -62,6 +62,7 @@ USER_ID=$(id -u)
 FOLDER_SAMPLE=$(pwd)/_sample-templates
 FOLDER_IMPORT=$(pwd)/_import-resources
 FOLDER_PLUGINS_JARS=$(pwd)/_plugins-jars
+rm -rf $FOLDER_SAMPLE $FOLDER_IMPORT $FOLDER_PLUGINS_JARS
 mkdir -p $FOLDER_SAMPLE $FOLDER_IMPORT $FOLDER_PLUGINS_JARS
 
 # Download plugins

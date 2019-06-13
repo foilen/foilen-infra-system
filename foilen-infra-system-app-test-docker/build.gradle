@@ -6,11 +6,8 @@ buildscript {
 
 dependencies {
   compile project(":foilen-infra-system-core-execute")
-  compile(project(":foilen-infra-system-core-system-fake")) {
-    exclude group: 'com.foilen', module: "foilen-infra-plugins-core" 
-  }
+  compile(project(":foilen-infra-system-core-system-fake"))
   
-  compileOnly "com.foilen:foilen-infra-plugins-core:$foilenInfraPluginsCoreVersion"
   compile "commons-io:commons-io:2.6"
   compile "org.jsoup:jsoup:1.11.3"
 }

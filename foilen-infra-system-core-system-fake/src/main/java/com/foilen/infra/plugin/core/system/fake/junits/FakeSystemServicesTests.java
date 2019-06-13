@@ -25,8 +25,6 @@ public class FakeSystemServicesTests {
 
     public static FakeSystemServicesImpl init() {
 
-        System.setProperty("PluginUpgrader.disable", "true");
-
         FakeSystemServicesImpl fakeSystemServicesImpl = new FakeSystemServicesImpl();
         TimerServiceImpl timerService = new TimerServiceImpl();
 

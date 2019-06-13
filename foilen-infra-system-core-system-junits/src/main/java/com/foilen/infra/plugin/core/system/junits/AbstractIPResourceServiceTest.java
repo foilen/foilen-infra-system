@@ -9,11 +9,9 @@
  */
 package com.foilen.infra.plugin.core.system.junits;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +30,6 @@ import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.TimerEventContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.eventhandler.TimerEventHandler;
-import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.exception.InfiniteUpdateLoop;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
@@ -44,34 +41,14 @@ import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
-import com.foilen.infra.resource.application.Application;
-import com.foilen.infra.resource.dns.DnsEntry;
-import com.foilen.infra.resource.dns.DnsPointer;
-import com.foilen.infra.resource.dns.model.DnsEntryType;
 import com.foilen.infra.resource.example.AbstractParent;
 import com.foilen.infra.resource.example.ConcreteLevel1;
 import com.foilen.infra.resource.example.ConcreteLevel2;
+import com.foilen.infra.resource.example.EmployeeResource;
 import com.foilen.infra.resource.example.JunitResource;
 import com.foilen.infra.resource.example.JunitResourceEnum;
 import com.foilen.infra.resource.example.failing.CrashingTimerEventHandler;
-import com.foilen.infra.resource.infraconfig.InfraConfig;
-import com.foilen.infra.resource.machine.Machine;
-import com.foilen.infra.resource.mariadb.MariaDBDatabase;
-import com.foilen.infra.resource.mariadb.MariaDBServer;
-import com.foilen.infra.resource.mariadb.MariaDBUser;
 import com.foilen.infra.resource.testing.controller.TestingControllerPluginDefinitionProvider;
-import com.foilen.infra.resource.unixuser.UnixUser;
-import com.foilen.infra.resource.unixuser.UnixUserEditor;
-import com.foilen.infra.resource.unixuser.helper.UnixUserAvailableIdHelper;
-import com.foilen.infra.resource.webcertificate.ManualWebsiteCertificateEditor;
-import com.foilen.infra.resource.webcertificate.WebsiteCertificate;
-import com.foilen.infra.resource.webcertificate.helper.CertificateHelper;
-import com.foilen.infra.resource.website.Website;
-import com.foilen.smalltools.crypt.spongycastle.asymmetric.AsymmetricKeys;
-import com.foilen.smalltools.crypt.spongycastle.asymmetric.RSACrypt;
-import com.foilen.smalltools.crypt.spongycastle.cert.CertificateDetails;
-import com.foilen.smalltools.crypt.spongycastle.cert.RSACertificate;
-import com.foilen.smalltools.hash.HashSha1;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.DateTools;
@@ -79,13 +56,14 @@ import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.ThreadTools;
 import com.foilen.smalltools.tuple.Tuple2;
 import com.foilen.smalltools.tuple.Tuple3;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 /**
  * This is to test that the implementation of the real system is working as expected.
  */
 public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
+
+    // TODO Add new tests
 
     static private interface ApplyQuery<R extends IPResource> {
         void apply(IPResourceQuery<R> resourceQuery);
@@ -192,25 +170,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
     }
 
-    protected void assertInfraConfigApps(String resourceName) {
-
-        List<IPResource> resources = new ArrayList<>();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Application.class) //
-                .propertyEquals(Application.PROPERTY_NAME, "infra_login")).get());
-        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Application.class) //
-                .propertyEquals(Application.PROPERTY_NAME, "infra_ui")).get());
-        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Website.class) //
-                .propertyEquals(Website.PROPERTY_NAME, "infra_login")).get());
-        resources.add(resourceService.resourceFind(resourceService.createResourceQuery(Website.class) //
-                .propertyEquals(Website.PROPERTY_NAME, "infra_ui")).get());
-
-        AssertTools.assertJsonComparison(resourceName, AbstractIPResourceServiceTest.class, resources);
-
-    }
-
     private <R extends IPResource> void assertLinkFromAllNames(Class<R> resourceClass, String linkType, IPResource resourceTo, String... expectedNames) {
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
@@ -289,13 +248,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertTrue(actualTags.containsAll(Arrays.asList(expectedTags)));
     }
 
-    private void assertUnixUserNotExists(String name) {
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-        Assert.assertFalse(resourceService.resourceFind(resourceService.createResourceQuery(UnixUser.class) //
-                .propertyEquals(UnixUser.PROPERTY_NAME, name)) //
-                .isPresent());
-    }
-
     @Before
     public void beforeEach() {
 
@@ -307,35 +259,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         JunitsHelper.createFakeData(getCommonServicesContext(), getInternalServicesContext());
     }
 
-    private WebsiteCertificate createWebsiteCertificate(String... domainNames) {
-
-        String commonName = domainNames[0];
-
-        AsymmetricKeys keys = RSACrypt.RSA_CRYPT.generateKeyPair(1024);
-        RSACertificate rsaCertificate = new RSACertificate(keys).selfSign( //
-                new CertificateDetails().setCommonName(commonName) //
-                        .addSanDns(domainNames) //
-                        .setStartDate(DateTools.parseDateOnly("2001-07-01")).setEndDate(DateTools.parseDateOnly("2001-08-01")));
-
-        WebsiteCertificate websiteCertificate = new WebsiteCertificate();
-        CertificateHelper.toWebsiteCertificate(null, rsaCertificate, websiteCertificate);
-        websiteCertificate.setThumbprint(HashSha1.hashString(Joiner.on(',').join(domainNames)));
-        return websiteCertificate;
-    }
-
     private void deleteAllResources() {
         ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
         for (IPResource resource : getInternalServicesContext().getInternalIPResourceService().resourceFindAll()) {
             changes.resourceDelete(resource);
         }
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-    }
-
-    private UnixUser findByName(String name) {
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-        return resourceService.resourceFind(resourceService.createResourceQuery(UnixUser.class) //
-                .propertyEquals(UnixUser.PROPERTY_NAME, name)) //
-                .get();
     }
 
     protected abstract CommonServicesContext getCommonServicesContext();
@@ -569,78 +498,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
     @Test
     public void testChanges_rollback() {
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        String machineName1 = "m1.node.example.com";
-        String machineName2 = "m2.node.example.com";
-
-        String m1Ip1 = "199.141.1.101";
-        String m2Ip1 = "199.141.1.201";
-
-        assertResourceCount(0, Machine.class);
-        assertResourceExists(false, new Machine(machineName1), Machine.class);
-        assertResourceExists(false, new Machine(machineName2), Machine.class);
-        assertResourceCount(0, DnsEntry.class);
-
-        // Create both machines
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(new Machine(machineName1, m1Ip1));
-        changes.resourceAdd(new Machine(machineName2, m2Ip1));
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertResourceCount(2, Machine.class);
-        Machine m1 = assertResourceExists(true, new Machine(machineName1), Machine.class);
-        Machine m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(m1Ip1, m1.getPublicIp());
-        Assert.assertEquals(m2Ip1, m2.getPublicIp());
-        assertResourceCount(2, DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip1), DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip1), DnsEntry.class);
-
-        // Create extra links and tags
-        changes.tagAdd(m2, "extraTag");
-        changes.linkAdd(m1, "extraLink", m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        // Get the list of ids
-        List<Long> allIds = new ArrayList<>();
-        allIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(Machine.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
-        allIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(DnsEntry.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
-        Collections.sort(allIds);
-
-        // Create a duplicate machine "m2.node.example.com" (to get a rollback), delete machine m1
-        changes.resourceDelete(m1.getInternalId());
-        changes.resourceAdd(new Machine("m2.node.example.com"));
-        try {
-            getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-            Assert.fail("Expecting exception");
-        } catch (ResourcePrimaryKeyCollisionException e) {
-        }
-
-        assertResourceCount(2, Machine.class);
-        m1 = assertResourceExists(true, new Machine(machineName1), Machine.class);
-        m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(m1Ip1, m1.getPublicIp());
-        Assert.assertEquals(m2Ip1, m2.getPublicIp());
-        assertResourceCount(2, DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip1), DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip1), DnsEntry.class);
-
-        Set<String> tags = resourceService.tagFindAllByResource(m2);
-        Assert.assertEquals(1, tags.size());
-        Assert.assertEquals("extraTag", tags.iterator().next());
-
-        List<? extends IPResource> extraLinks = resourceService.linkFindAllByFromResourceAndLinkType(m1, "extraLink");
-        Assert.assertEquals(1, extraLinks.size());
-        Assert.assertEquals(m2, extraLinks.get(0));
-
-        // Confirm all the same ids
-        List<Long> allActualIds = new ArrayList<>();
-        allActualIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(Machine.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
-        allActualIds.addAll(resourceService.resourceFindAll(resourceService.createResourceQuery(DnsEntry.class)).stream().map(it -> it.getInternalId()).collect(Collectors.toList()));
-        Collections.sort(allActualIds);
-        Assert.assertEquals(allIds, allActualIds);
+        // TOOD + testChanges_rollback
     }
 
     @Test
@@ -792,87 +650,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         changes.resourceAdd(resource);
 
         getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-    }
-
-    @Test
-    public void testMachineUpdateHandler() {
-
-        String machineName1 = "m1.node.example.com";
-        String machineName2 = "m2.node.example.com";
-
-        String m1Ip2 = "199.141.1.102";
-        String m2Ip1 = "199.141.1.201";
-        String m2Ip2 = "199.141.1.202";
-
-        assertResourceCount(0, Machine.class);
-        assertResourceExists(false, new Machine(machineName1), Machine.class);
-        assertResourceExists(false, new Machine(machineName2), Machine.class);
-        assertResourceCount(0, DnsEntry.class);
-
-        // Create both machines: m1 without ip and m2 with ip
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(new Machine(machineName1));
-        changes.resourceAdd(new Machine(machineName2, m2Ip1));
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertResourceCount(2, Machine.class);
-        Machine m1 = assertResourceExists(true, new Machine(machineName1), Machine.class);
-        Machine m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(null, m1.getPublicIp());
-        Assert.assertEquals(m2Ip1, m2.getPublicIp());
-        assertResourceCount(1, DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip1), DnsEntry.class);
-
-        // Update both machines: m1 with ip and m2 with a different ip
-        changes.resourceUpdate(m1.getInternalId(), new Machine(machineName1, m1Ip2));
-        changes.resourceUpdate(m2.getInternalId(), new Machine(machineName2, m2Ip2));
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertResourceCount(2, Machine.class);
-        m1 = assertResourceExists(true, new Machine(machineName1), Machine.class);
-        m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(m1Ip2, m1.getPublicIp());
-        Assert.assertEquals(m2Ip2, m2.getPublicIp());
-        assertResourceCount(2, DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip2), DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName2, DnsEntryType.A, m2Ip2), DnsEntry.class);
-
-        // Remove ip of m2
-        changes.resourceUpdate(m2.getInternalId(), new Machine(machineName2, null));
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertResourceCount(2, Machine.class);
-        m1 = assertResourceExists(true, new Machine(machineName1), Machine.class);
-        m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(m1Ip2, m1.getPublicIp());
-        Assert.assertEquals(null, m2.getPublicIp());
-        assertResourceCount(1, DnsEntry.class);
-        assertResourceExists(true, new DnsEntry(machineName1, DnsEntryType.A, m1Ip2), DnsEntry.class);
-
-        // Delete m1
-        changes.resourceDelete(m1.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        assertResourceCount(1, Machine.class);
-        m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(null, m2.getPublicIp());
-        assertResourceCount(0, DnsEntry.class);
-
-        // Update name (fails)
-        try {
-            changes.resourceUpdate(m2.getInternalId(), new Machine("anotherName.node.example.com"));
-            getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-            Assert.fail("Expecting an exception");
-        } catch (IllegalUpdateException e) {
-        }
-        changes.clear();
-
-        // Rolled back
-        assertResourceCount(1, Machine.class);
-        m2 = assertResourceExists(true, new Machine(machineName2), Machine.class);
-        Assert.assertEquals(null, m2.getPublicIp());
-        assertResourceCount(0, DnsEntry.class);
-
     }
 
     @Test
@@ -1470,10 +1247,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals((Long) expectedId, junitResourceOptional.get().getInternalId());
 
         // Don't get it if not the right type
-        Optional<DnsEntry> dnsEntryOptional = resourceService.resourceFind(resourceService.createResourceQuery(DnsEntry.class) //
+        Optional<EmployeeResource> employeeResourceOptional = resourceService.resourceFind(resourceService.createResourceQuery(EmployeeResource.class) //
                 .addIdEquals(expectedId) //
         );
-        Assert.assertFalse(dnsEntryOptional.isPresent());
+        Assert.assertFalse(employeeResourceOptional.isPresent());
 
     }
 
@@ -2420,627 +2197,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         Assert.assertEquals(2, items.size());
         Assert.assertEquals((Integer) 1, items.get(0).getIntegerNumber());
         Assert.assertEquals((Integer) 2, items.get(1).getIntegerNumber());
-
-    }
-
-    @Test
-    public void testResourceApplication() {
-
-        deleteAllResources();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        // Create initial data
-        Machine m1 = new Machine("m1.example.com", "199.141.1.101");
-        Machine m2 = new Machine("m2.example.com", "199.141.1.201");
-        Machine m3 = new Machine("m3.example.com", "199.141.1.202");
-        UnixUser uu1 = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "user1", "/home/user1", null, null);
-        UnixUser uu2 = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "user2", "/home/user2", null, null);
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(m1);
-        changes.resourceAdd(m2);
-        changes.resourceAdd(m3);
-        changes.resourceAdd(uu1);
-        changes.resourceAdd(uu2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-0.json", AbstractIPResourceServiceTest.class);
-
-        // Create an application without links and one with links
-        Application a1 = new Application();
-        a1.setName("a1");
-        a1.getDomainNames().add("a1.example.com");
-        a1.getApplicationDefinition().getPortsExposed().put(12, 12);
-        Application a2 = new Application();
-        a2.setName("a2");
-        a2.getDomainNames().add("d1.example.com");
-        a2.getDomainNames().add("d2.example.com");
-        a2.getApplicationDefinition().getPortsExposed().put(34, 12);
-        changes.resourceAdd(a1);
-        changes.resourceAdd(a2);
-        changes.linkAdd(a2, LinkTypeConstants.RUN_AS, uu2);
-        changes.linkAdd(a2, LinkTypeConstants.INSTALLED_ON, m2);
-        changes.linkAdd(a2, LinkTypeConstants.INSTALLED_ON, m3);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-1.json", AbstractIPResourceServiceTest.class);
-        a1 = resourceService.resourceFindByPk(a1).get();
-        a2 = resourceService.resourceFindByPk(a2).get();
-        Assert.assertEquals(null, a1.getApplicationDefinition().getRunAs());
-        Assert.assertEquals(70001L, (long) a2.getApplicationDefinition().getRunAs());
-
-        // Update the application without links to have links
-        changes.linkAdd(a1, LinkTypeConstants.RUN_AS, uu1);
-        changes.linkAdd(a1, LinkTypeConstants.INSTALLED_ON, m1);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-2.json", AbstractIPResourceServiceTest.class);
-        a1 = resourceService.resourceFindByPk(a1).get();
-        a2 = resourceService.resourceFindByPk(a2).get();
-        Assert.assertEquals(70000L, (long) a1.getApplicationDefinition().getRunAs());
-        Assert.assertEquals(70001L, (long) a2.getApplicationDefinition().getRunAs());
-
-        // Update the application with links to different links
-        changes.linkAdd(a2, LinkTypeConstants.RUN_AS, uu1);
-        changes.linkDelete(a2, LinkTypeConstants.RUN_AS, uu2);
-        changes.linkAdd(a2, LinkTypeConstants.INSTALLED_ON, m1);
-        changes.linkDelete(a2, LinkTypeConstants.INSTALLED_ON, m2);
-        changes.linkDelete(a2, LinkTypeConstants.INSTALLED_ON, m3);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-3.json", AbstractIPResourceServiceTest.class);
-        a1 = resourceService.resourceFindByPk(a1).get();
-        a2 = resourceService.resourceFindByPk(a2).get();
-        Assert.assertEquals(70000L, (long) a1.getApplicationDefinition().getRunAs());
-        Assert.assertEquals(70000L, (long) a2.getApplicationDefinition().getRunAs());
-
-        // Fail if they are both on the same machine with same exposed port
-        try {
-            a1.getApplicationDefinition().getPortsExposed().put(34, 55);
-            changes.resourceUpdate(a1.getInternalId(), a1);
-            getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-            Assert.fail("Expecting exception");
-        } catch (IllegalUpdateException e) {
-            // Expected
-        }
-
-        // Fail if there are 2 running users on the same app
-        try {
-            changes.clear();
-            changes.linkAdd(a1, LinkTypeConstants.RUN_AS, uu2);
-            getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-            Assert.fail("Expecting exception");
-        } catch (IllegalUpdateException e) {
-            // Expected
-        }
-
-        // Delete application with links
-        changes.clear();
-        changes.resourceDelete(a2.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-4.json", AbstractIPResourceServiceTest.class);
-
-        // Remove all links on application
-        changes.linkDelete(a1, LinkTypeConstants.RUN_AS, uu1);
-        changes.linkDelete(a1, LinkTypeConstants.INSTALLED_ON, m1);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-5.json", AbstractIPResourceServiceTest.class);
-        a1 = resourceService.resourceFindByPk(a1).get();
-        Assert.assertEquals(null, a1.getApplicationDefinition().getRunAs());
-
-        // Delete application (back to initial state)
-        changes.resourceDelete(a1.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "ApplicationTest-state-0.json", AbstractIPResourceServiceTest.class);
-    }
-
-    @Test
-    public void testResourceDnsPointer() {
-
-        deleteAllResources();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        // Create initial data
-        Machine m1 = new Machine("m1.example.com", "199.141.1.101");
-        Machine m2 = new Machine("m2.example.com", "199.141.1.201");
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(m1);
-        changes.resourceAdd(m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-0.json", AbstractIPResourceServiceTest.class);
-
-        // Points to no machine
-        DnsPointer dp = new DnsPointer("pointer.example.com");
-        changes.resourceAdd(dp);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-1.json", AbstractIPResourceServiceTest.class);
-
-        // Points to 1 machine
-        changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m1);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-2.json", AbstractIPResourceServiceTest.class);
-
-        // Points to 2 machines
-        changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-3.json", AbstractIPResourceServiceTest.class);
-
-        // Remove ip from m2
-        m2 = resourceService.resourceFindByPk(m2).get();
-        m2.setPublicIp(null);
-        changes.resourceUpdate(m2.getInternalId(), m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-4.json", AbstractIPResourceServiceTest.class);
-
-        // Put back ip to m2
-        m2.setPublicIp("199.141.1.201");
-        changes.resourceUpdate(m2.getInternalId(), m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-3.json", AbstractIPResourceServiceTest.class);
-
-        // Rename
-        dp = resourceService.resourceFindByPk(dp).get();
-        changes.resourceUpdate(dp.getInternalId(), new DnsPointer("pointer2.example.com"));
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-        dp = resourceService.resourceFindByPk(new DnsPointer("pointer2.example.com")).get();
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-5.json", AbstractIPResourceServiceTest.class);
-
-        // Points to 1 machine
-        changes.linkDelete(dp, LinkTypeConstants.POINTS_TO, m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-6.json", AbstractIPResourceServiceTest.class);
-
-        // Point to 2 machines
-        changes.linkAdd(dp, LinkTypeConstants.POINTS_TO, m2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-5.json", AbstractIPResourceServiceTest.class);
-
-        // Delete the second machine
-        m2 = resourceService.resourceFindByPk(m2).get();
-        changes.resourceDelete(m2.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-7.json", AbstractIPResourceServiceTest.class);
-
-        // Delete
-        changes.resourceDelete(dp.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "DnsPointerTest-state-8.json", AbstractIPResourceServiceTest.class);
-    }
-
-    @Test
-    public void testResourceInfraConfig() {
-
-        deleteAllResources();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        // Create initial data
-        Machine machine = new Machine("m1.example.com", "199.141.1.101");
-        MariaDBServer loginMariaDBServer = new MariaDBServer("infra_login_db_server", "The database for the Login service", null);
-        MariaDBDatabase loginMariaDBDatabase = new MariaDBDatabase("infra_login_db", "The database for the Login service");
-        MariaDBUser loginMariaDBUser = new MariaDBUser("infra_login_user", "The database user for the Login service", "llll");
-        MariaDBServer uiMariaDBServer = new MariaDBServer("infra_ui_db_server", "The database for the UI service", null);
-        MariaDBDatabase uiMariaDBDatabase = new MariaDBDatabase("infra_ui_db", "The database for the UI service");
-        MariaDBUser uiMariaDBUser = new MariaDBUser("infra_ui_user", "The database user for the UI service", "uuuu");
-        UnixUser loginUnixUser = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "infra_login", "/home/infra_login", null, null);
-        UnixUser uiUnixUser = new UnixUser(UnixUserAvailableIdHelper.getNextAvailableId(), "infra_ui", "/home/infra_ui", null, null);
-
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(machine);
-        changes.resourceAdd(loginMariaDBServer);
-        changes.resourceAdd(loginMariaDBDatabase);
-        changes.resourceAdd(loginMariaDBUser);
-        changes.resourceAdd(loginUnixUser);
-        changes.resourceAdd(uiMariaDBServer);
-        changes.resourceAdd(uiMariaDBDatabase);
-        changes.resourceAdd(uiMariaDBUser);
-        changes.resourceAdd(uiUnixUser);
-
-        changes.linkAdd(loginMariaDBServer, LinkTypeConstants.RUN_AS, loginUnixUser);
-        changes.linkAdd(loginMariaDBServer, LinkTypeConstants.INSTALLED_ON, machine);
-        changes.linkAdd(loginMariaDBDatabase, LinkTypeConstants.INSTALLED_ON, loginMariaDBServer);
-        changes.linkAdd(loginMariaDBUser, MariaDBUser.LINK_TYPE_ADMIN, loginMariaDBDatabase);
-        changes.linkAdd(loginMariaDBUser, MariaDBUser.LINK_TYPE_READ, loginMariaDBDatabase);
-        changes.linkAdd(loginMariaDBUser, MariaDBUser.LINK_TYPE_WRITE, loginMariaDBDatabase);
-
-        changes.linkAdd(uiMariaDBServer, LinkTypeConstants.RUN_AS, uiUnixUser);
-        changes.linkAdd(uiMariaDBServer, LinkTypeConstants.INSTALLED_ON, machine);
-        changes.linkAdd(uiMariaDBDatabase, LinkTypeConstants.INSTALLED_ON, uiMariaDBServer);
-        changes.linkAdd(uiMariaDBUser, MariaDBUser.LINK_TYPE_ADMIN, uiMariaDBDatabase);
-        changes.linkAdd(uiMariaDBUser, MariaDBUser.LINK_TYPE_READ, uiMariaDBDatabase);
-        changes.linkAdd(uiMariaDBUser, MariaDBUser.LINK_TYPE_WRITE, uiMariaDBDatabase);
-
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-0.json", AbstractIPResourceServiceTest.class);
-
-        // Create the HTTP InfraConfig
-        InfraConfig infraConfig = new InfraConfig();
-        infraConfig.setLoginAdministratorEmail("login-admin@example.com");
-        infraConfig.setLoginDomainName("login.example.com");
-        infraConfig.setLoginEmailFrom("login-from@example.com");
-        infraConfig.setUiAlertsToEmail("ui-alerts@example.com");
-        infraConfig.setUiDomainName("ui.example.com");
-        infraConfig.setUiEmailFrom("ui-from@example.com");
-
-        infraConfig.setApplicationId("__the_app_id__");
-        infraConfig.setLoginCookieSignatureSalt("__login_cookie_signature_salt__");
-        infraConfig.setLoginCsrfSalt("__login_crsf_salt__");
-        infraConfig.setUiCsrfSalt("__ui_crsf_salt__");
-        infraConfig.setUiLoginCookieSignatureSalt("__ui_login_cookie_signature_salt__");
-
-        infraConfig.setLoginVersion("0.2.1");
-        infraConfig.setUiVersion("0.1.0");
-
-        changes.resourceAdd(infraConfig);
-
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginMariaDBServer);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginMariaDBDatabase);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginMariaDBUser);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginUnixUser);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_INSTALLED_ON, machine);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiMariaDBServer);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiMariaDBDatabase);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiMariaDBUser);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiUnixUser);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_INSTALLED_ON, machine);
-
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-        infraConfig = resourceService.resourceFindByPk(infraConfig).get();
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-1.json", AbstractIPResourceServiceTest.class);
-        assertInfraConfigApps("InfraConfigTest-apps-1.json");
-
-        // Change for HTTPS
-        WebsiteCertificate loginWebsiteCertificate = new WebsiteCertificate("__login_ca_cert__", "__login_thumbprint__", "__login_cert__", "__login_pub_key__", "__login_priv_key__",
-                DateTools.parseDateOnly("2000-01-01"), DateTools.parseDateOnly("2010-01-01"), "login.example.com");
-        loginWebsiteCertificate.setResourceEditorName(ManualWebsiteCertificateEditor.EDITOR_NAME);
-        WebsiteCertificate uiWebsiteCertificate = new WebsiteCertificate("__ui_ca_cert__", "__ui_thumbprint__", "__ui_cert__", "__ui_pub_key__", "__ui_priv_key__",
-                DateTools.parseDateOnly("2000-01-01"), DateTools.parseDateOnly("2010-01-01"), "ui.example.com");
-        uiWebsiteCertificate.setResourceEditorName(ManualWebsiteCertificateEditor.EDITOR_NAME);
-
-        changes.resourceAdd(loginWebsiteCertificate);
-        changes.resourceAdd(uiWebsiteCertificate);
-
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_LOGIN_USES, loginWebsiteCertificate);
-        changes.linkAdd(infraConfig, InfraConfig.LINK_TYPE_UI_USES, uiWebsiteCertificate);
-
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-2.json", AbstractIPResourceServiceTest.class);
-        assertInfraConfigApps("InfraConfigTest-apps-2.json");
-
-        // Change for HTTP
-        changes.resourceDelete(loginWebsiteCertificate);
-        changes.resourceDelete(uiWebsiteCertificate);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-1.json", AbstractIPResourceServiceTest.class);
-        assertInfraConfigApps("InfraConfigTest-apps-1.json");
-
-        // Delete InfraConfig (back to initial state)
-        changes.resourceDelete(infraConfig);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "InfraConfigTest-state-0.1.json", AbstractIPResourceServiceTest.class);
-
-    }
-
-    @Test
-    public void testResourceMachine() {
-
-        deleteAllResources();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        // Create one
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        Machine machine = new Machine("m1.node.example.com", "199.141.1.101");
-        changes.resourceAdd(machine);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-1.json", AbstractIPResourceServiceTest.class);
-
-        // Change IP
-        machine = resourceService.resourceFindByPk(machine).get();
-        machine.setPublicIp("199.141.1.102");
-        changes.resourceUpdate(machine.getInternalId(), machine);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-2.json", AbstractIPResourceServiceTest.class);
-
-        // Remove IP
-        machine.setPublicIp(null);
-        changes.resourceUpdate(machine.getInternalId(), machine);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-3.json", AbstractIPResourceServiceTest.class);
-
-        // Put back IP
-        machine.setPublicIp("199.141.1.102");
-        changes.resourceUpdate(machine.getInternalId(), machine);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-2.json", AbstractIPResourceServiceTest.class);
-
-        // Change name (fail)
-        machine.setName("m2.node.example.com");
-        changes.resourceUpdate(machine.getInternalId(), machine);
-        try {
-            getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-            Assert.fail("Must fail since cannot change machine's name");
-        } catch (IllegalUpdateException e) {
-        }
-
-        // Delete
-        changes.resourceDelete(machine.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "MachineTest-state-4.json", AbstractIPResourceServiceTest.class);
-
-    }
-
-    @Test
-    public void testResourceUnixUser() throws InstantiationException, IllegalAccessException {
-
-        UnixUserEditor unixUserEditor = new UnixUserEditor();
-
-        // Create without password [OK]
-        Map<String, String> formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user1");
-        assertEditorNoErrors(null, unixUserEditor, formValues);
-
-        UnixUser unixUser1 = findByName("user1");
-        Assert.assertEquals("/home/user1", unixUser1.getHomeFolder());
-        Assert.assertNull(unixUser1.getHashedPassword());
-
-        // Create with password [OK]
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user2");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD, "qwerty");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "qwerty");
-        assertEditorNoErrors(null, unixUserEditor, formValues);
-
-        UnixUser unixUser2 = findByName("user2");
-        Assert.assertEquals("/home/user2", unixUser2.getHomeFolder());
-        Assert.assertNotNull(unixUser2.getHashedPassword());
-
-        // Create with different password [FAIL]
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user3");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD, "qwerty");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "qwerty2");
-        assertEditorWithErrors(null, unixUserEditor, formValues, new Tuple2<>("passwordConf", "error.notSamePassword"));
-
-        // Update password [OK]
-        String initialHash = unixUser2.getHashedPassword();
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user2");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD, "qwerty2");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "qwerty2");
-        assertEditorNoErrors(unixUser2.getInternalId(), unixUserEditor, formValues);
-
-        unixUser2 = findByName("user2");
-        Assert.assertEquals("/home/user2", unixUser2.getHomeFolder());
-        Assert.assertNotNull(unixUser2.getHashedPassword());
-        Assert.assertNotEquals(initialHash, unixUser2.getHashedPassword());
-
-        // Clear password [OK]
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user2");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD, UnixUserEditor.CLEAR_PASSWORD_CHAR);
-        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "");
-        assertEditorNoErrors(unixUser2.getInternalId(), unixUserEditor, formValues);
-
-        unixUser2 = findByName("user2");
-        Assert.assertEquals("/home/user2", unixUser2.getHomeFolder());
-        Assert.assertNull(unixUser2.getHashedPassword());
-
-        // Create with existing name [FAIL]
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user2");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD, "qwerty");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "qwerty");
-        assertEditorWithErrors(null, unixUserEditor, formValues, new Tuple2<>("name", "error.nameTaken"));
-
-        // Update password [OK]
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user2");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD, "qwerty");
-        formValues.put(UnixUserEditor.FIELD_PASSWORD_CONF, "qwerty");
-        assertEditorNoErrors(unixUser2.getInternalId(), unixUserEditor, formValues);
-
-        unixUser2 = findByName("user2");
-        Assert.assertEquals("/home/user2", unixUser2.getHomeFolder());
-        Assert.assertNotNull(unixUser2.getHashedPassword());
-
-        // Update with different name [OK]
-        initialHash = unixUser2.getHashedPassword();
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user20");
-        assertEditorNoErrors(unixUser2.getInternalId(), unixUserEditor, formValues);
-
-        assertUnixUserNotExists("user2");
-        UnixUser unixUser20 = findByName("user20");
-        Assert.assertEquals("/home/user2", unixUser20.getHomeFolder());
-        Assert.assertNotNull(unixUser20.getHashedPassword());
-        Assert.assertEquals(initialHash, unixUser20.getHashedPassword());
-
-        // Update with existing name [FAIL]
-        formValues = new HashMap<>();
-        formValues.put(UnixUser.PROPERTY_NAME, "user1");
-        assertEditorWithErrors(unixUser20.getInternalId(), unixUserEditor, formValues, new Tuple2<>("name", "error.nameTaken"));
-
-    }
-
-    @Test
-    public void testResourceWebsite() {
-
-        deleteAllResources();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        // Create initial data
-        Machine m1 = new Machine("m1.example.com", "199.141.1.101");
-        Machine m2 = new Machine("m2.example.com", "199.141.1.201");
-        WebsiteCertificate wc1 = createWebsiteCertificate("d1.example.com", "d2.example.com");
-        wc1.setResourceEditorName("manual");
-        WebsiteCertificate wc2 = createWebsiteCertificate("d3.example.com");
-        wc2.setResourceEditorName("manual");
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(m1);
-        changes.resourceAdd(m2);
-        changes.resourceAdd(wc1);
-        changes.resourceAdd(wc2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-0.json", AbstractIPResourceServiceTest.class);
-
-        // Create one, non-https
-        Website website = new Website("d1.example.com");
-        website.getDomainNames().add("d1.example.com");
-        changes.resourceAdd(website);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-        website = resourceService.resourceFindByPk(website).get();
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-1.json", AbstractIPResourceServiceTest.class);
-
-        // Add one application
-        Application application = new Application();
-        application.setName("my_web_app");
-        changes.resourceAdd(application);
-        changes.linkAdd(website, LinkTypeConstants.POINTS_TO, application);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-2.json", AbstractIPResourceServiceTest.class);
-
-        // Change the list of machines on the application
-        changes.linkAdd(application, LinkTypeConstants.INSTALLED_ON, m1);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-3.0.json", AbstractIPResourceServiceTest.class);
-
-        // Change the list of machines on the website
-        changes.linkAdd(website, LinkTypeConstants.INSTALLED_ON, m1);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-3.1.json", AbstractIPResourceServiceTest.class);
-
-        // Change domain names
-        website = resourceService.resourceFindByPk(website).get();
-        website.getDomainNames().clear();
-        website.setName("d2.example.com");
-        website.getDomainNames().add("d2.example.com");
-        changes.resourceUpdate(website);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-4.json", AbstractIPResourceServiceTest.class);
-
-        // Change to https
-        website = resourceService.resourceFindByPk(website).get();
-        website.setHttps(true);
-        changes.linkAdd(website, LinkTypeConstants.USES, wc1);
-        changes.resourceUpdate(website.getInternalId(), website);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-        changes.linkDelete(website, LinkTypeConstants.USES, wc1);
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-5.json", AbstractIPResourceServiceTest.class);
-
-        // Change to http
-        website = resourceService.resourceFindByPk(website).get();
-        website.setHttps(false);
-
-        changes.resourceUpdate(website.getInternalId(), website);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-4.json", AbstractIPResourceServiceTest.class); // Same as previous
-
-        // Change to https
-        website = resourceService.resourceFindByPk(website).get();
-        website.setHttps(true);
-        changes.linkAdd(website, LinkTypeConstants.USES, wc1);
-        changes.resourceUpdate(website.getInternalId(), website);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-5.json", AbstractIPResourceServiceTest.class);
-
-        // Change to another domain with another cert
-        website = resourceService.resourceFindByPk(website).get();
-        website.getDomainNames().clear();
-        website.setName("d3.example.com");
-        website.getDomainNames().add("d3.example.com");
-        changes.resourceUpdate(website.getInternalId(), website);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-6.json", AbstractIPResourceServiceTest.class);
-
-        // Delete
-        changes.resourceDelete(website.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteTest-state-7.json", AbstractIPResourceServiceTest.class);
-
-    }
-
-    @Test
-    public void testResourceWebsiteCertificate() {
-
-        deleteAllResources();
-
-        IPResourceService resourceService = getCommonServicesContext().getResourceService();
-
-        // Create a certificate
-        AsymmetricKeys rootKeys = RSACrypt.RSA_CRYPT.generateKeyPair(1024);
-        RSACertificate rsaCert = new RSACertificate(rootKeys);
-        rsaCert.selfSign(new CertificateDetails() //
-                .setStartDate(DateTools.parseDateOnly("2001-01-01")) //
-                .setEndDate(DateTools.parseDateOnly("2002-01-01")) //
-                .addSanDns("m1.example.com", "m2.example.com") //
-        );
-
-        WebsiteCertificate c1 = CertificateHelper.toWebsiteCertificate(null, rsaCert);
-        c1.setThumbprint("my_thumb");
-        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
-        changes.resourceAdd(c1);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-        c1 = resourceService.resourceFindByPk(c1).get();
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteCertificateTest-state-1.json", AbstractIPResourceServiceTest.class);
-
-        // Change the list of domains
-        rsaCert = new RSACertificate(rootKeys);
-        rsaCert.selfSign(new CertificateDetails() //
-                .setStartDate(DateTools.parseDateOnly("2001-01-01")) //
-                .setEndDate(DateTools.parseDateOnly("2002-01-01")) //
-                .addSanDns("m3.example.com", "m2.example.com") //
-        );
-
-        WebsiteCertificate c2 = CertificateHelper.toWebsiteCertificate(null, rsaCert);
-        c2.setThumbprint("my_thumb");
-        changes.resourceUpdate(c1.getInternalId(), c2);
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteCertificateTest-state-2.json", AbstractIPResourceServiceTest.class);
-
-        // Delete
-        changes.resourceDelete(c1.getInternalId());
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
-
-        JunitsHelper.assertState(getCommonServicesContext(), getInternalServicesContext(), "WebsiteCertificateTest-state-3.json", AbstractIPResourceServiceTest.class);
 
     }
 

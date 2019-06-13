@@ -8,6 +8,6 @@
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.buildship.core.classpathprovider"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.foilen.infra.plugin.app.test.docker.TestDockerApp"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="download-latest-plugins _out core website"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="download-latest-plugins _out core"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="foilen-infra-system-app-test-docker"/>
 </launchConfiguration>

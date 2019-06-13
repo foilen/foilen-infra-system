@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import com.foilen.infra.plugin.app.test.docker.model.Application;
+import com.foilen.infra.plugin.app.test.docker.model.UnixUser;
 import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
 import com.foilen.infra.plugin.core.system.fake.CommonServicesContextBean;
 import com.foilen.infra.plugin.core.system.fake.InitSystemBean;
@@ -44,8 +46,6 @@ import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutputContext;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
-import com.foilen.infra.resource.application.Application;
-import com.foilen.infra.resource.unixuser.UnixUser;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.LogbackTools;
@@ -220,7 +220,8 @@ public class StartResourcesApp {
         // Install unix users
         System.out.println("\n---[ Install unix users ]---");
         UnixUsersAndGroupsUtils unixUsersAndGroupsUtils = new UnixUsersAndGroupsUtilsImpl();
-        resourceService.resourceFindAll(resourceService.createResourceQuery(UnixUser.class)).forEach(unixUser -> {
+        resourceService.resourceFindAll(resourceService.createResourceQuery(UnixUser.RESOURCE_TYPE)).forEach(it -> {
+            UnixUser unixUser = JsonTools.clone(it, UnixUser.class);
             System.out.println("\t" + unixUser.getName() + " (" + unixUser.getId() + ")");
             unixUsersAndGroupsUtils.userCreate(unixUser.getName(), unixUser.getId(), unixUser.getHomeFolder(), null, null);
         });
@@ -233,7 +234,9 @@ public class StartResourcesApp {
         // Install applications (docker)
         File tmpDirectory = Files.createTempDir();
         System.out.println("\n---[ Install applications (docker) ]---");
-        List<Application> applications = resourceService.resourceFindAll(resourceService.createResourceQuery(Application.class));
+        List<Application> applications = resourceService.resourceFindAll(resourceService.createResourceQuery(Application.RESOURCE_TYPE)).stream() //
+                .map(it -> JsonTools.clone(it, Application.class)) //
+                .collect(Collectors.toList());
         DockerState dockerState = stateGetOrCreate();
         List<ApplicationBuildDetails> alwaysRunningApplications = applications.stream() //
                 .map(application -> {
@@ -273,7 +276,8 @@ public class StartResourcesApp {
         });
 
         System.out.println("\n---[ Remove all unix users ]---");
-        resourceService.resourceFindAll(resourceService.createResourceQuery(UnixUser.class)).forEach(unixUser -> {
+        resourceService.resourceFindAll(resourceService.createResourceQuery(UnixUser.RESOURCE_TYPE)).forEach(it -> {
+            UnixUser unixUser = JsonTools.clone(it, UnixUser.class);
             System.out.println("\t" + unixUser.getName() + " (" + unixUser.getId() + ")");
             unixUsersAndGroupsUtils.userRemove(unixUser.getName(), unixUser.getHomeFolder());
         });
