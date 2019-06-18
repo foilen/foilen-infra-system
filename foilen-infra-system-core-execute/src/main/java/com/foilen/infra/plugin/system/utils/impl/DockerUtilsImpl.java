@@ -555,8 +555,9 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                             lastRunningContainerIds.getContainerRunUniqueId(), transformedApplicationDefinition.toContainerRunUniqueId());
                     startStep = DockerStep.RESTART_CONTAINER;
                 } else if (needStart) {
-                    logger.debug("[MANAGER] [{}] is not running. Will restart", applicationNameToStart);
-                    startStep = DockerStep.RESTART_CONTAINER;
+                    logger.debug("[MANAGER] [{}] is not running. Will build and start", applicationNameToStart);
+                    containerStopAndRemove(ctx);
+                    startStep = DockerStep.BUILD_IMAGE;
                 } else if (!lastRunningContainerIds.getContainerStartedUniqueId().equals(transformedApplicationDefinition.toContainerStartUniqueId())) {
                     logger.debug("[MANAGER] [{}] has a different execute when started commands. Will execute", applicationNameToStart);
                     startStep = DockerStep.COPY_AND_EXECUTE_IN_RUNNING_CONTAINER;
