@@ -168,6 +168,7 @@ public class DockerUtilsImplTest {
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-nothing-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-nothing.txt");
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-some-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-some.txt");
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-incompleteStream-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-incompleteStream.txt");
+        assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-sizeWithExponent-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-sizeWithExponent.txt");
     }
 
     @Test
