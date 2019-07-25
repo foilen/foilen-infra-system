@@ -198,6 +198,7 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
             }
 
         }
+        this.changesEvents = Collections.unmodifiableList(changesEvents);
 
         updateResourcesColumnSearch(commonServicesContext.getResourceService().getResourceDefinitions());
 
@@ -220,7 +221,7 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
         // Save the lists as immutable lists
         this.brokenPlugins = Collections.unmodifiableList(brokenPlugins);
         this.availablePlugins = Collections.unmodifiableList(availablePlugins.stream().map(Tuple3::getC).collect(Collectors.toList()));
-        this.changesEvents = Collections.unmodifiableList(changesEvents);
+
         if (skipUpdateEvents) {
             logger.warn("Skipping all update events: FOILEN_PLUGIN_SKIP_UPDATE_EVENTS=true");
             this.changesEvents = Collections.emptyList();
