@@ -165,22 +165,6 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
 
         }
 
-        // Init
-        Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1>> availablePluginsIt = availablePlugins.iterator();
-        while (availablePluginsIt.hasNext()) {
-            Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1> next = availablePluginsIt.next();
-            IPPluginDefinitionProvider provider = next.getB();
-            try {
-                provider.initialize(commonServicesContext, internalServicesContext);
-            } catch (Exception e) {
-                logger.error("[{}] Problem initializing the plugin", next.getA().getName(), e);
-                availablePluginsIt.remove();
-                brokenPlugins.add(new Tuple3<>(next.getA(), next.getC(), getErrorMessage(e)));
-            }
-        }
-
-        updateResourcesColumnSearch(commonServicesContext.getResourceService().getResourceDefinitions());
-
         // Enable the events
         List<ChangesEventContext> changesEvents = new ArrayList<>();
         Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1>> it = availablePlugins.iterator();
@@ -213,6 +197,22 @@ public class IPPluginServiceImpl extends AbstractBasics implements IPPluginServi
                 brokenPlugins.add(new Tuple3<>(provider, pluginDefinition, getErrorMessage(e)));
             }
 
+        }
+
+        updateResourcesColumnSearch(commonServicesContext.getResourceService().getResourceDefinitions());
+
+        // Init
+        Iterator<Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1>> availablePluginsIt = availablePlugins.iterator();
+        while (availablePluginsIt.hasNext()) {
+            Tuple3<Class<? extends IPPluginDefinitionProvider>, IPPluginDefinitionProvider, IPPluginDefinitionV1> next = availablePluginsIt.next();
+            IPPluginDefinitionProvider provider = next.getB();
+            try {
+                provider.initialize(commonServicesContext, internalServicesContext);
+            } catch (Exception e) {
+                logger.error("[{}] Problem initializing the plugin", next.getA().getName(), e);
+                availablePluginsIt.remove();
+                brokenPlugins.add(new Tuple3<>(next.getA(), next.getC(), getErrorMessage(e)));
+            }
         }
 
         logger.info("Available plugins: {} ; Broken Plugins: {}", availablePlugins.size(), brokenPlugins.size());
