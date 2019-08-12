@@ -29,11 +29,27 @@ public interface DockerUtils {
 
     boolean containerExecCommands(String containerName, List<String> commands);
 
-    boolean containerIsRunningByContainerNameOrId(String applicationNameToStart);
+    boolean containerIsRunningByContainerNameOrIdWithCaching(String applicationNameToStart);
+
+    void containerPsCacheClear();
 
     List<DockerPs> containerPsFindAll();
 
+    /**
+     * Same as {@link #containerPsFindAll()}, but with a 1 minute cache
+     *
+     * @return the containers
+     */
+    List<DockerPs> containerPsFindAllWithCaching();
+
     Optional<DockerPs> containerPsFindByContainerNameOrId(String containerNameOrId);
+
+    /**
+     * Same as {@link #containerPsFindByContainerNameOrId(String)}, but with a 1 minute cache
+     *
+     * @return the container
+     */
+    Optional<DockerPs> containerPsFindByContainerNameOrIdWithCaching(String containerNameOrId);
 
     /**
      * Actions:

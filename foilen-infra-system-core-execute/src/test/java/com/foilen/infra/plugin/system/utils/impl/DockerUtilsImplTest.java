@@ -10,7 +10,6 @@
 package com.foilen.infra.plugin.system.utils.impl;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -53,11 +52,6 @@ public class DockerUtilsImplTest {
         UnixShellAndFsUtilsMock unixShellAndFsUtils = new UnixShellAndFsUtilsMock();
         unixShellAndFsUtils.setExecuteCommandQuietAndGetOutputCallback((actionName, actionDetails, command, arguments) -> { //
 
-            Map<String, String> ipByContainer = new HashMap<>();
-            ipByContainer.put("app1_mysql", "172.17.0.2");
-            ipByContainer.put("app1", "172.17.0.3");
-            ipByContainer.put("infra_redirector_exit", "172.17.0.4");
-            ipByContainer.put("infra_redirector_entry", "172.17.0.5");
             if ("ps".equals(actionDetails)) {
                 return "11111111111111\tapp1_mysql\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)" //
                         + "\n222222222222\tapp1\t2018-06-25 07:14:58 -0400 EDT\t2 weeks ago\tUp\t0B (virtual 407MB)" //
