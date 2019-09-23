@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
-<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/foilen-infra-system-app-test-docker/src/main/java/com/foilen/infra/plugin/app/test/docker/StartResourcesApp.java"/>
-</listAttribute>
-<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
-<listEntry value="1"/>
-</listAttribute>
-<stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.buildship.core.classpathprovider"/>
-<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.foilen.infra.plugin.app.test.docker.StartResourcesApp"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="import-resources"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="foilen-infra-system-app-test-docker"/>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+        <listEntry value="/foilen-infra-system-app-test-docker/src/main/java/com/foilen/infra/plugin/app/test/docker/StartResourcesApp.java"/>
+    </listAttribute>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+        <listEntry value="1"/>
+    </listAttribute>
+    <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.buildship.core.classpathprovider"/>
+    <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.foilen.infra.plugin.app.test.docker.StartResourcesApp"/>
+    <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="import-resources"/>
+    <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="foilen-infra-system-app-test-docker"/>
 </launchConfiguration>
