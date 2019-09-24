@@ -22,6 +22,7 @@ public class ContainersManageContext {
     private static final NoOpDockerContainerManagementCallback NO_OP_DOCKER_CONTAINER_MANAGEMENT_CALLBACK = new NoOpDockerContainerManagementCallback();
     private static final NoOpTransformedApplicationDefinitionCallback NO_OP_TRANSFORMED_APPLICATION_DEFINITION_CALLBACK = new NoOpTransformedApplicationDefinitionCallback();
 
+    private String baseOutputDirectory;
     private DockerState dockerState;
     private List<ApplicationBuildDetails> alwaysRunningApplications = new ArrayList<>();
     private List<CronApplicationBuildDetails> cronApplications = new ArrayList<>();
@@ -31,6 +32,10 @@ public class ContainersManageContext {
 
     public List<ApplicationBuildDetails> getAlwaysRunningApplications() {
         return alwaysRunningApplications;
+    }
+
+    public String getBaseOutputDirectory() {
+        return baseOutputDirectory;
     }
 
     public DockerContainerManagementCallback getContainerManagementCallback() {
@@ -54,6 +59,11 @@ public class ContainersManageContext {
         return this;
     }
 
+    public ContainersManageContext setBaseOutputDirectory(String baseOutputDirectory) {
+        this.baseOutputDirectory = baseOutputDirectory;
+        return this;
+    }
+
     public ContainersManageContext setContainerManagementCallback(DockerContainerManagementCallback containerManagementCallback) {
         this.containerManagementCallback = containerManagementCallback;
         return this;
@@ -69,8 +79,9 @@ public class ContainersManageContext {
         return this;
     }
 
-    public void setTransformedApplicationDefinitionCallback(TransformedApplicationDefinitionCallback transformedApplicationDefinitionCallback) {
+    public ContainersManageContext setTransformedApplicationDefinitionCallback(TransformedApplicationDefinitionCallback transformedApplicationDefinitionCallback) {
         this.transformedApplicationDefinitionCallback = transformedApplicationDefinitionCallback;
+        return this;
     }
 
 }

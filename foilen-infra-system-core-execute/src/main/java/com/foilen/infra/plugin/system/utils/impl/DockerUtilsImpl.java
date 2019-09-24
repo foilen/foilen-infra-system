@@ -234,6 +234,9 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
     @Override
     public List<String> containersManage(ContainersManageContext containersManageContext) {
 
+        String baseOutputDirectory = containersManageContext.getBaseOutputDirectory();
+        AssertTools.assertNotNull(baseOutputDirectory);
+
         containerPsCacheClear();
 
         List<String> modifiedContainerNames = new ArrayList<>();
@@ -314,7 +317,8 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         RedirectPortRegistryExits redirectPortRegistryExits = new RedirectPortRegistryExits();
         if (needsRedirectorEntry) {
             RedirectPortRegistryEntries redirectPortRegistryEntries = new RedirectPortRegistryEntries();
-            DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME);
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME)
+                    .setOutputDirectory(baseOutputDirectory + "/" + DockerContainerOutput.REDIRECTOR_ENTRY_CONTAINER_NAME);
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
             applicationDefinition.setFrom("foilen/redirectport-registry:1.1.0");
             applicationDefinition.setRunAs(65534L); // Nobody
@@ -406,7 +410,8 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                     .setOutputContext(outputContext));
         }
         if (needsRedirectorExit) {
-            DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME);
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext(DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME, DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME)
+                    .setOutputDirectory(baseOutputDirectory + "/" + DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME);
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
             applicationDefinition.setFrom("foilen/redirectport-registry:1.1.0");
             applicationDefinition.setRunAs(65534L); // Nobody
@@ -544,6 +549,10 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             ctx.setRedirectIpByMachineContainerEndpoint(dockerState.getRedirectIpByMachineContainerEndpoint());
             ctx.setRedirectPortByMachineContainerEndpoint(dockerState.getRedirectPortByMachineContainerEndpoint());
 
+            // Add network information
+            ctx.setNetworkName(NETWORK_NAME);
+            ctx.setNetworkIp(dockerState.getIpStateByName().get(applicationNameToStart).getIp());
+
             // Save redirectPortRegistryExits in the applicationDetails if is that container
             if (DockerContainerOutput.REDIRECTOR_EXIT_CONTAINER_NAME.equals(applicationNameToStart)) {
                 applicationDefinition.addCopyWhenStartedContent("/data/exit.json", JsonTools.prettyPrint(redirectPortRegistryExits));// We want hot change
@@ -552,7 +561,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             IPApplicationDefinition transformedApplicationDefinition = DockerContainerOutput.addInfrastructure(applicationDefinition, ctx);
             DockerStateIds currentTransformedDockerStateIds = new DockerStateIds( //
                     transformedApplicationDefinition.toImageUniqueId(), //
-                    transformedApplicationDefinition.toContainerRunUniqueId(), //
+                    transformedApplicationDefinition.toContainerRunUniqueId() + ctx.toContainerRunUniqueId(), //
                     transformedApplicationDefinition.toContainerStartUniqueId());
             containersManageContext.getTransformedApplicationDefinitionCallback().handler(applicationNameToStart, transformedApplicationDefinition);
 
@@ -561,22 +570,22 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
             transformedDockerStateIdsByApplicationName.put(applicationNameToStart, currentTransformedDockerStateIds);
 
             // Exposing endpoints
-            String applicationId = dockerState.getIpStateByName().get(applicationNameToStart).getIp();
+            String applicationIp = dockerState.getIpStateByName().get(applicationNameToStart).getIp();
             logger.info("[MANAGER] [{}] Has {} enpoints to expose to the exit container ; exposing with ip {}", //
-                    applicationNameToStart, transformedApplicationDefinition.getPortsEndpoint().size(), applicationId);
+                    applicationNameToStart, transformedApplicationDefinition.getPortsEndpoint().size(), applicationIp);
             if (!transformedApplicationDefinition.getPortsEndpoint().isEmpty()) {
                 for (Entry<Integer, String> portEndpoint : transformedApplicationDefinition.getPortsEndpoint().entrySet()) {
                     // Fill redirectPortRegistryExits
                     String endpoint = portEndpoint.getValue();
                     Integer port = portEndpoint.getKey();
-                    redirectPortRegistryExits.getExits().add(new RedirectPortRegistryExit(applicationNameToStart, endpoint, applicationId, port));
+                    redirectPortRegistryExits.getExits().add(new RedirectPortRegistryExit(applicationNameToStart, endpoint, applicationIp, port));
 
                     // Save endpoints in state ("localhost" and current machine name)
                     String machineContainerEndpoint = IPApplicationDefinitionPortRedirect.LOCAL_MACHINE + "/" + applicationNameToStart + "/" + endpoint;
-                    dockerState.getRedirectIpByMachineContainerEndpoint().put(machineContainerEndpoint, applicationId);
+                    dockerState.getRedirectIpByMachineContainerEndpoint().put(machineContainerEndpoint, applicationIp);
                     dockerState.getRedirectPortByMachineContainerEndpoint().put(machineContainerEndpoint, port);
                     machineContainerEndpoint = machineName + "/" + applicationNameToStart + "/" + endpoint;
-                    dockerState.getRedirectIpByMachineContainerEndpoint().put(machineContainerEndpoint, applicationId);
+                    dockerState.getRedirectIpByMachineContainerEndpoint().put(machineContainerEndpoint, applicationIp);
                     dockerState.getRedirectPortByMachineContainerEndpoint().put(machineContainerEndpoint, port);
 
                 }
@@ -589,19 +598,19 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 logger.debug("[MANAGER] [{}] is not currently running. Will build and start", applicationNameToStart);
                 startStep = DockerStep.BUILD_IMAGE;
             } else {
-                if (!lastRunningContainerIds.getImageUniqueId().equals(transformedApplicationDefinition.toImageUniqueId())) {
+                if (!lastRunningContainerIds.getImageUniqueId().equals(currentTransformedDockerStateIds.getImageUniqueId())) {
                     logger.debug("[MANAGER] [{}] has a different image {} -> {}. Will build and start", applicationNameToStart, //
-                            lastRunningContainerIds.getImageUniqueId(), transformedApplicationDefinition.toImageUniqueId());
+                            lastRunningContainerIds.getImageUniqueId(), currentTransformedDockerStateIds.getImageUniqueId());
                     startStep = DockerStep.BUILD_IMAGE;
-                } else if (!lastRunningContainerIds.getContainerRunUniqueId().equals(transformedApplicationDefinition.toContainerRunUniqueId())) {
+                } else if (!lastRunningContainerIds.getContainerRunUniqueId().equals(currentTransformedDockerStateIds.getContainerRunUniqueId())) {
                     logger.debug("[MANAGER] [{}] has a different run command {} -> {}. Will restart", applicationNameToStart, //
-                            lastRunningContainerIds.getContainerRunUniqueId(), transformedApplicationDefinition.toContainerRunUniqueId());
+                            lastRunningContainerIds.getContainerRunUniqueId(), currentTransformedDockerStateIds.getContainerRunUniqueId());
                     startStep = DockerStep.RESTART_CONTAINER;
                 } else if (needStart) {
                     logger.debug("[MANAGER] [{}] is not running. Will build and start", applicationNameToStart);
                     containerStopAndRemove(ctx);
                     startStep = DockerStep.BUILD_IMAGE;
-                } else if (!lastRunningContainerIds.getContainerStartedUniqueId().equals(transformedApplicationDefinition.toContainerStartUniqueId())) {
+                } else if (!lastRunningContainerIds.getContainerStartedUniqueId().equals(currentTransformedDockerStateIds.getContainerStartedUniqueId())) {
                     logger.debug("[MANAGER] [{}] has a different execute when started commands. Will execute", applicationNameToStart);
                     startStep = DockerStep.COPY_AND_EXECUTE_IN_RUNNING_CONTAINER;
                 }
@@ -641,6 +650,11 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 continue;
             }
 
+            if (startStep == DockerStep.BUILD_IMAGE || startStep == DockerStep.RESTART_CONTAINER) {
+                logger.info("[MANAGER] [{}] Output image", applicationNameToStart);
+                imageOutput(transformedApplicationDefinition, ctx);
+            }
+
             switch (startStep) {
             case BUILD_IMAGE:
                 logger.info("[MANAGER] [{}] Building image", applicationNameToStart);
@@ -660,8 +674,6 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 logger.info("[MANAGER] [{}] Starting/Restarting container", applicationNameToStart);
                 currentTransformedDockerStateIds.setLastState(DockerStep.RESTART_CONTAINER);
                 containerStopAndRemove(ctx);
-                ctx.setNetworkName(NETWORK_NAME);
-                ctx.setNetworkIp(dockerState.getIpStateByName().get(applicationNameToStart).getIp());
                 if (!containerStartWithRestart(transformedApplicationDefinition, ctx)) {
                     logger.error("[MANAGER] [{}] Could not start the container", applicationNameToStart);
                     dockerState.getFailedContainersByName().put(applicationNameToStart, new DockerStateFailed(currentTransformedDockerStateIds, new Date()));
@@ -732,14 +744,11 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         String containerName = ctx.getContainerName();
         logger.info("[CONTAINER] [{}] START", containerName);
 
-        String[] runArguments = DockerContainerOutput.toRunArgumentsWithRestart(applicationDefinition, ctx);
-        logger.debug("[CONTAINER] [{}] START - Arguments: {}", containerName, runArguments);
-
         boolean success = false;
         try {
-            unixShellAndFsUtils.executeCommandOrFail(Level.DEBUG, "CONTAINER/" + containerName, //
-                    "/usr/bin/docker", //
-                    runArguments);
+            unixShellAndFsUtils.executeCommandOrFailWithWorkDir(Level.DEBUG, "CONTAINER/" + containerName, //
+                    ctx.getOutputDirectory(), //
+                    "./start-restart.sh");
             success = true;
         } catch (Exception e) {
         }
@@ -826,18 +835,14 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         String imageName = ctx.getImageName();
         logger.info("[IMAGE] [{}] BUILD", imageName);
 
-        // Prepare the build directory
-        DockerContainerOutput.toDockerBuildDirectory(applicationDefinition, ctx);
-
         // Build image
         boolean success = false;
         try {
 
             TimeoutRunnableHandler timeoutRunnableHandler = new TimeoutRunnableHandler(15L * 60L * 1000L, () -> {
                 unixShellAndFsUtils.executeCommandOrFailWithWorkDir(Level.DEBUG, "CONTAINER/" + imageName, //
-                        ctx.getBuildDirectory(), //
-                        "/usr/bin/docker", //
-                        "build", "-t", imageName, ".");
+                        ctx.getOutputDirectory(), //
+                        "./build.sh");
             });
             timeoutRunnableHandler.run();
             success = true;
@@ -847,6 +852,18 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         logger.debug("[IMAGE] [{}] BUILD - success: {}", imageName, success);
 
         return success;
+    }
+
+    @Override
+    public void imageOutput(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx) {
+        String imageName = ctx.getImageName();
+        logger.info("[IMAGE] [{}] OUTPUT", imageName);
+
+        // Prepare the build directory
+        DockerContainerOutput.toDockerBuildDirectory(applicationDefinition, ctx);
+
+        logger.debug("[IMAGE] [{}] OUTPUT - done", imageName);
+
     }
 
     protected List<String> networkConvertToNames(String output) {

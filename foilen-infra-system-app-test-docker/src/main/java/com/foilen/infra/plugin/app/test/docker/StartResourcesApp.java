@@ -247,7 +247,8 @@ public class StartResourcesApp {
                 }).collect(Collectors.toList());
         dockerUtils.containersManage(new ContainersManageContext() //
                 .setDockerState(dockerState) //
-                .setAlwaysRunningApplications(alwaysRunningApplications));
+                .setAlwaysRunningApplications(alwaysRunningApplications) //
+                .setBaseOutputDirectory(tmpDirectory.getAbsolutePath()));
         stateSave(dockerState);
         List<String> applicationStatuses = new ArrayList<>();
         dockerState.getFailedContainersByName().keySet().forEach(it -> {

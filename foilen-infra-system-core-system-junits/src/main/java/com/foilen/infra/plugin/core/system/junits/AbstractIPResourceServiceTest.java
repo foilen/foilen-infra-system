@@ -91,6 +91,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    private void assertCollections(Collection<?> expected, Collection<?> actual) {
+        String expectedText = Joiner.on("\n").join(expected);
+        String actualText = Joiner.on("\n").join(actual);
+        Assert.assertEquals(expectedText, actualText);
+    }
+
     /**
      * Execute the editor with the form.
      *
@@ -2058,12 +2064,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                         .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Sets.newHashSet("2")) //
         );
         assertCollections(Arrays.asList("sets_1.2", "sets_2.1"), items.stream().map(i -> i.getText()).collect(Collectors.toList()));
-    }
-
-    private void assertCollections(Collection<?> expected, Collection<?> actual) {
-        String expectedText = Joiner.on("\n").join(expected);
-        String actualText = Joiner.on("\n").join(actual);
-        Assert.assertEquals(expectedText, actualText);
     }
 
     @Test

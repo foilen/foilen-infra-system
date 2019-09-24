@@ -81,6 +81,8 @@ public interface DockerUtils {
 
     boolean imageBuild(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx);
 
+    void imageOutput(IPApplicationDefinition applicationDefinition, DockerContainerOutputContext ctx);
+
     /**
      * Create a new network if it does not exists.
      *

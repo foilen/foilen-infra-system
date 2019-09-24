@@ -30,6 +30,7 @@ import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 
 public class DockerUtilsImplTest {
 
@@ -64,7 +65,8 @@ public class DockerUtilsImplTest {
         DockerUtils dockerUtils = new DockerUtilsImpl(unixShellAndFsUtils);
 
         DockerState dockerState = new DockerState();
-        ContainersManageContext containersManageContext = new ContainersManageContext().setDockerState(dockerState);
+        String baseOutputDirectory = Files.createTempDir().getAbsolutePath();
+        ContainersManageContext containersManageContext = new ContainersManageContext().setDockerState(dockerState).setBaseOutputDirectory(baseOutputDirectory);
 
         // Add initial applications: app1 and app1_mysql
         {
@@ -94,7 +96,7 @@ public class DockerUtilsImplTest {
         assertList(Arrays.asList("app1_mysql", "app1", "infra_redirector_exit"), updatedInstanceNames);
 
         // Executing a second time (should not change anything)
-        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
+        containersManageContext = new ContainersManageContext().setDockerState(dockerState).setBaseOutputDirectory(baseOutputDirectory);
 
         {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
@@ -122,7 +124,7 @@ public class DockerUtilsImplTest {
         assertList(Arrays.asList(), updatedInstanceNames);
 
         // Update and Execute (should change)
-        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
+        containersManageContext = new ContainersManageContext().setDockerState(dockerState).setBaseOutputDirectory(baseOutputDirectory);
         {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
@@ -139,7 +141,7 @@ public class DockerUtilsImplTest {
         assertList(Arrays.asList("infra_redirector_entry", "app1", "infra_redirector_exit"), updatedInstanceNames);
 
         // Executing a second time (should not change anything)
-        containersManageContext = new ContainersManageContext().setDockerState(dockerState);
+        containersManageContext = new ContainersManageContext().setDockerState(dockerState).setBaseOutputDirectory(baseOutputDirectory);
         {
             DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
             IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
