@@ -283,7 +283,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
             applyChanges(changesInTransactionContext, changes);
             changesInTransactionContext.setExplicitChange(false);
 
-            boolean hadChangesInLastLoop = false;
+            boolean hadChangesInLastLoop = changesInTransactionContext.hasChangesInLastRun();
             while (System.currentTimeMillis() < maxTime) {
 
                 // 2. Call the rules

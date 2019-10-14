@@ -9,6 +9,7 @@
  */
 package com.foilen.infra.plugin.core.system.junits;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -32,6 +33,7 @@ import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.TimerEventContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
+import com.foilen.infra.plugin.v1.core.eventhandler.ActionHandler;
 import com.foilen.infra.plugin.v1.core.eventhandler.TimerEventHandler;
 import com.foilen.infra.plugin.v1.core.exception.InfiniteUpdateLoop;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
@@ -48,6 +50,8 @@ import com.foilen.infra.resource.example.AbstractParent;
 import com.foilen.infra.resource.example.ConcreteLevel1;
 import com.foilen.infra.resource.example.ConcreteLevel2;
 import com.foilen.infra.resource.example.EmployeeResource;
+import com.foilen.infra.resource.example.Ex1Resource;
+import com.foilen.infra.resource.example.JunitDynamicChangesHandler;
 import com.foilen.infra.resource.example.JunitResource;
 import com.foilen.infra.resource.example.JunitResourceEnum;
 import com.foilen.infra.resource.example.failing.CrashingTimerEventHandler;
@@ -56,6 +60,7 @@ import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.DateTools;
 import com.foilen.smalltools.tools.JsonTools;
+import com.foilen.smalltools.tools.StringTools;
 import com.foilen.smalltools.tools.ThreadTools;
 import com.foilen.smalltools.tuple.Tuple2;
 import com.foilen.smalltools.tuple.Tuple3;
@@ -259,6 +264,8 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Before
     public void beforeEach() {
 
+        JunitDynamicChangesHandler.setDynamicChangesEventHandlers(Collections.emptyList());
+
         List<? extends IPResource> all = getInternalServicesContext().getInternalIPResourceService().resourceFindAll();
         AssertTools.assertJsonComparison(Collections.emptyList(), all);
 
@@ -297,6 +304,86 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         ThreadTools.sleep(3000);
 
         Assert.assertTrue(okCounter.get() >= 2);
+
+    }
+
+    @Test
+    public void testChanges_lastUpdate() {
+
+        String changeTracker = "testChanges_lastUpdate-changedCounts";
+        AtomicInteger ex1Id = new AtomicInteger();
+
+        JunitDynamicChangesHandler.setDynamicChangesEventHandlers(Collections.singletonList((services, changesInTransactionContext) -> {
+            List<ActionHandler> actions = new ArrayList<>();
+
+            if (changesInTransactionContext.hasChangesInLastRun()) {
+                logger.info("hasChangesInLastRun. Skipping for now");
+            } else {
+                logger.info("There were no changes in last run. Checking if any JunitResource changed");
+
+                // Keep track of counts in each categories. Refresh only if that changed
+                String currentChangedCounts = "";
+                currentChangedCounts += changesInTransactionContext.getAllAddedResources().stream().filter(r -> r instanceof JunitResource).count();
+                currentChangedCounts += ":";
+                currentChangedCounts += changesInTransactionContext.getAllUpdatedResources().stream().filter(r -> r.getPrevious() instanceof JunitResource).count();
+                currentChangedCounts += ":";
+                currentChangedCounts += changesInTransactionContext.getAllDeletedResources().stream().filter(r -> r instanceof JunitResource).count();
+
+                String previousChangedCounts = changesInTransactionContext.getVars().get(changeTracker);
+                if (previousChangedCounts == null) {
+                    previousChangedCounts = "0:0:0";
+                }
+                logger.info("previous changedCounts {} ; current changedCounts {}", previousChangedCounts, currentChangedCounts);
+
+                if (StringTools.safeEquals(previousChangedCounts, currentChangedCounts)) {
+                    logger.info("There were no JunitResource changed. Nothing to do");
+                } else {
+                    changesInTransactionContext.getVars().put(changeTracker, currentChangedCounts);
+
+                    logger.info("There were JunitResource changed. Adding Ex1Resource action");
+                    actions.add((_s, changes) -> {
+                        changes.resourceAdd(new Ex1Resource("auto-added", ex1Id.incrementAndGet()));
+                    });
+                }
+            }
+
+            return actions;
+        }));
+
+        // Common
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // Delete all
+        getInternalServicesContext().getInternalIPResourceService().resourceFindAll().forEach(r -> changes.resourceDelete(r));
+        internalChangeService.changesExecute(changes);
+        changes.clear();
+        getInternalServicesContext().getInternalIPResourceService().resourceFindAll().forEach(r -> changes.resourceDelete(r));
+        internalChangeService.changesExecute(changes);
+        changes.clear();
+
+        Assert.assertEquals(0, resourceService.resourceFindAll(resourceService.createResourceQuery(ConcreteLevel1.class)).size());
+        Assert.assertEquals(0, resourceService.resourceFindAll(resourceService.createResourceQuery(JunitResource.class)).size());
+        Assert.assertEquals(0, resourceService.resourceFindAll(resourceService.createResourceQuery(Ex1Resource.class)).size());
+
+        // Create non-JunitResource (no Ex1Resource created)
+        changes.resourceAdd(new ConcreteLevel1("one", null, null));
+        internalChangeService.changesExecute(changes);
+        changes.clear();
+
+        Assert.assertEquals(1, resourceService.resourceFindAll(resourceService.createResourceQuery(ConcreteLevel1.class)).size());
+        Assert.assertEquals(0, resourceService.resourceFindAll(resourceService.createResourceQuery(JunitResource.class)).size());
+        Assert.assertEquals(0, resourceService.resourceFindAll(resourceService.createResourceQuery(Ex1Resource.class)).size());
+
+        // Create JunitResource (1 Ex1Resource created)
+        changes.resourceAdd(new JunitResource("one"));
+        internalChangeService.changesExecute(changes);
+        changes.clear();
+
+        Assert.assertEquals(1, resourceService.resourceFindAll(resourceService.createResourceQuery(ConcreteLevel1.class)).size());
+        Assert.assertEquals(1, resourceService.resourceFindAll(resourceService.createResourceQuery(JunitResource.class)).size());
+        Assert.assertEquals(1, resourceService.resourceFindAll(resourceService.createResourceQuery(Ex1Resource.class)).size());
 
     }
 
