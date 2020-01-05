@@ -1,0 +1,19 @@
+[ {
+  "level" : "ERROR",
+  "sender" : "SYSTEM",
+  "shortDescription" : "An error",
+  "longDescription" : "Error Desc",
+  "acknowledged" : false
+}, {
+  "level" : "INFO",
+  "sender" : "SYSTEM",
+  "shortDescription" : "An info",
+  "longDescription" : "Info Desc",
+  "acknowledged" : false
+}, {
+  "level" : "WARN",
+  "sender" : "SYSTEM",
+  "shortDescription" : "A warn",
+  "longDescription" : "Warn Desc",
+  "acknowledged" : false
+} ]

@@ -10,7 +10,8 @@ License: The MIT License (MIT)
 - foilen-infra-system-core-execute: Some Linux and Docker services for the executor.
 - foilen-infra-system-core-system-common: All the services definitions for plugins.
 - foilen-infra-system-core-system-junits: The junits for testing any system implementation.
-- foilen-infra-system-core-system-fake: An implementation of the services for pluging used in unit tests and standalone tests.
+- foilen-infra-system-core-system-memory: An implementation of the services for pluging used in unit tests and standalone tests.
+- foilen-infra-system-core-system-mongodb: An implementation of the services for pluging that stores the information in MongoDB.
 - foilen-infra-system-app-test-docker: An application to generate sample resource files and run applications from files.
 
 # Usage

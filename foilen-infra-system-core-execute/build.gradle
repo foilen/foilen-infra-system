@@ -2,10 +2,12 @@ dependencies {
 
   // Plugin system
   compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
-  testCompile project(":foilen-infra-system-core-system-fake")
+  testCompile project(":foilen-infra-system-core-system-memory")
 
   // Logging
-  compile "org.slf4j:slf4j-api"
+  compile "org.slf4j:slf4j-api:1.7.30"
+  
+  compile "org.springframework.boot:spring-boot-starter-freemarker:$springBootVersion"
 
   // Tests
   testCompileOnly 'junit:junit:4.12'

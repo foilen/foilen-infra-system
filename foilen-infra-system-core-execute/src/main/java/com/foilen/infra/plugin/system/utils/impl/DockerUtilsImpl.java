@@ -69,7 +69,7 @@ import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.MultiDependenciesResolverTools;
 import com.foilen.smalltools.tools.SearchingAvailabilityIntTools;
-import com.foilen.smalltools.tools.SpaceConverterTool;
+import com.foilen.smalltools.tools.SpaceConverterTools;
 import com.foilen.smalltools.tools.SystemTools;
 import com.foilen.smalltools.tools.ThreadTools;
 import com.foilen.smalltools.tuple.Tuple2;
@@ -812,7 +812,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
             String instanceSizePart = sizeParts[0];
             try {
-                long instanceSize = SpaceConverterTool.convertToBytes(instanceSizePart);
+                long instanceSize = SpaceConverterTools.convertToBytes(instanceSizePart);
                 dockerPs.setSize(instanceSize);
             } catch (Exception e) {
                 logger.warn("Could not convert {}", instanceSizePart, e);
@@ -820,7 +820,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
             String totalSizePart = sizeParts[1].split("\\)")[0];
             try {
-                long totalSize = SpaceConverterTool.convertToBytes(totalSizePart);
+                long totalSize = SpaceConverterTools.convertToBytes(totalSizePart);
                 dockerPs.setTotalSize(totalSize);
             } catch (Exception e) {
                 logger.warn("Could not convert {}", totalSizePart, e);

@@ -35,6 +35,7 @@ import com.foilen.infra.plugin.v1.core.context.TimerEventContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.eventhandler.ActionHandler;
 import com.foilen.infra.plugin.v1.core.eventhandler.TimerEventHandler;
+import com.foilen.infra.plugin.v1.core.exception.IllegalUpdateException;
 import com.foilen.infra.plugin.v1.core.exception.InfiniteUpdateLoop;
 import com.foilen.infra.plugin.v1.core.exception.ResourcePrimaryKeyCollisionException;
 import com.foilen.infra.plugin.v1.core.plugin.IPPluginDefinitionProvider;
@@ -43,6 +44,7 @@ import com.foilen.infra.plugin.v1.core.resource.IPResourceQuery;
 import com.foilen.infra.plugin.v1.core.service.IPPluginService;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
+import com.foilen.infra.plugin.v1.core.service.internal.InternalIPResourceService;
 import com.foilen.infra.plugin.v1.core.visual.editor.ResourceEditor;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.plugin.v1.model.resource.LinkTypeConstants;
@@ -51,6 +53,7 @@ import com.foilen.infra.resource.example.ConcreteLevel1;
 import com.foilen.infra.resource.example.ConcreteLevel2;
 import com.foilen.infra.resource.example.EmployeeResource;
 import com.foilen.infra.resource.example.Ex1Resource;
+import com.foilen.infra.resource.example.Ex2Resource;
 import com.foilen.infra.resource.example.JunitDynamicChangesHandler;
 import com.foilen.infra.resource.example.JunitResource;
 import com.foilen.infra.resource.example.JunitResourceEnum;
@@ -115,7 +118,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
      *            resource type
      */
     @SuppressWarnings("unchecked")
-    protected <T extends IPResource> void assertEditorNoErrors(Long internalId, ResourceEditor<T> resourceEditor, Map<String, String> formValues) {
+    protected <T extends IPResource> void assertEditorNoErrors(String internalId, ResourceEditor<T> resourceEditor, Map<String, String> formValues) {
         try {
             // Format, validate
             if (internalId != null) {
@@ -585,7 +588,35 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
 
     @Test
     public void testChanges_rollback() {
-        // TOOD + testChanges_rollback
+        InternalIPResourceService internalIPResourceService = getInternalServicesContext().getInternalIPResourceService();
+        String initialJson = JsonTools.prettyPrintWithoutNulls(internalIPResourceService.resourceFindAll());
+
+        // Mock failure
+        JunitDynamicChangesHandler.setDynamicChangesEventHandlers(Collections.singletonList((services, changesInTransactionContext) -> {
+
+            if (changesInTransactionContext.hasChangesInLastRun()) {
+                logger.info("MOCK: Has changes in last run. Wait");
+            } else {
+                logger.info("MOCK: Does not have change in last run. Rollback");
+                throw new IllegalUpdateException("Force rollback");
+            }
+
+            return Collections.emptyList();
+        }));
+
+        // Execute some changes
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        internalIPResourceService.resourceFindAll().forEach(r -> changes.resourceDelete(r.getInternalId()));
+        try {
+            getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+            Assert.fail("Expecting failure");
+        } catch (IllegalUpdateException e) {
+            Assert.assertEquals("Force rollback", e.getMessage());
+        }
+
+        // Assert all the same
+        String finalJson = JsonTools.prettyPrintWithoutNulls(internalIPResourceService.resourceFindAll());
+        Assert.assertEquals(initialJson, finalJson);
     }
 
     @Test
@@ -675,6 +706,76 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
             Assert.fail("Didn't get an exception");
         } catch (Exception e) {
         }
+    }
+
+    @Test
+    public void testCreateResourcesWithIdWithLinkAndTags_1pass() {
+
+        // Common
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // Create 2 items
+        Ex2Resource resource1 = new Ex2Resource(10L, "first", 2000);
+        changes.resourceAdd(resource1);
+        Ex2Resource resource2 = new Ex2Resource(20L, "first", 2000);
+        changes.resourceAdd(resource2);
+
+        // Link them
+        changes.linkAdd(resource1, LinkTypeConstants.POINTS_TO, resource2);
+
+        // Add a tag
+        changes.tagAdd(resource1, "tag1");
+
+        // Execute
+        internalChangeService.changesExecute(changes);
+
+        // Assert
+        resource1 = resourceService.resourceFindByPk(new Ex2Resource(10L)).get();
+        Assert.assertEquals(Collections.singleton("tag1"), resourceService.tagFindAllByResource(resource1));
+        resource2 = resourceService.resourceFindByPk(new Ex2Resource(20L)).get();
+        Assert.assertEquals(Collections.emptySet(), resourceService.tagFindAllByResource(resource2));
+
+        List<Tuple2<String, ? extends IPResource>> links = resourceService.linkFindAllByFromResource(resource1);
+        Assert.assertEquals(1, links.size());
+        Assert.assertEquals(resource2.getInternalId(), links.get(0).getB().getInternalId());
+
+    }
+
+    @Test
+    public void testCreateResourcesWithLinkAndTags_1pass() {
+
+        // Common
+        ChangesContext changes = new ChangesContext(getCommonServicesContext().getResourceService());
+        InternalChangeService internalChangeService = getInternalServicesContext().getInternalChangeService();
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        // Create 2 items
+        JunitResource resource1 = new JunitResource("t1", JunitResourceEnum.A, 1);
+        changes.resourceAdd(resource1);
+        JunitResource resource2 = new JunitResource("t2", JunitResourceEnum.A, 2);
+        changes.resourceAdd(resource2);
+
+        // Link them
+        changes.linkAdd(resource1, LinkTypeConstants.POINTS_TO, resource2);
+
+        // Add a tag
+        changes.tagAdd(resource1, "tag1");
+
+        // Execute
+        internalChangeService.changesExecute(changes);
+
+        // Assert
+        resource1 = resourceService.resourceFindByPk(new JunitResource("t1", JunitResourceEnum.A, 1)).get();
+        Assert.assertEquals(Collections.singleton("tag1"), resourceService.tagFindAllByResource(resource1));
+        resource2 = resourceService.resourceFindByPk(new JunitResource("t2", JunitResourceEnum.A, 2)).get();
+        Assert.assertEquals(Collections.emptySet(), resourceService.tagFindAllByResource(resource2));
+
+        List<Tuple2<String, ? extends IPResource>> links = resourceService.linkFindAllByFromResource(resource1);
+        Assert.assertEquals(1, links.size());
+        Assert.assertEquals(resource2.getInternalId(), links.get(0).getB().getInternalId());
+
     }
 
     @Test
@@ -830,7 +931,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 new Tuple2<>(LinkTypeConstants.MANAGES, eBob), new Tuple2<>(LinkTypeConstants.MANAGES, eClaire)), //
                 resourceService.linkFindAllByFromResource(eAlain.getInternalId()));
         Assert.assertEquals(Arrays.asList(), //
-                resourceService.linkFindAllByFromResource(98565));
+                resourceService.linkFindAllByFromResource("98565"));
 
         // Test linkFindAllByFromResourceAndLinkType
         Assert.assertEquals(Arrays.asList(), //
@@ -1043,9 +1144,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 resourceService.createResourceQuery(JunitResource.class) //
                         .propertyGreaterAndEquals(JunitResource.PROPERTY_DATE, DateTools.parseFull("2000-04-01 00:00:00")) //
         );
-        Assert.assertEquals(2, items.size());
-        Assert.assertEquals("t2_aaa", items.get(0).getText());
-        Assert.assertEquals("zz", items.get(1).getText());
+
+        List<String> expected = Arrays.asList("t2_aaa", "zz");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
 
     }
 
@@ -1212,7 +1314,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("two"))//
         );
         Assert.assertTrue(junitResourceOptional.isPresent());
-        long expectedId = junitResourceOptional.get().getInternalId();
+        String expectedId = junitResourceOptional.get().getInternalId();
 
         // Modify its editor
         JunitResource resource = junitResourceOptional.get();
@@ -1226,7 +1328,7 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 .addEditorEquals("junit") //
         );
         Assert.assertTrue(junitResourceOptional.isPresent());
-        Assert.assertEquals((Long) expectedId, junitResourceOptional.get().getInternalId());
+        Assert.assertEquals(expectedId, junitResourceOptional.get().getInternalId());
 
         // Don't get the resource if wrong editor
         junitResourceOptional = resourceService.resourceFind(resourceService.createResourceQuery(JunitResource.class) //
@@ -1260,10 +1362,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 resourceService.createResourceQuery(JunitResource.class) //
                         .propertyGreaterAndEquals(JunitResource.PROPERTY_ENUMERATION, JunitResourceEnum.B) //
         );
-        Assert.assertEquals(3, items.size());
-        Assert.assertEquals("example.com", items.get(0).getText());
-        Assert.assertEquals("t2_aaa", items.get(1).getText());
-        Assert.assertEquals("zz", items.get(2).getText());
+
+        List<String> expected = Arrays.asList("example.com", "t2_aaa", "zz");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
 
     }
 
@@ -1290,12 +1392,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 resourceService.createResourceQuery(JunitResource.class) //
                         .propertyLesserAndEquals(JunitResource.PROPERTY_ENUMERATION, JunitResourceEnum.B) //
         );
-        Assert.assertEquals(5, items.size());
-        Assert.assertEquals("www.example.com", items.get(0).getText());
-        Assert.assertEquals("www.example.com", items.get(1).getText());
-        Assert.assertEquals("example.com", items.get(2).getText());
-        Assert.assertEquals("t1_aaa", items.get(3).getText());
-        Assert.assertEquals("zz", items.get(4).getText());
+        List<String> expected = Arrays.asList("example.com", "t1_aaa", "www.example.com", "www.example.com", "zz");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
 
     }
 
@@ -1350,9 +1449,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 resourceService.createResourceQuery(JunitResource.class) //
                         .propertyGreaterAndEquals(JunitResource.PROPERTY_FLOAT_NUMBER, 3.1f) //
         );
-        Assert.assertEquals(2, items.size());
-        Assert.assertEquals("t2_aaa", items.get(0).getText());
-        Assert.assertEquals("zz", items.get(1).getText());
+
+        List<String> expected = Arrays.asList("t2_aaa", "zz");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
 
     }
 
@@ -1421,14 +1521,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList("two"))//
         );
         Assert.assertTrue(junitResourceOptional.isPresent());
-        long expectedId = junitResourceOptional.get().getInternalId();
+        String expectedId = junitResourceOptional.get().getInternalId();
 
         // Get the resource
         junitResourceOptional = resourceService.resourceFind(resourceService.createResourceQuery(JunitResource.class) //
                 .addIdEquals(expectedId) //
         );
         Assert.assertTrue(junitResourceOptional.isPresent());
-        Assert.assertEquals((Long) expectedId, junitResourceOptional.get().getInternalId());
+        Assert.assertEquals(expectedId, junitResourceOptional.get().getInternalId());
 
         // Don't get it if not the right type
         Optional<EmployeeResource> employeeResourceOptional = resourceService.resourceFind(resourceService.createResourceQuery(EmployeeResource.class) //
@@ -1482,6 +1582,22 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     @Test
+    public void testQueryInteger_less_equal_greater_yes() {
+
+        IPResourceService resourceService = getCommonServicesContext().getResourceService();
+
+        List<JunitResource> items = resourceService.resourceFindAll( //
+                resourceService.createResourceQuery(JunitResource.class) //
+                        .propertyLesserAndEquals(JunitResource.PROPERTY_INTEGER_NUMBER, 5) //
+                        .propertyGreater(JunitResource.PROPERTY_INTEGER_NUMBER, 3) //
+        );
+        List<String> expected = Arrays.asList("t2_aaa");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
+
+    }
+
+    @Test
     public void testQueryInteger_less_equal_yes() {
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
@@ -1490,12 +1606,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 resourceService.createResourceQuery(JunitResource.class) //
                         .propertyLesserAndEquals(JunitResource.PROPERTY_INTEGER_NUMBER, 5) //
         );
-        Assert.assertEquals(5, items.size());
-        Assert.assertEquals("www.example.com", items.get(0).getText());
-        Assert.assertEquals("www.example.com", items.get(1).getText());
-        Assert.assertEquals("example.com", items.get(2).getText());
-        Assert.assertEquals("t1_aaa", items.get(3).getText());
-        Assert.assertEquals("t2_aaa", items.get(4).getText());
+        List<String> expected = Arrays.asList("example.com", "t1_aaa", "t2_aaa", "www.example.com", "www.example.com");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
 
     }
 
@@ -1508,12 +1621,9 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 resourceService.createResourceQuery(JunitResource.class) //
                         .propertyLesser(JunitResource.PROPERTY_INTEGER_NUMBER, 5) //
         );
-        Assert.assertEquals(4, items.size());
-        Assert.assertEquals("www.example.com", items.get(0).getText());
-        Assert.assertEquals("www.example.com", items.get(1).getText());
-        Assert.assertEquals("example.com", items.get(2).getText());
-        Assert.assertEquals("t1_aaa", items.get(3).getText());
-
+        List<String> expected = Arrays.asList("example.com", "t1_aaa", "www.example.com", "www.example.com");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
     }
 
     @Test
@@ -1551,9 +1661,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
                 resourceService.createResourceQuery(JunitResource.class) //
                         .propertyGreaterAndEquals(JunitResource.PROPERTY_LONG_NUMBER, 4L) //
         );
-        Assert.assertEquals(2, items.size());
-        Assert.assertEquals("t2_aaa", items.get(0).getText());
-        Assert.assertEquals("zz", items.get(1).getText());
+
+        List<String> expected = Arrays.asList("t2_aaa", "zz");
+        List<String> actual = items.stream().map(i -> i.getText()).sorted().collect(Collectors.toList());
+        AssertTools.assertJsonComparison(expected, actual);
 
     }
 

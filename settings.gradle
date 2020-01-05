@@ -1,5 +1,6 @@
 include 'foilen-infra-system-app-test-docker'
 include 'foilen-infra-system-core-execute'
 include 'foilen-infra-system-core-system-common'
-include 'foilen-infra-system-core-system-fake'
 include 'foilen-infra-system-core-system-junits'
+include 'foilen-infra-system-core-system-memory'
+include 'foilen-infra-system-core-system-mongodb'

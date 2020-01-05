@@ -29,7 +29,7 @@ import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.LogbackTools;
 
 @SpringBootApplication
-@ComponentScan("com.foilen.infra.plugin.core.system.fake")
+@ComponentScan("com.foilen.infra.plugin.app.test.docker.webapp")
 public class WebApp {
 
     public static void main(String[] args) {

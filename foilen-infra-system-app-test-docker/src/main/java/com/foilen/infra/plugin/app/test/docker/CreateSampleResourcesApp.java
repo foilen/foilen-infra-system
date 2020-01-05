@@ -17,10 +17,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
+import com.foilen.infra.plugin.app.test.docker.webapp.InitSystemBean;
+import com.foilen.infra.plugin.core.system.common.context.CommonServicesContextBean;
+import com.foilen.infra.plugin.core.system.common.context.InternalServicesContextBean;
 import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
-import com.foilen.infra.plugin.core.system.fake.CommonServicesContextBean;
-import com.foilen.infra.plugin.core.system.fake.InitSystemBean;
-import com.foilen.infra.plugin.core.system.fake.InternalServicesContextBean;
+import com.foilen.infra.plugin.core.system.common.service.MessagingServiceLoggerImpl;
+import com.foilen.infra.plugin.core.system.common.service.TimerServiceInExecutorImpl;
+import com.foilen.infra.plugin.core.system.common.service.TranslationServiceImpl;
 import com.foilen.infra.plugin.v1.core.resource.IPResourceDefinition;
 import com.foilen.infra.plugin.v1.core.service.IPResourceService;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
@@ -64,7 +67,10 @@ public class CreateSampleResourcesApp {
         applicationContext.register(InitSystemBean.class);
         applicationContext.register(InternalServicesContextBean.class);
         applicationContext.register(IPPluginServiceImpl.class);
-        applicationContext.scan("com.foilen.infra.plugin.core.system.fake.service");
+        applicationContext.register(MessagingServiceLoggerImpl.class);
+        applicationContext.register(TimerServiceInExecutorImpl.class);
+        applicationContext.register(TranslationServiceImpl.class);
+        applicationContext.scan("com.foilen.infra.plugin.core.system.memory.service");
         applicationContext.refresh();
 
         // Export a sample of all the resource types

@@ -16,11 +16,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.foilen.infra.plugin.core.system.common.changeexecution.hooks.ChangeExecutionHook;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
 import com.foilen.infra.plugin.v1.core.eventhandler.ActionHandler;
+import com.foilen.infra.plugin.v1.core.eventhandler.changes.ChangeExecutionHook;
 import com.foilen.infra.plugin.v1.core.eventhandler.changes.ChangesInTransactionContext;
 import com.foilen.infra.plugin.v1.core.exception.InfiniteUpdateLoop;
 import com.foilen.infra.plugin.v1.core.exception.ResourceNotFoundException;
@@ -77,7 +77,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
         );
 
         // Mark refreshed
-        for (Long id : changes.getResourcesToRefresh()) {
+        for (String id : changes.getResourcesToRefresh()) {
             Optional<IPResource> resourceO = ipResourceService.resourceFind(id);
             if (resourceO.isPresent()) {
                 logger.debug("[APPLY] Refresh resource {}", id);
@@ -91,7 +91,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
         }
 
         // Delete
-        for (Long id : changes.getResourcesToDelete()) {
+        for (String id : changes.getResourcesToDelete()) {
 
             Optional<IPResource> resourceO = ipResourceService.resourceFind(id);
             if (resourceO.isPresent()) {
@@ -122,8 +122,8 @@ public class ChangeExecutionLogic extends AbstractBasics {
             Optional<IPResource> fromResource = ipResourceService.resourceFindByPk(link.getA());
             Optional<IPResource> toResource = ipResourceService.resourceFindByPk(link.getC());
             if (fromResource.isPresent() && toResource.isPresent()) {
-                Long fromId = fromResource.get().getInternalId();
-                Long toId = toResource.get().getInternalId();
+                String fromId = fromResource.get().getInternalId();
+                String toId = toResource.get().getInternalId();
                 String linkType = link.getB();
                 if (internalChangeService.linkDelete(fromId, linkType, toId)) {
                     hooks.forEach(h -> h.linkDeleted(changesInTransactionContext, fromResource.get(), linkType, toResource.get()));
@@ -137,7 +137,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
             logger.debug("[APPLY] Delete tag {}", tag);
             Optional<IPResource> resource = ipResourceService.resourceFindByPk(tag.getA());
             if (resource.isPresent()) {
-                Long internalId = resource.get().getInternalId();
+                String internalId = resource.get().getInternalId();
                 String tagName = tag.getB();
                 if (internalChangeService.tagDelete(internalId, tagName)) {
                     hooks.forEach(h -> h.tagDeleted(changesInTransactionContext, resource.get(), tagName));
@@ -177,8 +177,8 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 throw new ResourceNotFoundException(link.getC());
             }
 
-            Long fromId = fromResource.get().getInternalId();
-            Long toId = toResource.get().getInternalId();
+            String fromId = fromResource.get().getInternalId();
+            String toId = toResource.get().getInternalId();
             // Add if not present
             String linkType = link.getB();
             if (internalChangeService.linkExists(fromId, linkType, toId)) {
@@ -197,7 +197,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
                 throw new ResourceNotFoundException(tag.getA());
             }
 
-            Long pluginResourceId = resource.get().getInternalId();
+            String pluginResourceId = resource.get().getInternalId();
             // Add if not present
             String tagName = tag.getB();
             if (internalChangeService.tagExists(pluginResourceId, tagName)) {
@@ -211,7 +211,7 @@ public class ChangeExecutionLogic extends AbstractBasics {
         }
 
         // Update
-        for (Tuple2<Long, IPResource> update : changes.getResourcesToUpdate()) {
+        for (Tuple2<String, IPResource> update : changes.getResourcesToUpdate()) {
 
             logger.debug("[APPLY] Update resource {}", update);
 

@@ -26,10 +26,13 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 import com.foilen.infra.plugin.app.test.docker.model.Application;
 import com.foilen.infra.plugin.app.test.docker.model.UnixUser;
+import com.foilen.infra.plugin.app.test.docker.webapp.InitSystemBean;
+import com.foilen.infra.plugin.core.system.common.context.CommonServicesContextBean;
+import com.foilen.infra.plugin.core.system.common.context.InternalServicesContextBean;
 import com.foilen.infra.plugin.core.system.common.service.IPPluginServiceImpl;
-import com.foilen.infra.plugin.core.system.fake.CommonServicesContextBean;
-import com.foilen.infra.plugin.core.system.fake.InitSystemBean;
-import com.foilen.infra.plugin.core.system.fake.InternalServicesContextBean;
+import com.foilen.infra.plugin.core.system.common.service.MessagingServiceLoggerImpl;
+import com.foilen.infra.plugin.core.system.common.service.TimerServiceInExecutorImpl;
+import com.foilen.infra.plugin.core.system.common.service.TranslationServiceImpl;
 import com.foilen.infra.plugin.core.system.junits.JunitsHelper;
 import com.foilen.infra.plugin.core.system.junits.ResourcesDump;
 import com.foilen.infra.plugin.system.utils.DockerUtils;
@@ -203,7 +206,10 @@ public class StartResourcesApp {
         applicationContext.register(InitSystemBean.class);
         applicationContext.register(InternalServicesContextBean.class);
         applicationContext.register(IPPluginServiceImpl.class);
-        applicationContext.scan("com.foilen.infra.plugin.core.system.fake.service");
+        applicationContext.register(MessagingServiceLoggerImpl.class);
+        applicationContext.register(TimerServiceInExecutorImpl.class);
+        applicationContext.register(TranslationServiceImpl.class);
+        applicationContext.scan("com.foilen.infra.plugin.core.system.memory.service");
         applicationContext.refresh();
 
         // Import from directory or file
