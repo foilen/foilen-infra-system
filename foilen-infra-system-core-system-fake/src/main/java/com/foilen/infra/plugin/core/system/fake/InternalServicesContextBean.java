@@ -1,7 +1,7 @@
 /*
     Foilen Infra System
     https://github.com/foilen/foilen-infra-system
-    Copyright (c) 2017-2019 Foilen (http://foilen.com)
+    Copyright (c) 2017-2020 Foilen (http://foilen.com)
 
     The MIT License
     http://opensource.org/licenses/MIT
