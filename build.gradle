@@ -3,9 +3,6 @@ buildscript {
     mavenLocal()
     jcenter()
   }
-  dependencies {
-    classpath 'io.spring.gradle:dependency-management-plugin:1.0.7.RELEASE'
-  }
 }
 
 plugins {
@@ -24,32 +21,20 @@ allprojects {
 subprojects {
 
   apply plugin: 'com.jfrog.bintray'
-  apply plugin: 'io.spring.dependency-management'
-  apply plugin: 'maven'
+  apply plugin: 'java'
   apply plugin: 'maven-publish'
 
-  apply plugin: 'java'
 
   repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
     maven {
-    	url 'https://dl.bintray.com/foilen/maven'
+      url 'https://dl.bintray.com/foilen/maven'
     }
   }
 
-  sourceCompatibility = 1.11
-
-  dependencyManagement {
-    imports {
-      mavenBom 'io.spring.platform:platform-bom:Cairo-SR8'
-    }
-  }
-  
-  configurations {
-  	testCompile.extendsFrom compileOnly
-  }
+  sourceCompatibility = 11
 
   eclipse {
     classpath {

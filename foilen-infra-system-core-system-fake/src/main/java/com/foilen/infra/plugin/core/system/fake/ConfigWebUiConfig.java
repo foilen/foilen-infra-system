@@ -21,7 +21,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
-import org.springframework.web.servlet.resource.GzipResourceResolver;
+import org.springframework.web.servlet.resource.EncodedResourceResolver;
 import org.springframework.web.servlet.resource.ResourceUrlEncodingFilter;
 import org.springframework.web.servlet.resource.VersionResourceResolver;
 
@@ -46,7 +46,7 @@ public class ConfigWebUiConfig implements WebMvcConfigurer {
         ResourceChainRegistration chain = registry.addResourceHandler("/bundles/**") //
                 .setCachePeriod(365 * 24 * 60 * 60) //
                 .resourceChain(false) //
-                .addResolver(new GzipResourceResolver()); //
+                .addResolver(new EncodedResourceResolver()); //
 
         chain.addResolver(new VersionResourceResolver() //
                 .addContentVersionStrategy("/**")) //

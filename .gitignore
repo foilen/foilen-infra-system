@@ -10,5 +10,12 @@ bin/
 .settings/
 .springBeans
 
+# IDEA
+.idea/
+/out/
+
+# Misc
+.attach_pid*
+
 # Project specific
 _*

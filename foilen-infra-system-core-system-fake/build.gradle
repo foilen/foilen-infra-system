@@ -7,9 +7,9 @@ dependencies {
 
   compile project(":foilen-infra-system-core-system-common")
   compile project(":foilen-infra-system-core-system-junits")
-  compile "org.springframework.boot:spring-boot-starter-freemarker"
-  compile "org.springframework.boot:spring-boot-starter-web"
-  compile "org.springframework.boot:spring-boot-starter-test"
+  compile "org.springframework.boot:spring-boot-starter-freemarker:$springBootVersion"
+  compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+  compile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 
   compile "org.webjars:bootstrap:3.3.7-1"
   compile "org.webjars:typeaheadjs:0.11.1"
