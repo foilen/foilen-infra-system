@@ -26,6 +26,7 @@ import com.foilen.infra.plugin.system.utils.model.DockerState;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.docker.DockerContainerEndpoints;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutputContext;
+import com.foilen.infra.plugin.v1.model.redirectportregistry.RedirectPortRegistryEntries;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.ResourceTools;
@@ -48,7 +49,71 @@ public class DockerUtilsImplTest {
     }
 
     @Test
-    public void testContainersManage() {
+    public void testContainersManage_manyApplicationsPointingToSameRemoteEndpoint() {
+
+        UnixShellAndFsUtilsMock unixShellAndFsUtils = new UnixShellAndFsUtilsMock();
+        unixShellAndFsUtils.setExecuteCommandQuietAndGetOutputCallback((actionName, actionDetails, command, arguments) -> { //
+
+            if ("ps".equals(actionDetails)) {
+                return "";
+            }
+
+            throw new RuntimeException("Mock: Not implemented");
+        });
+        DockerUtils dockerUtils = new DockerUtilsImpl(unixShellAndFsUtils);
+
+        DockerState dockerState = new DockerState();
+        String baseOutputDirectory = Files.createTempDir().getAbsolutePath();
+        ContainersManageContext containersManageContext = new ContainersManageContext().setDockerState(dockerState).setBaseOutputDirectory(baseOutputDirectory);
+
+        // Add multiple applications going on multiple remote points
+        {
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app1", "app1");
+            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
+            applicationDefinition.addPortEndpoint(8080, DockerContainerEndpoints.HTTP_TCP);
+            applicationDefinition.addPortRedirect(3306, "remote.example.com", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
+            applicationDefinition.setRunAs(65000L);
+            applicationDefinition.setCommand("/app1.sh");
+            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+                    .setOutputContext(outputContext) //
+                    .setApplicationDefinition(applicationDefinition));
+        }
+        {
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app2", "app2");
+            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
+            applicationDefinition.addPortEndpoint(8080, DockerContainerEndpoints.HTTP_TCP);
+            applicationDefinition.addPortRedirect(3306, "remote.example.com", "app2_mysql", DockerContainerEndpoints.MYSQL_TCP);
+            applicationDefinition.setRunAs(65000L);
+            applicationDefinition.setCommand("/app2.sh");
+            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+                    .setOutputContext(outputContext) //
+                    .setApplicationDefinition(applicationDefinition));
+        }
+        {
+            DockerContainerOutputContext outputContext = new DockerContainerOutputContext("app-both", "app-both");
+            IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
+            applicationDefinition.addPortEndpoint(8080, DockerContainerEndpoints.HTTP_TCP);
+            applicationDefinition.addPortRedirect(3306, "remote.example.com", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
+            applicationDefinition.addPortRedirect(3307, "remote.example.com", "app2_mysql", DockerContainerEndpoints.MYSQL_TCP);
+            applicationDefinition.setRunAs(65000L);
+            applicationDefinition.setCommand("/app-both.sh");
+            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+                    .setOutputContext(outputContext) //
+                    .setApplicationDefinition(applicationDefinition));
+        }
+
+        // Execute first time
+        List<String> updatedInstanceNames = dockerUtils.containersManage(containersManageContext);
+        assertList(Arrays.asList("infra_redirector_entry", "app-both", "app1", "app2", "infra_redirector_exit"), updatedInstanceNames);
+
+        // Assert infra_redirector_entry
+        RedirectPortRegistryEntries entries = JsonTools.readFromString(unixShellAndFsUtils.getFileContentByPath().get("infra_redirector_entry:/data/entry.json"), RedirectPortRegistryEntries.class);
+        AssertTools.assertJsonComparison("DockerUtilsImplTest-testContainersManage_manyApplicationsPointingToSameRemoteEndpoint.json", getClass(), entries);
+        ;
+    }
+
+    @Test
+    public void testContainersManage_multipleChanges() {
 
         UnixShellAndFsUtilsMock unixShellAndFsUtils = new UnixShellAndFsUtilsMock();
         unixShellAndFsUtils.setExecuteCommandQuietAndGetOutputCallback((actionName, actionDetails, command, arguments) -> { //

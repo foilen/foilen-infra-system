@@ -9,12 +9,16 @@
  */
 package com.foilen.infra.plugin.system.utils.mock;
 
+import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.event.Level;
 
 import com.foilen.infra.plugin.system.utils.UnixShellAndFsUtils;
 import com.foilen.smalltools.tools.AbstractBasics;
+import com.foilen.smalltools.tools.DirectoryTools;
+import com.foilen.smalltools.tools.FileTools;
 
 public class UnixShellAndFsUtilsMock extends AbstractBasics implements UnixShellAndFsUtils {
 
@@ -24,9 +28,36 @@ public class UnixShellAndFsUtilsMock extends AbstractBasics implements UnixShell
 
     private ExecuteCommandQuietAndGetOutputCallback executeCommandQuietAndGetOutputCallback = ((actionName, actionDetails, command, arguments) -> "");
 
+    private Map<String, String> fileContentByPath = new HashMap<String, String>();
+
     @Override
     public void executeCommandOrFail(Level loggerLevel, String actionDetails, String command, String... arguments) {
         logger.debug("executeCommandOrFail: {} ; {} ; {} ; {}", loggerLevel, actionDetails, command, arguments);
+
+        if (arguments.length >= 3) {
+            String dockerCommand = arguments[0];
+            if ("cp".equals(dockerCommand)) {
+                String localPath = arguments[1];
+                String dockerPath = arguments[2];
+                if (new File(localPath).isDirectory()) {
+                    logger.debug("Keeping track of copied directory {}", dockerPath);
+                    DirectoryTools.visitFilesAndFoldersRecursively(localPath, file -> {
+                        if (!file.isDirectory()) {
+                            String subDockerPath = dockerPath + "/" + file.getName();
+                            subDockerPath = subDockerPath.replaceAll("//", "/");
+                            logger.debug("Keeping track of copied file {}", subDockerPath);
+                            fileContentByPath.put(subDockerPath, FileTools.getFileAsString(file));
+                        }
+                    });
+                } else {
+                    logger.debug("Keeping track of copied file {}", dockerPath);
+                    fileContentByPath.put(dockerPath, FileTools.getFileAsString(localPath));
+                }
+            }
+        }
+        // unixShellAndFsUtils.executeCommandOrFail(Level.DEBUG, "CONTAINER/" + containerName, //
+        // "/usr/bin/docker", //
+        // "cp", tmpDir.getAbsolutePath() + "/.", containerName + ":" + containerFolder);
     }
 
     @Override
@@ -109,6 +140,10 @@ public class UnixShellAndFsUtilsMock extends AbstractBasics implements UnixShell
 
     public ExecuteCommandQuietAndGetOutputCallback getExecuteCommandQuietAndGetOutputCallback() {
         return executeCommandQuietAndGetOutputCallback;
+    }
+
+    public Map<String, String> getFileContentByPath() {
+        return fileContentByPath;
     }
 
     @Override

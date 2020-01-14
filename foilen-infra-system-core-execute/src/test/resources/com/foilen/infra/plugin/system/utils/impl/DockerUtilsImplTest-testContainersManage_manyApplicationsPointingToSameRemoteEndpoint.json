@@ -1,0 +1,15 @@
+{
+  "entries" : [ {
+    "entryRawPort" : 2000,
+    "remoteBridgeHost" : "remote.example.com",
+    "remoteBridgePort" : 11000,
+    "remoteServiceEndpoint" : "MYSQL_TCP",
+    "remoteServiceName" : "app1_mysql"
+  }, {
+    "entryRawPort" : 2001,
+    "remoteBridgeHost" : "remote.example.com",
+    "remoteBridgePort" : 11000,
+    "remoteServiceEndpoint" : "MYSQL_TCP",
+    "remoteServiceName" : "app2_mysql"
+  } ]
+}

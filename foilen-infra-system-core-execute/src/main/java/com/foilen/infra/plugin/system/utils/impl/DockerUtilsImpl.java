@@ -367,6 +367,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                 }
                 return Optional.empty();
             });
+            Set<RedirectPortRegistryEntry> redirectPortRegistryEntriesEntries = new HashSet<>();
             allApplicationBuildDetails.stream() //
                     .filter(it -> it.getApplicationDefinition().getPortsRedirect().stream() //
                             .filter(pr -> !pr.isToLocalMachine())//
@@ -390,12 +391,13 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
                                     dockerState.getRedirectPortByMachineContainerEndpoint().put(machineContainerEndpoint, port);
 
                                     // Add to redirectPortRegistryEntries
-                                    redirectPortRegistryEntries.getEntries()
+                                    redirectPortRegistryEntriesEntries
                                             .add(new RedirectPortRegistryEntry(port, pr.getToMachine(), dockerState.getRedirectorBridgePort(), pr.getToContainerName(), pr.getToEndpoint()));
                                 });
 
                     });
 
+            redirectPortRegistryEntries.setEntries(redirectPortRegistryEntriesEntries.stream().sorted().collect(Collectors.toList()));
             applicationDefinition.addCopyWhenStartedContent("/data/entry.json", JsonTools.prettyPrint(redirectPortRegistryEntries));// We want hot change
 
             arguments.add("--bridgePort");
