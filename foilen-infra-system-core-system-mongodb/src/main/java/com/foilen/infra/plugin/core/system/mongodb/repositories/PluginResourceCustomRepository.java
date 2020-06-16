@@ -10,6 +10,9 @@
 package com.foilen.infra.plugin.core.system.mongodb.repositories;
 
 import java.util.List;
+import java.util.function.Consumer;
+
+import org.springframework.data.mongodb.core.query.Query;
 
 import com.foilen.infra.plugin.v1.core.resource.IPResourceQuery;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
@@ -19,6 +22,8 @@ public interface PluginResourceCustomRepository {
     void addTagById(String resourceId, String tagName);
 
     <T extends IPResource> List<T> findAll(IPResourceQuery<T> query);
+
+    <T extends IPResource> List<T> findAll(IPResourceQuery<T> query, Consumer<Query> queryHook);
 
     boolean removeTagById(String resourceId, String tagName);
 

@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,10 +48,15 @@ public class PluginResourceCustomRepositoryImpl extends AbstractBasics implement
         mongoTemplate.updateMulti(query, update, PluginResource.class);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends IPResource> List<T> findAll(IPResourceQuery<T> query) {
+        return findAll(query, q -> {
+        });
+    }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends IPResource> List<T> findAll(IPResourceQuery<T> query, Consumer<Query> queryHook) {
         Query mongoQuery = new Query();
 
         List<IPResourceDefinition> resourceDefinitions = query.getResourceDefinitions();
@@ -203,7 +209,12 @@ public class PluginResourceCustomRepositoryImpl extends AbstractBasics implement
             mongoQuery.addCriteria(new Criteria("tags").in(query.getTagsOr()));
         }
 
-        logger.debug("MongoDB Query: {}", mongoQuery);
+        logger.debug("MongoDB Query (before hook): {}", mongoQuery);
+
+        // Call the hook
+        queryHook.accept(mongoQuery);
+
+        logger.debug("MongoDB Query (after hook): {}", mongoQuery);
 
         List<PluginResource> found = mongoTemplate.find(mongoQuery, PluginResource.class);
         return found.stream() //
