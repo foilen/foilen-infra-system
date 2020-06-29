@@ -135,11 +135,11 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
      *            the resource type
      */
     @SafeVarargs
-    protected final <T extends IPResource> void assertEditorWithErrors(Long internalId, ResourceEditor<T> resourceEditor, Map<String, String> formValues, Tuple2<String, String>... expectedErrors) {
+    protected final <T extends IPResource> void assertEditorWithErrors(String internalId, ResourceEditor<T> resourceEditor, Map<String, String> formValues, Tuple2<String, String>... expectedErrors) {
 
         // Format, validate
         if (internalId != null) {
-            formValues.put(RESOURCE_ID_FIELD, String.valueOf(internalId));
+            formValues.put(RESOURCE_ID_FIELD, internalId);
         }
         resourceEditor.formatForm(getCommonServicesContext(), formValues);
         List<Tuple2<String, String>> errors = resourceEditor.validateForm(getCommonServicesContext(), formValues);
