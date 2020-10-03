@@ -149,6 +149,63 @@ public abstract class AbstractIPPluginTest extends AbstractBasics {
     }
 
     /**
+     * Execute the editor with the form and fail.
+     *
+     * @param internalId
+     *            (optional) the internal id of the existing resource
+     * @param resourceEditor
+     *            the resource editor
+     * @param formValues
+     *            the form
+     * @param expectedException
+     *            the exception of the expected type and with the expected message
+     * @param <T>
+     *            resource type
+     */
+    @SuppressWarnings("unchecked")
+    protected <T extends IPResource> void assertEditorWithException(String internalId, ResourceEditor<T> resourceEditor, Map<String, String> formValues, Exception expectedException) {
+        try {
+            // Format, validate
+            if (internalId != null) {
+                formValues.put(RESOURCE_ID_FIELD, String.valueOf(internalId));
+            }
+            resourceEditor.formatForm(getCommonServicesContext(), formValues);
+            List<Tuple2<String, String>> errors = resourceEditor.validateForm(getCommonServicesContext(), formValues);
+            if (!errors.isEmpty()) {
+                System.out.println(JsonTools.prettyPrint(errors));
+            }
+            Assert.assertTrue(errors.isEmpty());
+
+            // Create or get
+            T resource;
+            if (internalId == null) {
+                resource = resourceEditor.getForResourceType().getConstructor().newInstance();
+            } else {
+                resource = (T) getCommonServicesContext().getResourceService().resourceFind(internalId).get();
+            }
+
+            // Fill
+            ChangesContext changesContext = new ChangesContext(getCommonServicesContext().getResourceService());
+            resourceEditor.fillResource(getCommonServicesContext(), changesContext, formValues, resource);
+
+            // Add or update
+            if (internalId == null) {
+                changesContext.resourceAdd(resource);
+            } else {
+                changesContext.resourceUpdate(internalId, resource);
+            }
+
+            // Execute the change
+            getInternalServicesContext().getInternalChangeService().changesExecute(changesContext);
+            Assert.fail("Expecting an exception");
+        } catch (Exception e) {
+            String expected = expectedException.getClass().getName() + " : " + expectedException.getMessage();
+            String actual = e.getClass().getName() + " : " + e.getMessage();
+            Assert.assertEquals(expected, actual);
+        }
+    }
+
+    /**
      * Assert the amount of resources of the specified type.
      *
      * @param expectedCount
