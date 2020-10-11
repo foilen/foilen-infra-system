@@ -6,7 +6,9 @@
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
         <listEntry value="1"/>
     </listAttribute>
+    <booleanAttribute key="org.eclipse.jdt.launching.ATTR_USE_CLASSPATH_ONLY_JAR" value="false"/>
     <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.foilen.infra.plugin.app.test.docker.TestDockerApp"/>
+    <stringAttribute key="org.eclipse.jdt.launching.MODULE_NAME" value="foilen-infra-system-app-test-docker"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="download-latest-plugins _out core"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="foilen-infra-system-app-test-docker"/>
 </launchConfiguration>

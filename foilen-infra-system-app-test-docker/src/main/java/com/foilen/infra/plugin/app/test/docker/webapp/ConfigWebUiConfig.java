@@ -15,7 +15,6 @@ import org.springframework.context.support.ReloadableResourceBundleMessageSource
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceChainRegistration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -82,11 +81,6 @@ public class ConfigWebUiConfig implements WebMvcConfigurer {
     @Bean
     public CommonServicesContextBean commonServicesContextBean() {
         return new CommonServicesContextBean();
-    }
-
-    @Override
-    public void configurePathMatch(PathMatchConfigurer matcher) {
-        matcher.setUseRegisteredSuffixPatternMatch(true);
     }
 
     @Bean
