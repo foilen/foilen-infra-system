@@ -770,6 +770,13 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         boolean success = false;
 
         try {
+            logger.info("[CONTAINER] [{}] STOP", containerNameOrId);
+            unixShellAndFsUtils.executeCommandOrFail(Level.DEBUG, "CONTAINER/" + containerNameOrId, //
+                    "/usr/bin/docker", //
+                    "stop", containerNameOrId);
+        } catch (Exception e) {
+        }
+        try {
             logger.info("[CONTAINER] [{}] REMOVE", containerNameOrId);
             unixShellAndFsUtils.executeCommandOrFail(Level.DEBUG, "CONTAINER/" + containerNameOrId, //
                     "/usr/bin/docker", //
