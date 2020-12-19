@@ -13,6 +13,7 @@ mkdir -p $DOCKER_BUILD/app
 
 cp -v build/distributions/foilen-infra-system-app-test-docker-$VERSION.zip $DOCKER_BUILD/app/foilen-infra-system-app-test-docker.zip
 cp -v docker-release/* $DOCKER_BUILD
+echo -n $VERSION > $DOCKER_BUILD/app/version.txt
 
 cd $DOCKER_BUILD/app
 unzip foilen-infra-system-app-test-docker.zip
@@ -26,5 +27,6 @@ find $DOCKER_BUILD
 echo ----[ Build docker image ]----
 DOCKER_IMAGE=foilen-infra-system-app-test-docker:$VERSION
 docker build -t $DOCKER_IMAGE $DOCKER_BUILD
+docker tag $DOCKER_IMAGE foilen/$DOCKER_IMAGE
 
 rm -rf $DOCKER_BUILD
