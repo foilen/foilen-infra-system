@@ -17,15 +17,14 @@ import java.util.Optional;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.foilen.infra.plugin.core.system.memory.junits.ResourceServicesInMemoryTests;
 import com.foilen.infra.plugin.core.system.memory.service.ResourceServicesInMemoryImpl;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
 import com.foilen.infra.plugin.v1.core.context.internal.InternalServicesContext;
+import com.foilen.infra.plugin.v1.core.exception.ProblemException;
 import com.foilen.infra.plugin.v1.core.visual.FieldPageItem;
 import com.foilen.infra.plugin.v1.core.visual.PageDefinition;
 import com.foilen.infra.plugin.v1.core.visual.pageItem.field.ResourceFieldPageItem;
@@ -39,9 +38,6 @@ public class CommonResourceLinkTest {
     private ResourceServicesInMemoryImpl resourceServicesInMemoryImpl;
     private CommonServicesContext commonServicesContext;
     private InternalServicesContext internalServicesContext;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     public CommonResourceLinkTest() {
         resourceServicesInMemoryImpl = ResourceServicesInMemoryTests.init();
@@ -97,8 +93,6 @@ public class CommonResourceLinkTest {
     @Test
     public void testAddResourcePageItem_hasMany() {
 
-        thrown.expectMessage("Too many links of type [MANAGER]");
-
         // Add more to one
         ChangesContext changes = new ChangesContext(resourceServicesInMemoryImpl);
         EmployeeResource bernardResource = new EmployeeResource("Bernard", "Smith", new Date());
@@ -108,7 +102,9 @@ public class CommonResourceLinkTest {
         // Execute
         PageDefinition pageDefinition = new PageDefinition("");
         EmployeeResource bernard = getEmployee("Bernard");
-        CommonResourceLink.addResourcePageItem(commonServicesContext, pageDefinition, bernard, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, "", FIELD_NAME_MANAGER);
+        Assert.assertThrows("Too many links of type [MANAGER]", ProblemException.class, () -> {
+            CommonResourceLink.addResourcePageItem(commonServicesContext, pageDefinition, bernard, EmployeeResource.LINK_TYPE_MANAGER, EmployeeResource.class, "", FIELD_NAME_MANAGER);
+        });
 
     }
 
@@ -156,12 +152,12 @@ public class CommonResourceLinkTest {
     @Test
     public void testAddReverseResourcePageItem_hasMany() {
 
-        thrown.expectMessage("Too many links of type [MANAGER]");
-
         // Execute
         PageDefinition pageDefinition = new PageDefinition("");
         EmployeeResource alain = getEmployee("Alain");
-        CommonResourceLink.addReverseResourcePageItem(commonServicesContext, pageDefinition, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain, "", FIELD_NAME_MANAGER);
+        Assert.assertThrows("Too many links of type [MANAGER]", ProblemException.class, () -> {
+            CommonResourceLink.addReverseResourcePageItem(commonServicesContext, pageDefinition, EmployeeResource.class, EmployeeResource.LINK_TYPE_MANAGER, alain, "", FIELD_NAME_MANAGER);
+        });
 
     }
 

@@ -24,9 +24,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.foilen.infra.plugin.core.system.junits.resource.UnregisteredResource;
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
@@ -59,6 +57,7 @@ import com.foilen.infra.resource.example.JunitResource;
 import com.foilen.infra.resource.example.JunitResourceEnum;
 import com.foilen.infra.resource.example.failing.CrashingTimerEventHandler;
 import com.foilen.infra.resource.testing.controller.TestingControllerPluginDefinitionProvider;
+import com.foilen.smalltools.exception.SmallToolsException;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.AbstractBasics;
 import com.foilen.smalltools.tools.DateTools;
@@ -95,9 +94,6 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     }
 
     public static final String RESOURCE_ID_FIELD = "_resourceId";
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     private void assertCollections(Collection<?> expected, Collection<?> actual) {
         String expectedText = Joiner.on("\n").join(expected);
@@ -792,11 +788,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         internalChangeService.changesExecute(changes);
 
         // Create same. Not fine
-        thrown.expect(ResourcePrimaryKeyCollisionException.class);
         resource = new JunitResource("t1", JunitResourceEnum.A, 1);
         resource.setLongNumber(30L);
         changes.resourceAdd(resource);
-        internalChangeService.changesExecute(changes);
+        Assert.assertThrows(ResourcePrimaryKeyCollisionException.class, () -> {
+            internalChangeService.changesExecute(changes);
+        });
 
     }
 
@@ -818,18 +815,17 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         internalChangeService.changesExecute(changes);
 
         // Rename second item to same pk as first
-        thrown.expect(ResourcePrimaryKeyCollisionException.class);
         resource = new JunitResource("t1", JunitResourceEnum.A, 1);
         resource.setLongNumber(20L);
         changes.resourceUpdate(resourceService.resourceFindByPk(new JunitResource("t2", JunitResourceEnum.A, 2)).get().getInternalId(), resource);
-        internalChangeService.changesExecute(changes);
+        Assert.assertThrows(ResourcePrimaryKeyCollisionException.class, () -> {
+            internalChangeService.changesExecute(changes);
+        });
 
     }
 
     @Test(timeout = 30000)
     public void testInfiniteLoop() {
-
-        thrown.expect(InfiniteUpdateLoop.class);
 
         TestingControllerPluginDefinitionProvider.getInstance().getTestingControllerInfiniteLoopChangesEventHandler().setAlwaysUpdate(true);
 
@@ -837,7 +833,10 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
         JunitResource resource = new JunitResource("OneToGetStarted");
         changes.resourceAdd(resource);
 
-        getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+        Assert.assertThrows(InfiniteUpdateLoop.class, () -> {
+            getInternalServicesContext().getInternalChangeService().changesExecute(changes);
+        });
+
     }
 
     @Test
@@ -986,51 +985,51 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuery_SetPropertyTwice() {
 
-        thrown.expectMessage("Property [text] already has a value to check for equals");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .primaryKeyEquals(new JunitResource("www.example.com", JunitResourceEnum.A, 1)) //
-                .propertyEquals(JunitResource.PROPERTY_TEXT, "random");
+        Assert.assertThrows("Property [text] already has a value to check for equals", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .primaryKeyEquals(new JunitResource("www.example.com", JunitResourceEnum.A, 1)) //
+                    .propertyEquals(JunitResource.PROPERTY_TEXT, "random");
+        });
 
     }
 
     @Test
     public void testQuery_tagsBoth_1() {
 
-        thrown.expectMessage("There can be only tags check as AND or OR, but not both at the same time");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .tagAddAnd("a", "b") //
-                .tagAddOr("c");
+        Assert.assertThrows("There can be only tags check as AND or OR, but not both at the same time", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .tagAddAnd("a", "b") //
+                    .tagAddOr("c");
+        });
 
     }
 
     @Test
     public void testQuery_tagsBoth_2() {
 
-        thrown.expectMessage("There can be only tags check as AND or OR, but not both at the same time");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .tagAddOr("c") //
-                .tagAddAnd("a", "b");
+        Assert.assertThrows("There can be only tags check as AND or OR, but not both at the same time", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .tagAddOr("c") //
+                    .tagAddAnd("a", "b");
+        });
 
     }
 
     @Test
     public void testQuery_UnexistingProperty() {
 
-        thrown.expectMessage("Property [nope] does not exists");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyEquals("nope", "random");
+        Assert.assertThrows("Property [nope] does not exists", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyEquals("nope", "random");
+        });
 
     }
 
@@ -1064,60 +1063,60 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryBoolean_greater_equal_no() {
 
-        thrown.expectMessage("Property [bool] does not support querying greater or equal");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyGreaterAndEquals(JunitResource.PROPERTY_BOOL, true);
+        Assert.assertThrows("Property [bool] does not support querying greater or equal", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyGreaterAndEquals(JunitResource.PROPERTY_BOOL, true);
+        });
 
     }
 
     @Test
     public void testQueryBoolean_greater_no() {
 
-        thrown.expectMessage("Property [bool] does not support querying greater");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyGreater(JunitResource.PROPERTY_BOOL, true);
+        Assert.assertThrows("Property [bool] does not support querying greater", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyGreater(JunitResource.PROPERTY_BOOL, true);
+        });
 
     }
 
     @Test
     public void testQueryBoolean_less_equal_no() {
 
-        thrown.expectMessage("Property [bool] does not support querying lesser or equal");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLesserAndEquals(JunitResource.PROPERTY_BOOL, true);
+        Assert.assertThrows("Property [bool] does not support querying lesser or equal", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLesserAndEquals(JunitResource.PROPERTY_BOOL, true);
+        });
 
     }
 
     @Test
     public void testQueryBoolean_less_no() {
 
-        thrown.expectMessage("Property [bool] does not support querying lesser");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLesser(JunitResource.PROPERTY_BOOL, true);
+        Assert.assertThrows("Property [bool] does not support querying lesser", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLesser(JunitResource.PROPERTY_BOOL, true);
+        });
 
     }
 
     @Test
     public void testQueryBoolean_like_no() {
 
-        thrown.expectMessage("Property [bool] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_BOOL, "%true");
+        Assert.assertThrows("Property [bool] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_BOOL, "%true");
+        });
 
     }
 
@@ -1197,12 +1196,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryDate_like_no() {
 
-        thrown.expectMessage("Property [date] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_DATE, "%");
+        Assert.assertThrows("Property [date] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_DATE, "%");
+        });
 
     }
 
@@ -1294,12 +1293,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryDouble_like_no() {
 
-        thrown.expectMessage("Property [doubleNumber] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_DOUBLE_NUMBER, "%10.0");
+        Assert.assertThrows("Property [doubleNumber] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_DOUBLE_NUMBER, "%10.0");
+        });
 
     }
 
@@ -1417,12 +1416,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryEnum_like_no() {
 
-        thrown.expectMessage("Property [enumeration] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_ENUMERATION, "%" + JunitResourceEnum.B);
+        Assert.assertThrows("Property [enumeration] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_ENUMERATION, "%" + JunitResourceEnum.B);
+        });
 
     }
 
@@ -1502,12 +1501,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryFloat_like_no() {
 
-        thrown.expectMessage("Property [floatNumber] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_FLOAT_NUMBER, "%10.0");
+        Assert.assertThrows("Property [floatNumber] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_FLOAT_NUMBER, "%10.0");
+        });
 
     }
 
@@ -1629,12 +1628,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryInteger_like_no() {
 
-        thrown.expectMessage("Property [integerNumber] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_INTEGER_NUMBER, "%10");
+        Assert.assertThrows("Property [integerNumber] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_INTEGER_NUMBER, "%10");
+        });
 
     }
 
@@ -1720,12 +1719,12 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryLong_like_no() {
 
-        thrown.expectMessage("Property [longNumber] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_LONG_NUMBER, "%10");
+        Assert.assertThrows("Property [longNumber] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_LONG_NUMBER, "%10");
+        });
 
     }
 
@@ -1741,14 +1740,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryOne_failMoreThanOne() {
 
-        thrown.expectMessage("There are more than one item matching the query");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.resourceFind( //
-                resourceService.createResourceQuery(JunitResource.class) //
-                        .propertyEquals(JunitResource.PROPERTY_TEXT, "www.example.com") //
-        );
+        Assert.assertThrows("There are more than one item matching the query", SmallToolsException.class, () -> {
+            resourceService.resourceFind( //
+                    resourceService.createResourceQuery(JunitResource.class) //
+                            .propertyEquals(JunitResource.PROPERTY_TEXT, "www.example.com") //
+            );
+        });
 
     }
 
@@ -2267,32 +2266,32 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetTexts_many_contains_empty_no() {
 
-        thrown.expectMessage("Property [setTexts] cannot be queried with an empty 'contains'");
-
         JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.resourceFindAll( //
-                resourceService.createResourceQuery(JunitResource.class) //
-                        .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList()) //
-        );
+        Assert.assertThrows("Property [setTexts] cannot be queried with an empty 'contains'", SmallToolsException.class, () -> {
+            resourceService.resourceFindAll( //
+                    resourceService.createResourceQuery(JunitResource.class) //
+                            .propertyContains(JunitResource.PROPERTY_SET_TEXTS, Arrays.asList()) //
+            );
+        });
 
     }
 
     @Test
     public void testQuerySetTexts_many_contains_null_no() {
 
-        thrown.expectMessage("Property [setTexts] cannot be queried with a null 'contains'");
-
         JunitsHelper.createFakeDataWithSets(getCommonServicesContext(), getInternalServicesContext());
 
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.resourceFindAll( //
-                resourceService.createResourceQuery(JunitResource.class) //
-                        .propertyContains(JunitResource.PROPERTY_SET_TEXTS, null) //
-        );
+        Assert.assertThrows("Property [setTexts] cannot be queried with a null 'contains'", SmallToolsException.class, () -> {
+            resourceService.resourceFindAll( //
+                    resourceService.createResourceQuery(JunitResource.class) //
+                            .propertyContains(JunitResource.PROPERTY_SET_TEXTS, null) //
+            );
+        });
 
     }
 
@@ -2388,60 +2387,60 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQuerySetTexts_single_greater_equal_no() {
 
-        thrown.expectMessage("Property [setTexts] does not support querying greater or equal");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyGreaterAndEquals(JunitResource.PROPERTY_SET_TEXTS, "a");
+        Assert.assertThrows("Property [setTexts] does not support querying greater or equal", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyGreaterAndEquals(JunitResource.PROPERTY_SET_TEXTS, "a");
+        });
 
     }
 
     @Test
     public void testQuerySetTexts_single_greater_no() {
 
-        thrown.expectMessage("Property [setTexts] does not support querying greater");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyGreater(JunitResource.PROPERTY_SET_TEXTS, "a");
+        Assert.assertThrows("Property [setTexts] does not support querying greater", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyGreater(JunitResource.PROPERTY_SET_TEXTS, "a");
+        });
 
     }
 
     @Test
     public void testQuerySetTexts_single_less_equal_no() {
 
-        thrown.expectMessage("Property [setTexts] does not support querying lesser or equal");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLesserAndEquals(JunitResource.PROPERTY_SET_TEXTS, "a");
+        Assert.assertThrows("Property [setTexts] does not support querying lesser or equal", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLesserAndEquals(JunitResource.PROPERTY_SET_TEXTS, "a");
+        });
 
     }
 
     @Test
     public void testQuerySetTexts_single_less_no() {
 
-        thrown.expectMessage("Property [setTexts] does not support querying lesser");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLesser(JunitResource.PROPERTY_SET_TEXTS, "a");
+        Assert.assertThrows("Property [setTexts] does not support querying lesser", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLesser(JunitResource.PROPERTY_SET_TEXTS, "a");
+        });
 
     }
 
     @Test
     public void testQuerySetTexts_single_like_no() {
 
-        thrown.expectMessage("Property [setTexts] does not support querying like");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLike(JunitResource.PROPERTY_SET_TEXTS, "t%"); //
+        Assert.assertThrows("Property [setTexts] does not support querying like", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLike(JunitResource.PROPERTY_SET_TEXTS, "t%"); //
+        });
     }
 
     @Test
@@ -2470,48 +2469,48 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryString_greater_equal_no() {
 
-        thrown.expectMessage("Property [text] does not support querying greater or equal");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyGreaterAndEquals(JunitResource.PROPERTY_TEXT, "a");
+        Assert.assertThrows("Property [text] does not support querying greater or equal", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyGreaterAndEquals(JunitResource.PROPERTY_TEXT, "a");
+        });
 
     }
 
     @Test
     public void testQueryString_greater_no() {
 
-        thrown.expectMessage("Property [text] does not support querying greater");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyGreater(JunitResource.PROPERTY_TEXT, "a");
+        Assert.assertThrows("Property [text] does not support querying greater", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyGreater(JunitResource.PROPERTY_TEXT, "a");
+        });
 
     }
 
     @Test
     public void testQueryString_less_equal_no() {
 
-        thrown.expectMessage("Property [text] does not support querying lesser or equal");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLesserAndEquals(JunitResource.PROPERTY_TEXT, "a");
+        Assert.assertThrows("Property [text] does not support querying lesser or equal", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLesserAndEquals(JunitResource.PROPERTY_TEXT, "a");
+        });
 
     }
 
     @Test
     public void testQueryString_less_no() {
 
-        thrown.expectMessage("Property [text] does not support querying lesser");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.createResourceQuery(JunitResource.class) //
-                .propertyLesser(JunitResource.PROPERTY_TEXT, "a");
+        Assert.assertThrows("Property [text] does not support querying lesser", SmallToolsException.class, () -> {
+            resourceService.createResourceQuery(JunitResource.class) //
+                    .propertyLesser(JunitResource.PROPERTY_TEXT, "a");
+        });
 
     }
 
@@ -2614,14 +2613,14 @@ public abstract class AbstractIPResourceServiceTest extends AbstractBasics {
     @Test
     public void testQueryText_invalid_resource_no() {
 
-        thrown.expectMessage("Resource type Junit2 is unknown");
-
         IPResourceService resourceService = getCommonServicesContext().getResourceService();
 
-        resourceService.resourceFindAll( //
-                resourceService.createResourceQuery("Junit2") //
-                        .propertyEquals(JunitResource.PROPERTY_INTEGER_NUMBER, 5) //
-        );
+        Assert.assertThrows("Resource type Junit2 is unknown", SmallToolsException.class, () -> {
+            resourceService.resourceFindAll( //
+                    resourceService.createResourceQuery("Junit2") //
+                            .propertyEquals(JunitResource.PROPERTY_INTEGER_NUMBER, 5) //
+            );
+        });
 
     }
 

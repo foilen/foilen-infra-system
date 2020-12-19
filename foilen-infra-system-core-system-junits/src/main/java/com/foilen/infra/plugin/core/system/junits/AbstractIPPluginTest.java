@@ -16,8 +16,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 import com.foilen.infra.plugin.v1.core.context.ChangesContext;
 import com.foilen.infra.plugin.v1.core.context.CommonServicesContext;
@@ -38,9 +36,6 @@ import com.google.common.base.Strings;
 public abstract class AbstractIPPluginTest extends AbstractBasics {
 
     private static final String RESOURCE_ID_FIELD = "_resourceId";
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     /**
      * Execute the editor with the form.

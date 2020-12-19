@@ -8,18 +8,18 @@ dependencies {
   compile project(":foilen-infra-system-core-system-common")
 
   // Mongo
-  compile 'org.mongodb:mongo-java-driver:3.11.0'
-  compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
-  compile 'org.springframework.data:spring-data-mongodb:2.2.4.RELEASE'
+  compile "org.mongodb:mongodb-driver-sync:$mongoVersion"
+  compile "org.springframework.boot:spring-boot-starter"
+  compile 'org.springframework.data:spring-data-mongodb'
 
   testCompile project(":foilen-infra-system-core-system-junits")
-  testCompile "com.foilen:foilen-infra-resource-example:0.5.0"
-  testCompile "com.foilen:foilen-infra-resource-example-failing:0.4.0"
-  testCompile "com.foilen:foilen-infra-resource-testing-controller:0.4.0"
-  testCompileOnly 'junit:junit:4.12'
-  testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-  testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junitVersion"
-  testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+  testCompile "com.foilen:foilen-infra-resource-example:$foilenInfraResourceExampleVersion"
+  testCompile "com.foilen:foilen-infra-resource-example-failing:$foilenInfraResourceExampleFailingVersion"
+  testCompile "com.foilen:foilen-infra-resource-testing-controller:$foilenInfraResourceTestingControllerVersion"
+  testCompileOnly 'junit:junit'
+  testImplementation "org.junit.jupiter:junit-jupiter-api"
+  testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
+  testCompile "org.springframework.boot:spring-boot-starter-test"
 }
 
 test {

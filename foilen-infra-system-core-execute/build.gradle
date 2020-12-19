@@ -5,14 +5,14 @@ dependencies {
   testCompile project(":foilen-infra-system-core-system-memory")
 
   // Logging
-  compile "org.slf4j:slf4j-api:1.7.30"
+  compile "org.slf4j:slf4j-api"
   
-  compile "org.springframework.boot:spring-boot-starter-freemarker:$springBootVersion"
+  compile "org.springframework.boot:spring-boot-starter-freemarker"
 
   // Tests
-  testCompileOnly 'junit:junit:4.12'
-  testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-  testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junitVersion"
+  testCompileOnly 'junit:junit'
+  testImplementation "org.junit.jupiter:junit-jupiter-api"
+  testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
 
 }
 

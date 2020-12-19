@@ -7,10 +7,10 @@ buildscript {
 dependencies {
 
   compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
-  compile "javax.xml.bind:jaxb-api:2.3.1"
-  compile "org.slf4j:slf4j-api:1.7.30"
+  compile "javax.xml.bind:jaxb-api"
+  compile "org.slf4j:slf4j-api"
   compile "org.reflections:reflections:$reflectionsVersion"
-  compile "org.springframework:spring-context:$springVersion"
+  compile "org.springframework:spring-context"
 
 }
 
