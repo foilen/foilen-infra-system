@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,7 +54,6 @@ import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.LogbackTools;
 import com.google.common.base.Strings;
-import com.google.common.io.Files;
 
 public class StartResourcesApp {
 
@@ -157,7 +157,7 @@ public class StartResourcesApp {
         changes.clear();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         List<String> arguments = new ArrayList<>(Arrays.asList(args));
 
@@ -238,7 +238,7 @@ public class StartResourcesApp {
         dockerUtils.networkCreateIfNotExists(DockerUtilsImpl.NETWORK_NAME, "172.20.0.0/16");
 
         // Install applications (docker)
-        File tmpDirectory = Files.createTempDir();
+        File tmpDirectory = Files.createTempDirectory(null).toFile();
         System.out.println("\n---[ Install applications (docker) ]---");
         List<Application> applications = resourceService.resourceFindAll(resourceService.createResourceQuery(Application.RESOURCE_TYPE)).stream() //
                 .map(it -> JsonTools.clone(it, Application.class)) //

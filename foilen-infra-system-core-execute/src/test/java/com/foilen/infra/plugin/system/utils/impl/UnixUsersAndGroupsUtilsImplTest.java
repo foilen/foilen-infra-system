@@ -11,6 +11,7 @@ package com.foilen.infra.plugin.system.utils.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,7 +26,6 @@ import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.google.common.base.Joiner;
-import com.google.common.io.Files;
 
 public class UnixUsersAndGroupsUtilsImplTest {
 
@@ -51,7 +51,7 @@ public class UnixUsersAndGroupsUtilsImplTest {
         unixUsersAndGroupsUtils.setShadowFile(shadowFile.getAbsolutePath());
 
         // Sudo folder
-        File sudoFolderFile = Files.createTempDir();
+        File sudoFolderFile = Files.createTempDirectory(null).toFile();
         unixUsersAndGroupsUtils.setSudoDirectory(sudoFolderFile.getAbsolutePath());
         ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-sudo-ccloud-1.txt", this.getClass(), new File(unixUsersAndGroupsUtils.getSudoDirectory() + "ccloud-1"));
     }

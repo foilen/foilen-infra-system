@@ -10,6 +10,8 @@
 package com.foilen.infra.plugin.system.utils.impl;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -76,7 +78,6 @@ import com.foilen.smalltools.tuple.Tuple2;
 import com.google.common.base.Joiner;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.io.Files;
 
 public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
 
@@ -115,7 +116,12 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
     public boolean containerCopyFileContent(String containerName, String path, String content) {
         logger.info("[CONTAINER] [{}] COPY file in [{}]", containerName, path);
 
-        File tmpDir = Files.createTempDir();
+        File tmpDir;
+        try {
+            tmpDir = Files.createTempDirectory(null).toFile();
+        } catch (IOException e1) {
+            throw new UtilsException("Cannot create temporary directory", e1);
+        }
         File containerPath = new File(path);
         String containerFolder = containerPath.getParent();
         if (containerFolder == null) {

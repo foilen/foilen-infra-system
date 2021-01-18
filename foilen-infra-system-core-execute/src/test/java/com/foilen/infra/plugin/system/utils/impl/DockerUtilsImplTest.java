@@ -9,6 +9,8 @@
  */
 package com.foilen.infra.plugin.system.utils.impl;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +33,6 @@ import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.ResourceTools;
 import com.google.common.base.Joiner;
-import com.google.common.io.Files;
 
 public class DockerUtilsImplTest {
 
@@ -49,7 +50,7 @@ public class DockerUtilsImplTest {
     }
 
     @Test
-    public void testContainersManage_manyApplicationsPointingToSameRemoteEndpoint() {
+    public void testContainersManage_manyApplicationsPointingToSameRemoteEndpoint() throws IOException {
 
         UnixShellAndFsUtilsMock unixShellAndFsUtils = new UnixShellAndFsUtilsMock();
         unixShellAndFsUtils.setExecuteCommandQuietAndGetOutputCallback((actionName, actionDetails, command, arguments) -> { //
@@ -63,7 +64,7 @@ public class DockerUtilsImplTest {
         DockerUtils dockerUtils = new DockerUtilsImpl(unixShellAndFsUtils);
 
         DockerState dockerState = new DockerState();
-        String baseOutputDirectory = Files.createTempDir().getAbsolutePath();
+        String baseOutputDirectory = Files.createTempDirectory(null).toFile().getAbsolutePath();
         ContainersManageContext containersManageContext = new ContainersManageContext().setDockerState(dockerState).setBaseOutputDirectory(baseOutputDirectory);
 
         // Add multiple applications going on multiple remote points
@@ -113,7 +114,7 @@ public class DockerUtilsImplTest {
     }
 
     @Test
-    public void testContainersManage_multipleChanges() {
+    public void testContainersManage_multipleChanges() throws IOException {
 
         UnixShellAndFsUtilsMock unixShellAndFsUtils = new UnixShellAndFsUtilsMock();
         unixShellAndFsUtils.setExecuteCommandQuietAndGetOutputCallback((actionName, actionDetails, command, arguments) -> { //
@@ -130,7 +131,7 @@ public class DockerUtilsImplTest {
         DockerUtils dockerUtils = new DockerUtilsImpl(unixShellAndFsUtils);
 
         DockerState dockerState = new DockerState();
-        String baseOutputDirectory = Files.createTempDir().getAbsolutePath();
+        String baseOutputDirectory = Files.createTempDirectory(null).toFile().getAbsolutePath();
         ContainersManageContext containersManageContext = new ContainersManageContext().setDockerState(dockerState).setBaseOutputDirectory(baseOutputDirectory);
 
         // Add initial applications: app1 and app1_mysql
