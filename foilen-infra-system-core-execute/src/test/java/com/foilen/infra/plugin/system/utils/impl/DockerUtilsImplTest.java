@@ -75,7 +75,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortRedirect(3306, "remote.example.com", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/app1.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -86,7 +86,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortRedirect(3306, "remote.example.com", "app2_mysql", DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/app2.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -98,7 +98,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortRedirect(3307, "remote.example.com", "app2_mysql", DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/app-both.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -142,7 +142,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortRedirect(3306, "localhost", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/app1.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -152,7 +152,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortEndpoint(3306, DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/mysql-start.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -171,7 +171,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortRedirect(3306, "localhost", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/app1.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -181,7 +181,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortEndpoint(3306, DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/mysql-start.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -198,7 +198,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortRedirect(3306, "remote", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/app1.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }
@@ -215,7 +215,7 @@ public class DockerUtilsImplTest {
             applicationDefinition.addPortRedirect(3306, "remote", "app1_mysql", DockerContainerEndpoints.MYSQL_TCP);
             applicationDefinition.setRunAs(65000L);
             applicationDefinition.setCommand("/app1.sh");
-            containersManageContext.getAlwaysRunningApplications().add(new ApplicationBuildDetails() //
+            containersManageContext.getApplicationBuildDetails().add(new ApplicationBuildDetails() //
                     .setOutputContext(outputContext) //
                     .setApplicationDefinition(applicationDefinition));
         }

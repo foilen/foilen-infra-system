@@ -24,14 +24,13 @@ public class ContainersManageContext {
 
     private String baseOutputDirectory;
     private DockerState dockerState;
-    private List<ApplicationBuildDetails> alwaysRunningApplications = new ArrayList<>();
-    private List<CronApplicationBuildDetails> cronApplications = new ArrayList<>();
+    private List<ApplicationBuildDetails> applicationBuildDetails = new ArrayList<>();
 
     private DockerContainerManagementCallback containerManagementCallback = NO_OP_DOCKER_CONTAINER_MANAGEMENT_CALLBACK;
     private TransformedApplicationDefinitionCallback transformedApplicationDefinitionCallback = NO_OP_TRANSFORMED_APPLICATION_DEFINITION_CALLBACK;
 
-    public List<ApplicationBuildDetails> getAlwaysRunningApplications() {
-        return alwaysRunningApplications;
+    public List<ApplicationBuildDetails> getApplicationBuildDetails() {
+        return applicationBuildDetails;
     }
 
     public String getBaseOutputDirectory() {
@@ -42,10 +41,6 @@ public class ContainersManageContext {
         return containerManagementCallback;
     }
 
-    public List<CronApplicationBuildDetails> getCronApplications() {
-        return cronApplications;
-    }
-
     public DockerState getDockerState() {
         return dockerState;
     }
@@ -54,8 +49,8 @@ public class ContainersManageContext {
         return transformedApplicationDefinitionCallback;
     }
 
-    public ContainersManageContext setAlwaysRunningApplications(List<ApplicationBuildDetails> alwaysRunningApplications) {
-        this.alwaysRunningApplications = alwaysRunningApplications;
+    public ContainersManageContext setApplicationBuildDetails(List<ApplicationBuildDetails> applicationBuildDetails) {
+        this.applicationBuildDetails = applicationBuildDetails;
         return this;
     }
 
@@ -66,11 +61,6 @@ public class ContainersManageContext {
 
     public ContainersManageContext setContainerManagementCallback(DockerContainerManagementCallback containerManagementCallback) {
         this.containerManagementCallback = containerManagementCallback;
-        return this;
-    }
-
-    public ContainersManageContext setCronApplications(List<CronApplicationBuildDetails> cronApplications) {
-        this.cronApplications = cronApplications;
         return this;
     }
 

@@ -43,10 +43,6 @@ public class Application extends AbstractIPResource implements Comparable<Applic
     private String name;
     private String description;
 
-    // Execution
-    private ExecutionPolicy executionPolicy = ExecutionPolicy.ALWAYS_ON;
-    private String executionCronDetails;
-
     // Details
     private IPApplicationDefinition applicationDefinition = new IPApplicationDefinition();
 
@@ -85,14 +81,6 @@ public class Application extends AbstractIPResource implements Comparable<Applic
         return domainNames;
     }
 
-    public String getExecutionCronDetails() {
-        return executionCronDetails;
-    }
-
-    public ExecutionPolicy getExecutionPolicy() {
-        return executionPolicy;
-    }
-
     public String getName() {
         return name;
     }
@@ -122,14 +110,6 @@ public class Application extends AbstractIPResource implements Comparable<Applic
 
     public void setDomainNames(SortedSet<String> domainNames) {
         this.domainNames = domainNames;
-    }
-
-    public void setExecutionCronDetails(String executionCronDetails) {
-        this.executionCronDetails = executionCronDetails;
-    }
-
-    public void setExecutionPolicy(ExecutionPolicy executionPolicy) {
-        this.executionPolicy = executionPolicy;
     }
 
     public void setName(String name) {

@@ -51,7 +51,6 @@ import com.foilen.infra.plugin.system.utils.model.DockerStep;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinition;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionAssetsBundle;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionPortRedirect;
-import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionService;
 import com.foilen.infra.plugin.v1.model.base.IPApplicationDefinitionVolume;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutput;
 import com.foilen.infra.plugin.v1.model.outputter.docker.DockerContainerOutputContext;
@@ -249,34 +248,7 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         DockerState dockerState = containersManageContext.getDockerState();
 
         List<ApplicationBuildDetails> allApplicationBuildDetails = new ArrayList<>();
-        allApplicationBuildDetails.addAll(containersManageContext.getAlwaysRunningApplications());
-
-        // Transform cron applications to normal applications
-        allApplicationBuildDetails.addAll(containersManageContext.getCronApplications().stream() //
-                .map(cronApplicationBuildDetails -> {
-
-                    // Move the main command to a cron entry
-                    IPApplicationDefinition applicationDefinition = cronApplicationBuildDetails.getApplicationDefinition();
-                    String cronEntry = cronApplicationBuildDetails.getCronTime() + " uid_" + applicationDefinition.getRunAs() + " " + applicationDefinition.getCommand();
-                    String containerName = cronApplicationBuildDetails.getOutputContext().getContainerName();
-                    applicationDefinition.setCommand(null);
-                    logger.info("[MANAGER] [{}] Transforming the main command as cron entry: {}", containerName, cronEntry);
-                    applicationDefinition.addAssetContent("/etc/cron.d/main", cronEntry + "\n");
-
-                    // Add the cron service
-                    applicationDefinition.getServices().add(new IPApplicationDefinitionService("_cron", "/startCron.sh", 0L));
-                    applicationDefinition.addAssetResource("/startCron.sh", "/com/foilen/infra/plugin/system/utils/impl/startCron.sh");
-                    applicationDefinition.addBuildStepCommand("chmod +x /startCron.sh && chmod 644 /etc/cron.d/main");
-
-                    // Prepare entries for /etc/passwd
-                    StringBuilder cronUsersToInstall = new StringBuilder();
-                    cronUsersToInstall.append("uid_").append(applicationDefinition.getRunAs()).append(":").append(applicationDefinition.getRunAs()).append("\n");
-                    applicationDefinition.addAssetContent("/cron_users.txt", cronUsersToInstall.toString());
-
-                    return cronApplicationBuildDetails;
-                }) //
-                .collect(Collectors.toList()) //
-        );
+        allApplicationBuildDetails.addAll(containersManageContext.getApplicationBuildDetails());
 
         // Check if needs the ports redirector applications (in and out) and add them if needed
         MultiDependenciesResolverTools dependenciesResolver = new MultiDependenciesResolverTools();

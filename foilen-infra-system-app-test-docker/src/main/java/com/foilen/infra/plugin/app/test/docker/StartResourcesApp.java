@@ -253,7 +253,7 @@ public class StartResourcesApp {
                 }).collect(Collectors.toList());
         dockerUtils.containersManage(new ContainersManageContext() //
                 .setDockerState(dockerState) //
-                .setAlwaysRunningApplications(alwaysRunningApplications) //
+                .setApplicationBuildDetails(alwaysRunningApplications) //
                 .setBaseOutputDirectory(tmpDirectory.getAbsolutePath()));
         stateSave(dockerState);
         List<String> applicationStatuses = new ArrayList<>();
