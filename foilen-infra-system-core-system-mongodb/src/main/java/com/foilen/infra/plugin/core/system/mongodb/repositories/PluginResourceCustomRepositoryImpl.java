@@ -18,10 +18,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Component;
 
 import com.foilen.infra.plugin.core.system.mongodb.repositories.documents.PluginResource;
@@ -224,6 +227,30 @@ public class PluginResourceCustomRepositoryImpl extends AbstractBasics implement
                     return resource;
                 }) //
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<PluginResource> findAll(Pageable pageable) {
+        return findAll(pageable, q -> {
+        });
+    }
+
+    @Override
+    public Page<PluginResource> findAll(Pageable pageable, Consumer<Query> queryHook) {
+        Query mongoQuery = new Query();
+
+        logger.debug("MongoDB Query (before hook): {}", mongoQuery);
+
+        // Call the hook
+        queryHook.accept(mongoQuery);
+
+        logger.debug("MongoDB Query (after hook): {}", mongoQuery);
+
+        long count = mongoTemplate.count(mongoQuery, PluginResource.class);
+
+        mongoQuery.with(pageable);
+        List<PluginResource> found = mongoTemplate.find(mongoQuery, PluginResource.class);
+        return PageableExecutionUtils.getPage(found, pageable, () -> count);
     }
 
     private String getDbPropertyName(String propertyName) {
