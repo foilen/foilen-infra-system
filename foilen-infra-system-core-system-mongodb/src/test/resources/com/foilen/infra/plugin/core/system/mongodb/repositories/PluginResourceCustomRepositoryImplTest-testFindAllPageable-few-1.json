@@ -20,6 +20,8 @@
       "setTexts" : [ ],
       "text" : "www.example.com"
     },
+    "resourceDescription" : "JunitResource [text=www.example.com, enumeration=A, date=null, integerNumber=1, longNumber=0, doubleNumber=null, floatNumber=null, bool=false, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[]]",
+    "resourceName" : "www.example.com",
     "tags" : [ "tag1", "asite" ]
   }, {
     "version" : 2,
@@ -42,6 +44,8 @@
       "setTexts" : [ ],
       "text" : "www.example.com"
     },
+    "resourceDescription" : "JunitResource [text=www.example.com, enumeration=A, date=null, integerNumber=2, longNumber=0, doubleNumber=null, floatNumber=null, bool=false, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[]]",
+    "resourceName" : "www.example.com",
     "tags" : [ "asite" ]
   } ],
   "empty" : false,

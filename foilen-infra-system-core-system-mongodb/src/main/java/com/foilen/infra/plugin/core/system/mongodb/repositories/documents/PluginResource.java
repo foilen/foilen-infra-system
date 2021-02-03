@@ -36,6 +36,9 @@ public class PluginResource {
 
     private IPResource resource;
 
+    private String resourceDescription;
+    private String resourceName;
+
     private Set<String> tags = new HashSet<>();
 
     public PluginResource() {
@@ -61,6 +64,14 @@ public class PluginResource {
     public IPResource getResource() {
         resource.setInternalId(id);
         return resource;
+    }
+
+    public String getResourceDescription() {
+        return resourceDescription;
+    }
+
+    public String getResourceName() {
+        return resourceName;
     }
 
     public Set<String> getTags() {
@@ -90,6 +101,16 @@ public class PluginResource {
         return this;
     }
 
+    public PluginResource setResourceDescription(String resourceDescription) {
+        this.resourceDescription = resourceDescription;
+        return this;
+    }
+
+    public PluginResource setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+        return this;
+    }
+
     public PluginResource setTags(Set<String> tags) {
         this.tags = tags;
         return this;
@@ -110,6 +131,8 @@ public class PluginResource {
         AssertTools.assertNotNull(resource, "The resource to store cannot be null");
         type = resourceType;
         this.resource = resource;
+        this.resourceName = resource.getResourceName();
+        this.resourceDescription = resource.getResourceDescription();
         editorName = resource.getResourceEditorName();
     }
 

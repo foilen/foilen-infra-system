@@ -20,6 +20,8 @@
       "setTexts" : [ ],
       "text" : "www.example.com"
     },
+    "resourceDescription" : "JunitResource [text=www.example.com, enumeration=A, date=null, integerNumber=1, longNumber=0, doubleNumber=null, floatNumber=null, bool=false, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[]]",
+    "resourceName" : "www.example.com",
     "tags" : [ "tag1", "asite" ]
   }, {
     "version" : 2,
@@ -42,6 +44,8 @@
       "setTexts" : [ ],
       "text" : "www.example.com"
     },
+    "resourceDescription" : "JunitResource [text=www.example.com, enumeration=A, date=null, integerNumber=2, longNumber=0, doubleNumber=null, floatNumber=null, bool=false, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[]]",
+    "resourceName" : "www.example.com",
     "tags" : [ "asite" ]
   }, {
     "version" : 1,
@@ -64,6 +68,8 @@
       "setTexts" : [ ],
       "text" : "example.com"
     },
+    "resourceDescription" : "JunitResource [text=example.com, enumeration=B, date=null, integerNumber=3, longNumber=0, doubleNumber=null, floatNumber=null, bool=false, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[]]",
+    "resourceName" : "example.com",
     "tags" : [ ]
   }, {
     "version" : 1,
@@ -89,6 +95,8 @@
       "setTexts" : [ "one", "two" ],
       "text" : "t1_aaa"
     },
+    "resourceDescription" : "JunitResource [text=t1_aaa, enumeration=A, date=Sat Jan 01 00:00:00 EST 2000, integerNumber=1, longNumber=1, doubleNumber=1.0, floatNumber=1.0, bool=true, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[one, two]]",
+    "resourceName" : "t1_aaa",
     "tags" : [ ]
   }, {
     "version" : 1,
@@ -114,6 +122,8 @@
       "setTexts" : [ "one", "three" ],
       "text" : "t2_aaa"
     },
+    "resourceDescription" : "JunitResource [text=t2_aaa, enumeration=C, date=Thu Jun 01 00:00:00 EDT 2000, integerNumber=5, longNumber=8, doubleNumber=1.5, floatNumber=7.3, bool=false, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[one, three]]",
+    "resourceName" : "t2_aaa",
     "tags" : [ ]
   }, {
     "version" : 1,
@@ -139,6 +149,8 @@
       "setTexts" : [ ],
       "text" : "zz"
     },
+    "resourceDescription" : "JunitResource [text=zz, enumeration=B, date=Sat Apr 01 00:00:00 EST 2000, integerNumber=80, longNumber=4, doubleNumber=77.6, floatNumber=3.1, bool=true, setDates=[], setDoubles=[], setEnumerations=[], setFloats=[], setLongs=[], setIntegers=[], setTexts=[]]",
+    "resourceName" : "zz",
     "tags" : [ ]
   } ],
   "empty" : false,
