@@ -1,9 +1,3 @@
-buildscript {
-    repositories {
-        jcenter()
-    }
-}
-
 dependencies {
   compile project(":foilen-infra-system-core-execute")
   compile(project(":foilen-infra-system-core-system-memory"))
@@ -25,21 +19,4 @@ mainClassName = 'com.foilen.infra.plugin.app.test.docker.TestDockerApp'
 
 startScripts {
   unixStartScriptGenerator.template = resources.text.fromFile('customUnixStartScript.txt')
-}
-
-bintray {
-  user = System.getenv('BINTRAY_USER')
-  key = System.getenv('BINTRAY_KEY')
-
-  publish = true
-
-  pkg {
-    repo = 'maven'
-    userOrg = 'foilen'
-    name = 'foilen-infra-system-app-test-docker'
-    licenses = ['MIT']
-    vcsUrl = 'https://github.com/foilen/foilen-infra-system.git'
-  }
-
-  publications = []
 }

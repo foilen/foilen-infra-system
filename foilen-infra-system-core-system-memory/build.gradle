@@ -1,8 +1,3 @@
-buildscript {
-    repositories {
-        jcenter()
-    }
-}
 dependencies {
   compile project(":foilen-infra-system-core-system-common")
   
@@ -15,35 +10,46 @@ dependencies {
   testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
 }
 
-test {
-  useJUnitPlatform()
-}
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-bintray {
-  user = System.getenv('BINTRAY_USER')
-  key = System.getenv('BINTRAY_KEY')
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
+      }
 
-  publish = true
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
+      }
 
-  pkg {
-    repo = 'maven'
-    userOrg = 'foilen'
-    name = 'com.foilen:foilen-infra-system-core-system-memory'
-    licenses = ['MIT']
-    vcsUrl = 'https://github.com/foilen/foilen-infra-system.git'
-  }
+      pom.project {
+        name = "foilen-infra-system-core-system-memory"
+        packaging 'jar'
+        artifactId 'foilen-infra-system-core-system-memory'
+        description 'The system development environment for Foilen Infra using the plugin system'
+        url 'https://github.com/foilen/foilen-infra-system'
 
-  publications = ['MyPublication']
-}
+        scm {
+          connection = "scm:git:git@github.com:foilen/foilen-infra-system.git"
+          url = "https://github.com/foilen/foilen-infra-system"
+        }
 
-publishing {
-  publications {
-    MyPublication(MavenPublication) {
-      from components.java
-      artifact sourcesJar
-      artifact javadocJar
-      groupId 'com.foilen'
-      artifactId 'foilen-infra-system-core-system-memory'
+        licenses {
+          license {
+            name = "MIT"
+            url = "https://opensource.org/licenses/MIT"
+          }
+        }
+
+        developers {
+          developer {
+            id 'foilen'
+            name 'Simon Levesque'
+            email 'simon@foilen.com'
+          }
+        }
+      }
     }
   }
 }

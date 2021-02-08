@@ -1,54 +1,37 @@
-buildscript {
-  repositories {
-    mavenLocal()
-    jcenter()
-  }
-}
-
 plugins {
-  id "com.jfrog.bintray" version "$bintrayVersion"
   id 'io.spring.dependency-management' version "$springDependencyManagementVersion"
-}
-
-dependencyManagement {
-	imports {
-		mavenBom "org.springframework.boot:spring-boot-dependencies:$springBootVersion"
-	}
 }
 
 allprojects {
 
-  apply plugin: 'io.spring.dependency-management'
   apply plugin: 'eclipse'
 
   group = 'com.foilen'
   version = System.getenv('VERSION')?:'master-SNAPSHOT'
-  
-  dependencyManagement {
-		imports {
-			mavenBom "org.springframework.boot:spring-boot-dependencies:$springBootVersion"
-		}
-	}
+  ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 }
 
 subprojects {
 
-  apply plugin: 'com.jfrog.bintray'
-  apply plugin: 'java'
+  apply plugin: 'io.spring.dependency-management'
   apply plugin: 'maven'
-  apply plugin: 'maven-publish'
+  apply plugin: 'signing'
+
+  apply plugin: 'java'
 
   repositories {
     mavenLocal()
     mavenCentral()
-    jcenter()
-    maven {
-      url 'https://dl.bintray.com/foilen/maven'
-    }
   }
 
   sourceCompatibility = 11
+
+  dependencyManagement {
+    imports {
+      mavenBom "org.springframework.boot:spring-boot-starter-parent:$springBootVersion"
+    }
+  }
 
   eclipse {
     classpath {
@@ -68,25 +51,16 @@ subprojects {
   }
 
   artifacts {
-    archives sourcesJar
-    archives javadocJar
+    archives javadocJar, sourcesJar
+  }
+  
+  signing {
+	  required { isReleaseVersion && gradle.taskGraph.hasTask(":uploadArchives") }
+	  sign configurations.archives
+	}
+  
+  test {
+    useJUnitPlatform()
   }
 
-}
-
-bintray {
-  user = System.getenv('BINTRAY_USER')
-  key = System.getenv('BINTRAY_KEY')
-
-  publish = true
-
-  pkg {
-    repo = 'maven'
-    userOrg = 'foilen'
-    name = 'com.foilen:foilen-infra-system'
-    licenses = ['MIT']
-    vcsUrl = 'https://github.com/foilen/foilen-infra-system.git'
-  }
-
-  publications = []
 }
