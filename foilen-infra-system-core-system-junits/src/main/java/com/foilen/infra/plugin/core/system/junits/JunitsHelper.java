@@ -9,6 +9,8 @@
  */
 package com.foilen.infra.plugin.core.system.junits;
 
+import java.io.File;
+import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,10 +32,14 @@ import com.foilen.infra.plugin.v1.core.service.internal.InternalChangeService;
 import com.foilen.infra.plugin.v1.model.resource.IPResource;
 import com.foilen.infra.resource.example.JunitResource;
 import com.foilen.infra.resource.example.JunitResourceEnum;
+import com.foilen.smalltools.JavaEnvironmentValues;
 import com.foilen.smalltools.test.asserts.AssertTools;
 import com.foilen.smalltools.tools.DateTools;
+import com.foilen.smalltools.tools.DirectoryTools;
+import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.JsonTools;
 import com.foilen.smalltools.tools.ResourceTools;
+import com.foilen.smalltools.tools.SystemTools;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
@@ -76,8 +83,29 @@ public class JunitsHelper {
         String actualJson = JsonTools.prettyPrintWithoutNulls(resourcesState);
         actualJson = actualJson.replaceAll("\\\\n", "\n");
         actualJson = actualJson.replaceAll("\\\\t", "\t");
-        String expectedJson = ResourceTools.getResourceAsString(resourceName, resourceContext);
-        AssertTools.assertIgnoreLineFeed(expectedJson, actualJson);
+
+        // Update or assert
+        if ("true".equals(SystemTools.getPropertyOrEnvironment("ASSERT_TOOLS_UPDATE_EXPECTED_FILE", "false"))) {
+            // Update
+            URL url = resourceContext.getResource(resourceName);
+            if (url == null) {
+                Assert.fail("The file must already exists (you can create an empty file)");
+            } else {
+                String filename = url.toString().substring(5);
+                String filePart = new File(filename).getName();
+                List<String> availableFiles = DirectoryTools.listFilesAndFoldersRecursively(JavaEnvironmentValues.getWorkingDirectory(), true).stream() //
+                        .filter(it -> it.endsWith(filePart) && !it.equals(filename)) //
+                        .collect(Collectors.toList());
+
+                Assert.assertEquals("Must have exactly one candidate", 1, availableFiles.size());
+                FileTools.writeFile(actualJson, availableFiles.get(0));
+            }
+        } else {
+            // Assert
+            String expectedJson = ResourceTools.getResourceAsString(resourceName, resourceContext);
+            AssertTools.assertIgnoreLineFeed(expectedJson, actualJson);
+        }
+
     }
 
     public static void createFakeData(CommonServicesContext commonCtx, InternalServicesContext internalCtx) {
