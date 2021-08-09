@@ -1,0 +1,5 @@
+NETWORK ID     NAME      DRIVER    SCOPE
+031843adb1fe   bridge    bridge    local
+34e935cb10a0   fcloud    bridge    local
+555a88790268   host      host      local
+7888473ce346   none      null      local

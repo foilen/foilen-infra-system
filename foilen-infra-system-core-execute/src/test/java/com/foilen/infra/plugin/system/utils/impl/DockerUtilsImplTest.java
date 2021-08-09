@@ -12,6 +12,7 @@ package com.foilen.infra.plugin.system.utils.impl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -231,6 +232,26 @@ public class DockerUtilsImplTest {
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-some-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-some.txt");
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-incompleteStream-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-incompleteStream.txt");
         assertDockerPs("DockerUtilsImplTest-testConvertToDockerPs-sizeWithExponent-expected.json", "DockerUtilsImplTest-testConvertToDockerPs-sizeWithExponent.txt");
+    }
+
+    @Test
+    public void testNetworkConvertToNames_18_09_7() {
+        List<String> actual = new DockerUtilsImpl().networkConvertToNames(ResourceTools.getResourceAsString("DockerUtilsImplTest-testNetworkConvertToNames_18_09_7.txt", getClass()));
+        List<String> expected = Arrays.asList("bridge", "fcloud", "host", "none");
+        Collections.sort(actual);
+        Collections.sort(expected);
+
+        AssertTools.assertJsonComparison(expected, actual);
+    }
+
+    @Test
+    public void testNetworkConvertToNames_20_10_7() {
+        List<String> actual = new DockerUtilsImpl().networkConvertToNames(ResourceTools.getResourceAsString("DockerUtilsImplTest-testNetworkConvertToNames_20_10_7.txt", getClass()));
+        List<String> expected = Arrays.asList("bridge", "fcloud", "host", "none");
+        Collections.sort(actual);
+        Collections.sort(expected);
+
+        AssertTools.assertJsonComparison(expected, actual);
     }
 
     @Test

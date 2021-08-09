@@ -860,7 +860,8 @@ public class DockerUtilsImpl extends AbstractBasics implements DockerUtils {
         List<String> names = new ArrayList<>();
         while (linesIterable.hasNext()) {
             String line = linesIterable.next();
-            int start = 20;
+            line = line.replaceAll("\\s+", " ");
+            int start = line.indexOf(' ') + 1;
             int end = line.indexOf(' ', start);
             names.add(line.substring(start, end));
         }
