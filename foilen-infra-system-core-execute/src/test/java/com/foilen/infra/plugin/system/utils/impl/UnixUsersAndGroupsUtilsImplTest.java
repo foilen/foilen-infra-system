@@ -10,140 +10,194 @@
 package com.foilen.infra.plugin.system.utils.impl;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.foilen.infra.plugin.system.utils.model.UnixGroupDetail;
-import com.foilen.infra.plugin.system.utils.model.UnixUserDetail;
+import com.foilen.infra.plugin.system.utils.mock.UnixShellAndFsUtilsTrackPermissionsMock;
 import com.foilen.smalltools.test.asserts.AssertTools;
+import com.foilen.smalltools.tools.DirectoryTools;
 import com.foilen.smalltools.tools.FileTools;
 import com.foilen.smalltools.tools.ResourceTools;
-import com.google.common.base.Joiner;
 
 public class UnixUsersAndGroupsUtilsImplTest {
 
+    private UnixShellAndFsUtilsTrackPermissionsMock unixShellAndFsUtilsTrackPermissionsMock;
     private UnixUsersAndGroupsUtilsImpl unixUsersAndGroupsUtils;
+
+    private void assertFolder(String expectedResourceName) {
+
+        StringBuilder report = new StringBuilder();
+
+        for (String fileName : DirectoryTools.listFilesAndFoldersRecursively(unixUsersAndGroupsUtils.getHostFs(), false)) {
+
+            String absolutePath = unixUsersAndGroupsUtils.getHostFs() + "/" + fileName;
+
+            report.append("--[ ").append(fileName);
+            String permission = unixShellAndFsUtilsTrackPermissionsMock.getPermissionsByPath().get(absolutePath);
+
+            if (permission != null) {
+                report.append(" ").append(permission);
+            }
+            report.append(" ]--\n");
+
+            File file = new File(absolutePath);
+            if (file.isFile()) {
+                FileTools.readFileLinesStream(file).forEach(line -> report.append(line).append("\n"));
+            }
+
+        }
+
+        String expected = ResourceTools.getResourceAsString(expectedResourceName, getClass());
+        AssertTools.assertIgnoreLineFeed(expected, report.toString());
+
+    }
 
     @Before
     public void init() throws Exception {
-        unixUsersAndGroupsUtils = new UnixUsersAndGroupsUtilsImpl();
+
+        unixShellAndFsUtilsTrackPermissionsMock = new UnixShellAndFsUtilsTrackPermissionsMock();
+        unixUsersAndGroupsUtils = new UnixUsersAndGroupsUtilsImpl(unixShellAndFsUtilsTrackPermissionsMock);
+
+        String hostFs = Files.createTempDirectory(null).toFile().getAbsolutePath();
+        unixUsersAndGroupsUtils.setHostFs(hostFs);
+        DirectoryTools.createPath(hostFs + "/etc/skel/deeper");
+        DirectoryTools.createPath(hostFs + "/home");
+
+        // User file
+        File userFile = new File(hostFs + unixUsersAndGroupsUtils.getUserFile());
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-passwd.txt", this.getClass(), userFile);
+
+        // User Shadow file
+        File userShadowFile = new File(hostFs + unixUsersAndGroupsUtils.getUserShadowFile());
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-shadow.txt", this.getClass(), userShadowFile);
 
         // Group file
-        File groupFile = File.createTempFile("group", null);
-        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-group.txt", this.getClass(), groupFile);
-        unixUsersAndGroupsUtils.setGroupFile(groupFile.getAbsolutePath());
-
-        // Passwd file
-        File passwdFile = File.createTempFile("passwd", null);
-        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-passwd.txt", this.getClass(), passwdFile);
-        unixUsersAndGroupsUtils.setPasswdFile(passwdFile.getAbsolutePath());
-
-        // Shadow file
-        File shadowFile = File.createTempFile("shadow", null);
-        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-shadow.txt", this.getClass(), shadowFile);
-        unixUsersAndGroupsUtils.setShadowFile(shadowFile.getAbsolutePath());
-
-        // Sudo folder
-        File sudoFolderFile = Files.createTempDirectory(null).toFile();
-        unixUsersAndGroupsUtils.setSudoDirectory(sudoFolderFile.getAbsolutePath());
-        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-sudo-ccloud-1.txt", this.getClass(), new File(unixUsersAndGroupsUtils.getSudoDirectory() + "ccloud-1"));
-    }
-
-    @Test
-    public void testGetAllUsers() {
-
-        List<UnixUserDetail> unixUserDetails = unixUsersAndGroupsUtils.userGetAll();
-
-        Assert.assertEquals(11, unixUserDetails.size());
-
-        // Check all names
-        int i = 0;
-        for (int y = 0; y < 6; ++y) {
-            Assert.assertEquals("reserved-" + y, unixUserDetails.get(i++).getName());
-        }
-        for (int y = 0; y < 4; ++y) {
-            Assert.assertEquals("ccloud-" + y, unixUserDetails.get(i++).getName());
-        }
-
-        // Check details
-        UnixUserDetail ccloud1 = unixUserDetails.get(7);
-        AssertTools.assertJsonComparison("UnixUsersAndGroupsUtilsImplTest-testGetAllUsers-ccloud1.json", getClass(), ccloud1);
-
-        // Check null hashed password
-        UnixUserDetail ccloud2 = unixUserDetails.get(8);
-        Assert.assertNull(ccloud2.getHashedPassword());
-        UnixUserDetail ccloud3 = unixUserDetails.get(8);
-        Assert.assertNull(ccloud3.getHashedPassword());
-
-    }
-
-    @Test
-    public void testGroupMemberIn() throws IOException {
-
-        // Group file
-        File groupFile = File.createTempFile("group", null);
+        File groupFile = new File(hostFs + unixUsersAndGroupsUtils.getGroupFile());
         ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-group.txt", this.getClass(), groupFile);
 
-        // Asserts
-        Assert.assertTrue(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "foilen-cdn", "www-data"));
-        Assert.assertFalse(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "foilen-cdn", "debian-spamd"));
-        Assert.assertFalse(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "foilen-cdn", "10021"));
-        Assert.assertTrue(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "postfix", "debian-spamd"));
-        Assert.assertTrue(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "postfix", "dovecot"));
-        Assert.assertFalse(unixUsersAndGroupsUtils.groupMemberIn(groupFile.getAbsolutePath(), "postfix", "www-data"));
+        // Group Shadow file
+        File groupShadowFile = new File(hostFs + unixUsersAndGroupsUtils.getGroupShadowFile());
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-gshadow.txt", this.getClass(), groupShadowFile);
+
+        // Skeleton
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-skel-empty.txt", this.getClass(), new File(hostFs + "/etc/skel/.bash_logout"));
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-skel-empty.txt", this.getClass(), new File(hostFs + "/etc/skel/.bashrc"));
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-skel-empty.txt", this.getClass(), new File(hostFs + "/etc/skel/.profile"));
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-skel-empty.txt", this.getClass(), new File(hostFs + "/etc/skel/deeper/in_sub"));
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-init.txt");
+    }
+
+    @Test
+    public void testGroupAddMember() {
+
+        Assert.assertTrue(unixUsersAndGroupsUtils.groupAddMember("dialout", "www-data"));
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testGroupAddMember.txt");
+
+        // Bis
+        Assert.assertFalse(unixUsersAndGroupsUtils.groupAddMember("dialout", "www-data"));
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testGroupAddMember.txt");
+
+        // Second member
+        Assert.assertTrue(unixUsersAndGroupsUtils.groupAddMember("dialout", "irc"));
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testGroupAddMember-2.txt");
 
     }
 
     @Test
-    public void testGroupSaveGroup() throws IOException {
+    public void testGroupCreate() {
 
-        List<UnixGroupDetail> unixGroupDetails = unixUsersAndGroupsUtils.groupGetAll();
+        unixUsersAndGroupsUtils.groupCreate("mygroup", 70001L);
 
-        Assert.assertEquals(22, unixGroupDetails.size());
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testGroupCreate.txt");
 
-        // Group file
-        File groupFile = File.createTempFile("group", null);
-        unixUsersAndGroupsUtils.setGroupFile(groupFile.getAbsolutePath());
-
-        // Save
-        unixUsersAndGroupsUtils.groupSaveGroup(unixGroupDetails);
-
-        // Assert
-        String expected = ResourceTools.getResourceAsString("UnixUsersAndGroupsUtilsImplTest-group.txt", this.getClass());
-        expected = expected.replaceAll("\r", "");
-        List<String> expectedLines = Arrays.asList(expected.split("\n")).stream().sorted().collect(Collectors.toList());
-        expected = Joiner.on('\n').join(expectedLines);
-        expected += "\n";
-
-        String actual = FileTools.getFileAsString(groupFile);
-        AssertTools.assertIgnoreLineFeed(expected, actual);
     }
 
     @Test
-    public void testUserSavePasswd() throws IOException {
+    public void testGroupDelete() {
 
-        List<UnixUserDetail> unixUserDetails = unixUsersAndGroupsUtils.userGetAll();
+        unixUsersAndGroupsUtils.groupDelete("dialout");
 
-        Assert.assertEquals(11, unixUserDetails.size());
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testGroupDelete.txt");
 
-        // Passwd file
-        File passwdFile = File.createTempFile("passwd", null);
-        unixUsersAndGroupsUtils.setPasswdFile(passwdFile.getAbsolutePath());
+    }
 
-        // Save
-        unixUsersAndGroupsUtils.userSavePasswd(unixUserDetails);
+    @Test
+    public void testGroupNameUpdate() {
 
-        // Assert
-        String expected = ResourceTools.getResourceAsString("UnixUsersAndGroupsUtilsImplTest-passwd.txt", this.getClass());
-        String actual = FileTools.getFileAsString(passwdFile);
-        AssertTools.assertIgnoreLineFeed(expected, actual);
+        unixUsersAndGroupsUtils.groupNameUpdate("dialout", "nextgendialout");
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testGroupNameUpdate.txt");
+
+    }
+
+    @Test
+    public void testUserCreate_all() {
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, "/home/myuser", "/bin/bash", "$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1");
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_all.txt");
+
+    }
+
+    @Test
+    public void testUserCreate_minimal() {
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, null, null, null);
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_minimal.txt");
+
+    }
+
+    @Test
+    public void testUserRemove() {
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, "/home/myuser", "/bin/bash", "$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_all.txt");
+
+        FileTools.writeFile("hello world", unixUsersAndGroupsUtils.getHostFs() + "/home/myuser/deeper/another");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_all_with_more.txt");
+
+        unixUsersAndGroupsUtils.userRemove("myuser");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-init.txt");
+    }
+
+    @Test
+    public void testUserUpdateHome() {
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, "/home/myuser", "/bin/bash", "$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_all.txt");
+
+        FileTools.writeFile("hello world", unixUsersAndGroupsUtils.getHostFs() + "/home/myuser/deeper/another");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_all_with_more.txt");
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, "/home/anotherplace", "/bin/bash",
+                "$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserUpdateHome.txt");
+
+    }
+
+    @Test
+    public void testUserUpdateMinimalToAllToMinimal() {
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, null, null, null);
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_minimal.txt");
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, "/home/myuser", "/bin/bash", "$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_all.txt");
+
+        FileTools.writeFile("hello world", unixUsersAndGroupsUtils.getHostFs() + "/home/myuser/deeper/another");
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_all_with_more.txt");
+
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, null, null, null);
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-testUserCreate_minimal.txt");
+
     }
 
 }

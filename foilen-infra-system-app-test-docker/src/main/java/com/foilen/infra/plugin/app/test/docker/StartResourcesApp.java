@@ -229,7 +229,7 @@ public class StartResourcesApp {
         resourceService.resourceFindAll(resourceService.createResourceQuery(UnixUser.RESOURCE_TYPE)).forEach(it -> {
             UnixUser unixUser = JsonTools.clone(it, UnixUser.class);
             System.out.println("\t" + unixUser.getName() + " (" + unixUser.getId() + ")");
-            unixUsersAndGroupsUtils.userCreate(unixUser.getName(), unixUser.getId(), unixUser.getHomeFolder(), null, null);
+            unixUsersAndGroupsUtils.userCreateOrUpdate(unixUser.getName(), unixUser.getId(), unixUser.getHomeFolder(), null, null);
         });
 
         // Install docker network
@@ -286,7 +286,7 @@ public class StartResourcesApp {
         resourceService.resourceFindAll(resourceService.createResourceQuery(UnixUser.RESOURCE_TYPE)).forEach(it -> {
             UnixUser unixUser = JsonTools.clone(it, UnixUser.class);
             System.out.println("\t" + unixUser.getName() + " (" + unixUser.getId() + ")");
-            unixUsersAndGroupsUtils.userRemove(unixUser.getName(), unixUser.getHomeFolder());
+            unixUsersAndGroupsUtils.userRemove(unixUser.getName());
         });
 
         System.out.println("\n-------------------------------");

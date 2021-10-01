@@ -9,7 +9,7 @@
  */
 package com.foilen.infra.plugin.system.utils;
 
-import java.util.List;
+import java.util.LinkedHashMap;
 
 import com.foilen.infra.plugin.system.utils.model.UnixGroupDetail;
 import com.foilen.infra.plugin.system.utils.model.UnixUserDetail;
@@ -59,9 +59,9 @@ public interface UnixUsersAndGroupsUtils {
     /**
      * Get all the current groups.
      *
-     * @return the groups in sorted by name
+     * @return the groups
      */
-    List<UnixGroupDetail> groupGetAll();
+    LinkedHashMap<String, UnixGroupDetail> groupGetAll();
 
     /**
      * Tells if the user is already part of the unix group.
@@ -99,26 +99,7 @@ public interface UnixUsersAndGroupsUtils {
      *            (optional) the already hashed password of the user
      * @return true if was created or updated
      */
-    boolean userCreate(String username, Long id, String homeFolder, String shell, String hashedPassword);
-
-    /**
-     * Create a unix user or update its information.
-     *
-     * @param username
-     *            the name of the user
-     * @param id
-     *            the id of the user
-     * @param homeFolder
-     *            (optional) the full path to the home folder
-     * @param shell
-     *            (optional) the shell of the user
-     * @param hashedPassword
-     *            (optional) the already hashed password of the user
-     * @param sudoFileContent
-     *            (optional) the content of the sudo file
-     * @return true if was created or updated
-     */
-    boolean userCreate(String username, Long id, String homeFolder, String shell, String hashedPassword, String sudoFileContent);
+    boolean userCreateOrUpdate(String username, Long id, String homeFolder, String shell, String hashedPassword);
 
     /**
      * Tells if the unix user exists.
@@ -141,60 +122,17 @@ public interface UnixUsersAndGroupsUtils {
     /**
      * Get all the current users.
      *
-     * @return the users in sorted by id order
+     * @return the users
      */
-    List<UnixUserDetail> userGetAll();
-
-    /**
-     * Update a unix user home folder.
-     *
-     * @param username
-     *            the name of the user
-     * @param newHomeFolder
-     *            the new home folder
-     */
-    void userHomeUpdate(String username, String newHomeFolder);
-
-    /**
-     * Update a unix user name.
-     *
-     * @param oldUsername
-     *            the old name of the user
-     * @param newUsername
-     *            the new name of the user
-     */
-    void userNameUpdate(String oldUsername, String newUsername);
-
-    /**
-     * Update a unix user password.
-     *
-     * @param username
-     *            the name of the user
-     * @param hashedPassword
-     *            the hashed version of the password
-     * @return true if was changed
-     */
-    boolean userPasswordUpdate(String username, String hashedPassword);
+    LinkedHashMap<String, UnixUserDetail> userGetAll();
 
     /**
      * Remove a unix user.
      *
      * @param username
      *            the name of the user
-     * @param homePath
-     *            (optional) the path of the home folder (default: /home/USERNAME)
      * @return true if was removed
      */
-    boolean userRemove(String username, String homePath);
-
-    /**
-     * Update a unix user shell.
-     *
-     * @param username
-     *            the name of the user
-     * @param newShell
-     *            the new shell
-     */
-    void userShellUpdate(String username, String newShell);
+    boolean userRemove(String username);
 
 }

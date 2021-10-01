@@ -93,6 +93,18 @@ public interface UnixShellAndFsUtils {
     String executeCommandQuietAndGetOutput(String actionName, String actionDetails, String command, String... arguments);
 
     /**
+     * Change file or directory ownership.
+     *
+     * @param path
+     *            the path to the file
+     * @param owner
+     *            the owner of the file
+     * @param group
+     *            the group of the file
+     */
+    void fileChangeOwner(String path, long owner, long group);
+
+    /**
      * Change file or directory ownership and permissions.
      *
      * @param path

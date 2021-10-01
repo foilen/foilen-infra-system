@@ -55,9 +55,6 @@ public class UnixShellAndFsUtilsMock extends AbstractBasics implements UnixShell
                 }
             }
         }
-        // unixShellAndFsUtils.executeCommandOrFail(Level.DEBUG, "CONTAINER/" + containerName, //
-        // "/usr/bin/docker", //
-        // "cp", tmpDir.getAbsolutePath() + "/.", containerName + ":" + containerFolder);
     }
 
     @Override
@@ -79,6 +76,11 @@ public class UnixShellAndFsUtilsMock extends AbstractBasics implements UnixShell
     public String executeCommandQuietAndGetOutput(String actionName, String actionDetails, String command, String... arguments) {
         logger.debug("executeCommandQuietAndGetOutput: {} ; {} ; {} ; {}", actionName, actionDetails, command, arguments);
         return executeCommandQuietAndGetOutputCallback.handle(actionName, actionDetails, command, arguments);
+    }
+
+    @Override
+    public void fileChangeOwner(String path, long owner, long group) {
+        logger.debug("fileChangeOwner: {} ; {} ; {}}", path, owner, group);
     }
 
     @Override

@@ -113,6 +113,12 @@ public class UnixShellAndFsUtilsImpl extends AbstractBasics implements UnixShell
     }
 
     @Override
+    public void fileChangeOwner(String path, long owner, long group) {
+        logger.info("[{}] Changing ownership {} {}", path, owner, group);
+        executeCommandQuiet("FILE", "Update owner", "/bin/chown", owner + ":" + group, path);
+    }
+
+    @Override
     public void fileChangeOwnerAndPermissions(String path, long owner, long group, String permission) {
         logger.info("[{}] Changing ownership and permissions {} {} {}", path, owner, group, permission);
         executeCommandQuiet("FILE", "Update owner", "/bin/chown", owner + ":" + group, path);

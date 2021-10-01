@@ -9,14 +9,94 @@
  */
 package com.foilen.infra.plugin.system.utils.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.foilen.infra.plugin.system.utils.UtilsException;
+import com.google.common.base.Strings;
 import com.google.common.collect.ComparisonChain;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UnixUserDetail implements Comparable<UnixUserDetail> {
+
+    private final static List<String> noPasswords = Collections.unmodifiableList(Arrays.asList("", "!", "*"));
+
+    /**
+     * Get the {@link UnixUserDetail} from a line in /etc/passwd
+     *
+     * @param line
+     *            the line
+     * @return the unix user detail
+     */
+    public static UnixUserDetail fromUser(String line) {
+        List<String> parts = split(line);
+        if (parts.size() < 6) {
+            throw new UtilsException("[USER] The entry [" + line + "] is invalid in the passwd file");
+        }
+
+        UnixUserDetail unixUserDetail = new UnixUserDetail();
+        int i = 0;
+        unixUserDetail.setName(parts.get(i++));
+        ++i;
+        unixUserDetail.setId(Long.valueOf(parts.get(i++)));
+        unixUserDetail.setGid(Long.valueOf(parts.get(i++)));
+        unixUserDetail.setGecos(parts.get(i++));
+        unixUserDetail.setHomeFolder(parts.get(i++));
+        if (parts.size() >= 7) {
+            unixUserDetail.setShell(parts.get(i++));
+        }
+
+        return unixUserDetail;
+    }
+
+    /**
+     * Get the {@link UnixUserDetail} from a line in /etc/shadow
+     *
+     * @param line
+     *            the line
+     * @return the unix user detail
+     */
+    public static UnixUserDetail fromUserShadow(String line) {
+
+        String parts[] = line.split(":");
+        if (parts.length < 4) {
+            throw new UtilsException("[USER SHADOW] The entry [" + line + "] is invalid in the user shadow file");
+        }
+        UnixUserDetail unixUserDetails = new UnixUserDetail();
+        int i = 0;
+        unixUserDetails.setName(parts[i++]);
+        unixUserDetails.setHashedPassword(parts[i++]);
+        unixUserDetails.setLastPasswordChange(Long.valueOf(parts[i++]));
+
+        // Put hashed password to null if no password account
+        if (noPasswords.contains(unixUserDetails.getHashedPassword())) {
+            unixUserDetails.setHashedPassword(null);
+        }
+
+        return unixUserDetails;
+    }
+
+    private static List<String> split(String line) {
+
+        List<String> parts = new ArrayList<>();
+        int startPos = 0;
+        while (startPos <= line.length()) {
+            int endPos = line.indexOf(':', startPos);
+            if (endPos == -1) {
+                endPos = line.length();
+            }
+
+            parts.add(line.substring(startPos, endPos));
+
+            startPos = endPos + 1;
+
+        }
+
+        return parts;
+    }
 
     private Long id;
     private Long gid;
@@ -25,7 +105,7 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
     private String homeFolder;
     private String shell;
     private String hashedPassword;
-    private Set<String> sudos = new HashSet<>();
+    private Long lastPasswordChange;
 
     public UnixUserDetail() {
     }
@@ -67,6 +147,10 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
         return id;
     }
 
+    public Long getLastPasswordChange() {
+        return lastPasswordChange;
+    }
+
     public String getName() {
         return name;
     }
@@ -75,8 +159,15 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
         return shell;
     }
 
-    public Set<String> getSudos() {
-        return sudos;
+    /**
+     * Merge the current unix user by adding the shadow specific details.
+     *
+     * @param shadowUnixUserDetail
+     *            the shadow details
+     */
+    public void mergeShadow(UnixUserDetail shadowUnixUserDetail) {
+        this.hashedPassword = shadowUnixUserDetail.hashedPassword;
+        this.lastPasswordChange = shadowUnixUserDetail.lastPasswordChange;
     }
 
     public void setGecos(String gecos) {
@@ -99,6 +190,10 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
         this.id = id;
     }
 
+    public void setLastPasswordChange(Long lastPasswordChange) {
+        this.lastPasswordChange = lastPasswordChange;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -107,17 +202,13 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
         this.shell = shell;
     }
 
-    public void setSudos(Set<String> sudos) {
-        this.sudos = sudos;
-    }
-
     /**
      * Get the line in /etc/passwd file.
      *
      * @return the line
      */
-    public String toPasswd() {
-        return name + ":x:" + id + ":" + id + "::" + homeFolder + ":" + shell;
+    public String toUser() {
+        return name + ":x:" + id + ":" + gid + ":" + Strings.nullToEmpty(gecos) + ":" + Strings.nullToEmpty(homeFolder) + ":" + Strings.nullToEmpty(shell);
     }
 
     /**
@@ -125,24 +216,10 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
      *
      * @return the line
      */
-    public String toShadow() {
-        return name + ":" + hashedPassword + ":0:0:99999:7:::";
-    }
-
-    /**
-     * Complete sudo file.
-     *
-     * @return all the lines
-     */
-    public String toSudoFile() {
-        StringBuilder builder = new StringBuilder();
-        for (String command : sudos) {
-            builder.append(name);
-            builder.append("  ALL = NOPASSWD: ");
-            builder.append(command.replaceAll("\\:", "\\\\:"));
-            builder.append("\n");
-        }
-        return builder.toString();
+    public String toUserShadow() {
+        String hashedPasswordPart = hashedPassword == null ? "*" : hashedPassword;
+        long lastPasswordChangePart = lastPasswordChange == null ? 0 : lastPasswordChange;
+        return name + ":" + hashedPasswordPart + ":" + lastPasswordChangePart + ":0:99999:7:::";
     }
 
 }
