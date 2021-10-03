@@ -1,33 +1,32 @@
 dependencies {
 
-  compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
-  compile "javax.xml.bind:jaxb-api"
-  compile "org.slf4j:slf4j-api"
-  compile "org.reflections:reflections:$reflectionsVersion"
-  compile "org.springframework:spring-context"
+  api "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
+  api "javax.xml.bind:jaxb-api"
+  api "org.slf4j:slf4j-api"
+  api "org.reflections:reflections:$reflectionsVersion"
+  api "org.springframework:spring-context"
 
 }
 
-uploadArchives {
+publishing {
   repositories {
-    mavenDeployer {
-      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
+    maven {
+      url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+      credentials {
+        username = System.getenv('OSSRH_USER')
+        password = System.getenv('OSSRH_PASS')
       }
+    }
+  }
 
-      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
-      }
-
-      pom.project {
-        name = "foilen-infra-system-core-system-common"
-        packaging 'jar'
-        artifactId 'foilen-infra-system-core-system-common'
-        description 'The system development environment for Foilen Infra using the plugin system'
-        url 'https://github.com/foilen/foilen-infra-system'
-
+  publications {
+    mavenJava(MavenPublication) {
+      pom {
+        name = 'foilen-infra-system-core-system-common'
+        description = 'The system development environment for Foilen Infra using the plugin system'
+        url = 'https://github.com/foilen/foilen-infra-system'
+        from components.java
+        
         scm {
           connection = "scm:git:git@github.com:foilen/foilen-infra-system.git"
           url = "https://github.com/foilen/foilen-infra-system"
@@ -42,12 +41,19 @@ uploadArchives {
 
         developers {
           developer {
-            id 'foilen'
-            name 'Simon Levesque'
-            email 'simon@foilen.com'
+            id = 'foilen'
+            name = 'Simon Levesque'
+            email = 'simon@foilen.com'
           }
         }
       }
     }
   }
+}
+
+signing {
+  sign publishing.publications.mavenJava
+}
+tasks.withType(Sign) {
+  onlyIf { isReleaseVersion }
 }

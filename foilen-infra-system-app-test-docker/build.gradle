@@ -1,15 +1,15 @@
 dependencies {
-  compile project(":foilen-infra-system-core-execute")
-  compile(project(":foilen-infra-system-core-system-memory"))
-  compile(project(":foilen-infra-system-core-system-junits"))
+  api project(":foilen-infra-system-core-execute")
+  api(project(":foilen-infra-system-core-system-memory"))
+  api(project(":foilen-infra-system-core-system-junits"))
   
-  compile "commons-io:commons-io:$commonsIoVersion"
-  compile "org.jsoup:jsoup:$jsoupVersion"
+  api "commons-io:commons-io:$commonsIoVersion"
+  api "org.jsoup:jsoup:$jsoupVersion"
   
-  compile "org.springframework.boot:spring-boot-starter-web"
+  api "org.springframework.boot:spring-boot-starter-web"
   
-  compile "org.webjars:bootstrap:3.3.7-1"
-  compile "org.webjars:typeaheadjs:0.11.1"
+  api "org.webjars:bootstrap:3.3.7-1"
+  api "org.webjars:typeaheadjs:0.11.1"
   
 }
 

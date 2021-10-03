@@ -1,13 +1,13 @@
 dependencies {
 
   // Plugin system
-  compile "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
-  testCompile project(":foilen-infra-system-core-system-memory")
+  api "com.foilen:foilen-infra-plugin-core:$foilenInfraPluginVersion"
+  testImplementation project(":foilen-infra-system-core-system-memory")
 
   // Logging
-  compile "org.slf4j:slf4j-api"
+  api "org.slf4j:slf4j-api"
   
-  compile "org.springframework.boot:spring-boot-starter-freemarker"
+  api "org.springframework.boot:spring-boot-starter-freemarker"
 
   // Tests
   testCompileOnly 'junit:junit'
@@ -16,26 +16,25 @@ dependencies {
 
 }
 
-uploadArchives {
+publishing {
   repositories {
-    mavenDeployer {
-      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
+    maven {
+      url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+      credentials {
+        username = System.getenv('OSSRH_USER')
+        password = System.getenv('OSSRH_PASS')
       }
+    }
+  }
 
-      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
-      }
-
-      pom.project {
-        name = "foilen-infra-system-core-execute"
-        packaging 'jar'
-        artifactId 'foilen-infra-system-core-execute'
-        description 'The system development environment for Foilen Infra using the plugin system'
-        url 'https://github.com/foilen/foilen-infra-system'
-
+  publications {
+    mavenJava(MavenPublication) {
+      pom {
+        name = 'foilen-infra-system-core-execute'
+        description = 'The system development environment for Foilen Infra using the plugin system'
+        url = 'https://github.com/foilen/foilen-infra-system'
+        from components.java
+        
         scm {
           connection = "scm:git:git@github.com:foilen/foilen-infra-system.git"
           url = "https://github.com/foilen/foilen-infra-system"
@@ -50,12 +49,19 @@ uploadArchives {
 
         developers {
           developer {
-            id 'foilen'
-            name 'Simon Levesque'
-            email 'simon@foilen.com'
+            id = 'foilen'
+            name = 'Simon Levesque'
+            email = 'simon@foilen.com'
           }
         }
       }
     }
   }
+}
+
+signing {
+  sign publishing.publications.mavenJava
+}
+tasks.withType(Sign) {
+  onlyIf { isReleaseVersion }
 }

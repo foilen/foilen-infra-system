@@ -1,35 +1,34 @@
 dependencies {
-  compile project(":foilen-infra-system-core-system-common")
+  api project(":foilen-infra-system-core-system-common")
   
-  testCompile project(":foilen-infra-system-core-system-junits")
-  testCompile "com.foilen:foilen-infra-resource-example:$foilenInfraResourceExampleVersion"
-  testCompile "com.foilen:foilen-infra-resource-example-failing:$foilenInfraResourceExampleFailingVersion"
-  testCompile "com.foilen:foilen-infra-resource-testing-controller:$foilenInfraResourceTestingControllerVersion"
+  testImplementation project(":foilen-infra-system-core-system-junits")
+  testImplementation "com.foilen:foilen-infra-resource-example:$foilenInfraResourceExampleVersion"
+  testImplementation "com.foilen:foilen-infra-resource-example-failing:$foilenInfraResourceExampleFailingVersion"
+  testImplementation "com.foilen:foilen-infra-resource-testing-controller:$foilenInfraResourceTestingControllerVersion"
   testCompileOnly 'junit:junit'
   testImplementation "org.junit.jupiter:junit-jupiter-api"
   testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
 }
 
-uploadArchives {
+publishing {
   repositories {
-    mavenDeployer {
-      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
+    maven {
+      url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+      credentials {
+        username = System.getenv('OSSRH_USER')
+        password = System.getenv('OSSRH_PASS')
       }
+    }
+  }
 
-      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-        authentication(userName: System.getenv('OSSRH_USER'), password: System.getenv('OSSRH_PASS'))
-      }
-
-      pom.project {
-        name = "foilen-infra-system-core-system-memory"
-        packaging 'jar'
-        artifactId 'foilen-infra-system-core-system-memory'
-        description 'The system development environment for Foilen Infra using the plugin system'
-        url 'https://github.com/foilen/foilen-infra-system'
-
+  publications {
+    mavenJava(MavenPublication) {
+      pom {
+        name = 'foilen-infra-system-core-system-memory'
+        description = 'The system development environment for Foilen Infra using the plugin system'
+        url = 'https://github.com/foilen/foilen-infra-system'
+        from components.java
+        
         scm {
           connection = "scm:git:git@github.com:foilen/foilen-infra-system.git"
           url = "https://github.com/foilen/foilen-infra-system"
@@ -44,12 +43,19 @@ uploadArchives {
 
         developers {
           developer {
-            id 'foilen'
-            name 'Simon Levesque'
-            email 'simon@foilen.com'
+            id = 'foilen'
+            name = 'Simon Levesque'
+            email = 'simon@foilen.com'
           }
         }
       }
     }
   }
+}
+
+signing {
+  sign publishing.publications.mavenJava
+}
+tasks.withType(Sign) {
+  onlyIf { isReleaseVersion }
 }
