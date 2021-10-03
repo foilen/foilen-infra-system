@@ -3,7 +3,7 @@ dependencies {
   api project(":foilen-infra-system-core-system-common")
 
   // Mongo
-  api "org.mongodb:mongodb-driver-sync:$mongoVersion"
+  api "org.mongodb:mongodb-driver-sync"
   api "org.springframework.boot:spring-boot-starter"
   api 'org.springframework.data:spring-data-mongodb'
 

@@ -20,7 +20,7 @@ License: The MIT License (MIT)
 
 You can see the latest version and the Maven and Gradle settings here:
 
-https://bintray.com/foilen/maven/com.foilen:foilen-infra-system-core-system-common
+https://repo1.maven.org/maven2/com/foilen/foilen-infra-system-core-system-common/
 
 ## System
 
@@ -96,12 +96,12 @@ docker run -ti \
   --user $USER_ID \
   --volume $FOLDER_IMPORT:/data \
   --volume $FOLDER_PLUGINS_JARS:/plugins \
-  --publish 8080:8080 \
+  --publish 8888:8080 \
   foilen-infra-system-app-test-docker:master-SNAPSHOT \
   web \
   /data/
   
-  # Go on http://localhost:8080
+# Go on http://localhost:8888
 # You can also add the environment FOILEN_PLUGIN_SKIP_UPDATE_EVENTS=true if you do not want to let the update handlers run. That is useful if you want to create the basic resources and export them to test the update handlers.
 
 
