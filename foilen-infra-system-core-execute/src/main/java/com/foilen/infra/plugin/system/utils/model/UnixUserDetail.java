@@ -218,7 +218,7 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
      */
     public String toUserShadow() {
         String hashedPasswordPart = hashedPassword == null ? "*" : hashedPassword;
-        long lastPasswordChangePart = lastPasswordChange == null ? 0 : lastPasswordChange;
+        long lastPasswordChangePart = lastPasswordChange == null ? 1 : lastPasswordChange;
         return name + ":" + hashedPasswordPart + ":" + lastPasswordChangePart + ":0:99999:7:::";
     }
 

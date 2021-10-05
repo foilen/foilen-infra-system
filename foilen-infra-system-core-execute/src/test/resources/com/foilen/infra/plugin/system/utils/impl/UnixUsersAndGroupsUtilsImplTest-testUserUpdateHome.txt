@@ -124,7 +124,7 @@ irc:*:18831:0:99999:7:::
 gnats:*:18831:0:99999:7:::
 nobody:*:18831:0:99999:7:::
 _apt:*:18831:0:99999:7:::
-myuser:$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1:0:0:99999:7:::
+myuser:$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1:1:0:99999:7:::
 --[ etc/skel/ ]--
 --[ etc/skel/.bash_logout ]--
 some content
