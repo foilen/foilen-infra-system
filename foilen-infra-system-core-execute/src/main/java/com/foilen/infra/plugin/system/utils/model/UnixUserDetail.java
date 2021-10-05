@@ -61,15 +61,15 @@ public class UnixUserDetail implements Comparable<UnixUserDetail> {
      */
     public static UnixUserDetail fromUserShadow(String line) {
 
-        String parts[] = line.split(":");
-        if (parts.length < 4) {
+        List<String> parts = split(line);
+        if (parts.size() < 4) {
             throw new UtilsException("[USER SHADOW] The entry [" + line + "] is invalid in the user shadow file");
         }
         UnixUserDetail unixUserDetails = new UnixUserDetail();
         int i = 0;
-        unixUserDetails.setName(parts[i++]);
-        unixUserDetails.setHashedPassword(parts[i++]);
-        unixUserDetails.setLastPasswordChange(Long.valueOf(parts[i++]));
+        unixUserDetails.setName(parts.get(i++));
+        unixUserDetails.setHashedPassword(parts.get(i++));
+        unixUserDetails.setLastPasswordChange(Long.valueOf(parts.get(i++)));
 
         // Put hashed password to null if no password account
         if (noPasswords.contains(unixUserDetails.getHashedPassword())) {

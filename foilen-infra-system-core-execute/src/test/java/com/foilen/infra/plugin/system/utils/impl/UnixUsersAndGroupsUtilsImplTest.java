@@ -138,6 +138,42 @@ public class UnixUsersAndGroupsUtilsImplTest {
     }
 
     @Test
+    public void testUbuntu2004_default() throws Exception {
+
+        unixShellAndFsUtilsTrackPermissionsMock = new UnixShellAndFsUtilsTrackPermissionsMock();
+        unixUsersAndGroupsUtils = new UnixUsersAndGroupsUtilsImpl(unixShellAndFsUtilsTrackPermissionsMock);
+
+        String hostFs = Files.createTempDirectory(null).toFile().getAbsolutePath();
+        unixUsersAndGroupsUtils.setHostFs(hostFs);
+        DirectoryTools.createPath(hostFs + "/etc/skel");
+        DirectoryTools.createPath(hostFs + "/home");
+
+        // User file
+        File userFile = new File(hostFs + unixUsersAndGroupsUtils.getUserFile());
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-ubuntu2004-passwd.txt", this.getClass(), userFile);
+
+        // User Shadow file
+        File userShadowFile = new File(hostFs + unixUsersAndGroupsUtils.getUserShadowFile());
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-ubuntu2004-shadow.txt", this.getClass(), userShadowFile);
+
+        // Group file
+        File groupFile = new File(hostFs + unixUsersAndGroupsUtils.getGroupFile());
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-ubuntu2004-group.txt", this.getClass(), groupFile);
+
+        // Group Shadow file
+        File groupShadowFile = new File(hostFs + unixUsersAndGroupsUtils.getGroupShadowFile());
+        ResourceTools.copyToFile("UnixUsersAndGroupsUtilsImplTest-ubuntu2004-gshadow.txt", this.getClass(), groupShadowFile);
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-ubuntu2004-init.txt");
+
+        // Add and remove the user to touch the files
+        unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, "/home/myuser", "/bin/bash", "$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1");
+        unixUsersAndGroupsUtils.userRemove("myuser");
+
+        assertFolder("UnixUsersAndGroupsUtilsImplTest-ubuntu2004-init2.txt");
+    }
+
+    @Test
     public void testUserCreate_all() {
 
         unixUsersAndGroupsUtils.userCreateOrUpdate("myuser", 70000L, "/home/myuser", "/bin/bash", "$6$nNXWxwVm$s2DFjbpb1hmfgPpCFqKKMYQ0VFygoBn5vq19zRt/ymMP9EfebU/3FlZuWsasyb34pAf8VarmLB3cE6M2ccefO1");
