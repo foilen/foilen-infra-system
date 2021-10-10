@@ -173,7 +173,7 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
             UnixGroupDetail shadowUnixGroupDetail = UnixGroupDetail.fromGroupShadow(line);
             UnixGroupDetail unixGroupDetail = detailsByName.get(shadowUnixGroupDetail.getName());
             if (unixGroupDetail == null) {
-                logger.info("[GROUP] The group {} exists in gshadow, but not in group. Skipping");
+                logger.info("[GROUP] The group {} exists in gshadow, but not in group. Skipping", shadowUnixGroupDetail.getName());
                 continue;
             }
 
@@ -449,7 +449,7 @@ public class UnixUsersAndGroupsUtilsImpl extends AbstractBasics implements UnixU
             UnixUserDetail shadowUnixUserDetail = UnixUserDetail.fromUserShadow(line);
             UnixUserDetail unixUserDetail = detailsByName.get(shadowUnixUserDetail.getName());
             if (unixUserDetail == null) {
-                logger.info("[USER] The user {} exists in shadow, but not in passwd. Skipping");
+                logger.info("[USER] The user {} exists in shadow, but not in passwd. Skipping", shadowUnixUserDetail.getName());
                 continue;
             }
 
